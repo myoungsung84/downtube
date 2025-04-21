@@ -3,12 +3,16 @@ import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
 import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
+import eslintPluginSimpleImportSort from 'eslint-plugin-simple-import-sort'
+import eslintPluginUnusedImports from 'eslint-plugin-unused-imports'
 
 export default tseslint.config(
   { ignores: ['**/node_modules', '**/dist', '**/out'] },
+
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,
   eslintPluginReact.configs.flat['jsx-runtime'],
+
   {
     settings: {
       react: {
@@ -16,6 +20,7 @@ export default tseslint.config(
       }
     }
   },
+
   {
     files: ['**/*.{ts,tsx}'],
     plugins: {
@@ -27,5 +32,32 @@ export default tseslint.config(
       ...eslintPluginReactRefresh.configs.vite.rules
     }
   },
+
+  // ✅ simple-import-sort & unused-imports 추가 블록
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: {
+      'simple-import-sort': eslintPluginSimpleImportSort,
+      'unused-imports': eslintPluginUnusedImports
+    },
+    rules: {
+      // import 정렬
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
+
+      // unused imports 제거
+      'unused-imports/no-unused-imports': 'warn',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_'
+        }
+      ]
+    }
+  },
+
   eslintConfigPrettier
 )
