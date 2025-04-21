@@ -2,4 +2,7 @@ build/
 node_modules/
 dist/
 out/
-package-lock.json
+.vscode/
+.DS_Store
+.eslintcache
+*.log*
