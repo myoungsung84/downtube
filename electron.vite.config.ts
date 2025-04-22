@@ -7,6 +7,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
+        '@src': resolve('src'),
         '@libs': resolve('src/libs')
       }
     }
@@ -15,6 +16,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
+        '@src': resolve('src'),
         '@libs': resolve('src/libs')
       }
     }
@@ -22,6 +24,7 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
+        '@src': resolve('src'),
         '@renderer': resolve('src/renderer/src'),
         '@libs': resolve('src/libs')
       }

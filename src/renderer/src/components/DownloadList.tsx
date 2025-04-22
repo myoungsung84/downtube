@@ -1,16 +1,15 @@
 import { Stack } from '@mui/material'
-import DownloadItem from '@renderer/components/DownloadItem'
+import DownloadItem, { DownloadItemProps } from '@renderer/components/DownloadItem'
 
-type DownloadListProps = {
-  items: []
+export type DownloadListProps = {
+  items: DownloadItemProps[]
 }
 
 export default function DownloadList({ items }: DownloadListProps): React.JSX.Element {
-  console.log('DownloadList items:', items)
   return (
     <Stack>
       {items.map((item, index) => (
-        <DownloadItem key={index} />
+        <DownloadItem key={index} {...item} />
       ))}
     </Stack>
   )

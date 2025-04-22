@@ -3,9 +3,10 @@ import { JSX, useRef } from 'react'
 
 type NavigationBarProps = {
   onSubmit: (url: string) => void
+  onDirectory?: () => void
 }
 
-export default function NavigationBar({ onSubmit }: NavigationBarProps): JSX.Element {
+export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarProps): JSX.Element {
   const url = useRef<HTMLInputElement>(null)
   return (
     <Container>
@@ -14,7 +15,9 @@ export default function NavigationBar({ onSubmit }: NavigationBarProps): JSX.Ele
         <Stack direction="row" alignItems="center">
           {/* 왼쪽: 파일 버튼 */}
           <Box sx={{ flex: 1 }}>
-            <IconButton color="primary">파일</IconButton>
+            <IconButton color="primary" onClick={onDirectory}>
+              파일
+            </IconButton>
           </Box>
 
           {/* 가운데: 앱 제목 */}
@@ -46,7 +49,7 @@ export default function NavigationBar({ onSubmit }: NavigationBarProps): JSX.Ele
               }
             }}
           >
-            다운로드
+            검색
           </Button>
         </Stack>
       </Stack>

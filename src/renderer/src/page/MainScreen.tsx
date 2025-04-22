@@ -1,45 +1,83 @@
 import { Stack } from '@mui/material'
+import { DownloadItemProps } from '@renderer/components/DownloadItem'
 import DownloadList from '@renderer/components/DownloadList'
 import NavigationBar from '@renderer/components/NavigationBar'
+import { useEffect, useState } from 'react'
 
-function MainScreen(): React.JSX.Element {
-  const handleDownload = (url: string): void => {
-    // 다운로드 로직을 여기에 추가합니다.
-    console.log('다운로드 시작:', url)
-    if (!url.includes('youtube.com')) {
-      console.log('유효한 YouTube URL입니다.')
-      return
+export default function MainScreen(): React.JSX.Element {
+  const [downloadList, setDownloadList] = useState<DownloadItemProps[]>([])
+
+  useEffect(() => {
+    window.api.onDownloadProgress(({ url, percent }) => {
+      setDownloadList((prev) =>
+        prev.map((item) => {
+          if (item.url !== url) return item
+          if ((item.percent ?? 0) >= percent) {
+            return item
+          }
+          return { ...item, percent }
+        })
+      )
+    })
+    window.api.onDownloadDone(({ url }) => {
+      console.log('다운로드 완료:', url)
+      setDownloadList((prev) =>
+        prev.map((item) =>
+          item.url === url
+            ? { ...item, percent: 100, status: 'completed', isCompleted: true }
+            : item
+        )
+      )
+    })
+  }, [])
+
+  const handleDownloadInfo = async (url: string): Promise<void> => {
+    try {
+      const alreadyExists = downloadList.some((item) => item.url === url)
+      if (alreadyExists) {
+        console.warn(`[INFO] 이미 등록된 URL입니다: ${url}`)
+        return
+      }
+      const baseItem: DownloadItemProps = {
+        url,
+        status: 'loding',
+        info: null,
+        percent: 0,
+        isCompleted: false,
+        onDownload: async (_url) => {
+          console.log('다운로드 시작:', _url)
+          setDownloadList((prev) =>
+            prev.map((item) => (item.url === _url ? { ...item, status: 'downloading' } : item))
+          )
+          await window.api.download(url)
+        }
+      }
+      setDownloadList((prev) => [...prev, baseItem])
+      const info = await window.api.downloadInfo(url)
+      setDownloadList((prev) => {
+        const exists = prev.some((item) => item.url === url)
+        if (!exists) {
+          throw new Error(`URL not found in list: ${url}`)
+        }
+        return prev.map((item) => (item.url === url ? { ...item, status: 'normal', info } : item))
+      })
+    } catch (error) {
+      console.error('다운로드 정보 처리 중 오류:', error)
+      setDownloadList((prev) => prev.filter((item) => item.url !== url))
     }
-    downloadVideo(url)
   }
-
-  const downloadVideo = async (url: string): Promise<void> => {
-    await window.api.download(url)
-  }
-
-  const items = [
-    {
-      id: 1,
-      title: 'Video 1',
-      url: 'https://www.youtube.com/watch?v=example1',
-      status: 'downloading'
-    },
-    {
-      id: 2,
-      title: 'Video 2',
-      url: 'https://www.youtube.com/watch?v=example2',
-      status: 'completed'
-    }
-  ]
 
   return (
-    <Stack>
-      <NavigationBar onSubmit={handleDownload} />
-      <Stack>
-        <DownloadList items={items} />
+    <Stack sx={{ height: '100vh' }}>
+      <NavigationBar
+        onSubmit={handleDownloadInfo}
+        onDirectory={() => {
+          window.api.openDownloadDir()
+        }}
+      />
+      <Stack sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        <DownloadList items={downloadList} />
       </Stack>
     </Stack>
   )
 }
-
-export default MainScreen

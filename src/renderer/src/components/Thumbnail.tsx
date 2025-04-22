@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 
 export type ThumbnailProps = {
-  url: string
+  url: string | undefined | null
   w: number | string
   h: number | string
   onClick?: () => void
@@ -10,6 +10,7 @@ export type ThumbnailProps = {
 export default function Thumbnail({ url, w, h, onClick }: ThumbnailProps): React.JSX.Element {
   return (
     <Box
+      component={'img'}
       sx={{
         width: w,
         height: h,
@@ -17,7 +18,8 @@ export default function Thumbnail({ url, w, h, onClick }: ThumbnailProps): React
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
-        borderRadius: 1
+        borderRadius: 1,
+        flexShrink: 0
       }}
       onClick={onClick}
     />
