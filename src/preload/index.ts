@@ -2,9 +2,10 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
-  openDownloadDir: () => ipcRenderer.invoke('open-download-dir'),
+  openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
   downloadInfo: (url: string) => ipcRenderer.invoke('download-info', url),
   download: (url: string) => ipcRenderer.invoke('download-video', url),
+  stopDownload: (url: string) => ipcRenderer.invoke('download-stop', url),
   onDownloadProgress: (callback: (data: { url: string; percent: number }) => void) => {
     ipcRenderer.on('download-progress', (_event, data) => {
       callback(data)

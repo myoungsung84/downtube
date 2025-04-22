@@ -7,6 +7,14 @@ import path from 'path'
 
 const isWindows = process.platform === 'win32'
 
+type DownloadTask = {
+  process: ReturnType<typeof spawn>
+  filename: string
+  outputPath: string
+}
+
+const downloadProcesses = new Map<string, DownloadTask>()
+
 /**
  * yt-dlp, ffmpeg 등 실행 파일 경로 반환
  * @param filename 실행 파일명 (확장자 제외)
@@ -37,16 +45,15 @@ export function locateBinary(filename: string): string {
  * @param mainWindow 메인 윈도우
  */
 export const downloadHandler = (mainWindow: BrowserWindow): void => {
-  ipcMain.handle('open-download-dir', async () => {
+  ipcMain.handle('download-dir-open', async () => {
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
     if (!fs.existsSync(downloadDir)) {
       mkdirSync(downloadDir, { recursive: true })
     }
-    console.log('[INFO] Opening download directory:', downloadDir)
     await shell.openPath(downloadDir)
   })
+
   ipcMain.handle('download-info', async (_, url: string) => {
-    console.log('[INFO] Getting video info for:', url)
     const ytDlpPath = locateBinary('yt-dlp')
     return new Promise((resolve, reject) => {
       const args = [
@@ -83,7 +90,11 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
       })
     })
   })
+
   ipcMain.handle('download-video', async (_, url: string) => {
+    if (downloadProcesses.has(url)) {
+      return { success: false, message: 'Already downloading' }
+    }
     const ffmpegPath = locateBinary('ffmpeg')
     const ytDlpPath = locateBinary('yt-dlp')
 
@@ -94,7 +105,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
 
     return new Promise((resolve, reject) => {
       const timestamp = Math.floor(Date.now() / 1000).toString()
-      const filename = `${timestamp}_VOD.%(ext)s`
+      const filename = `${timestamp}_VOD`
       const args = [
         '--no-cache-dir',
         '--no-warnings',
@@ -109,10 +120,13 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         '--no-part',
         '--restrict-filenames',
         '--output',
-        path.join(downloadDir, filename),
+        path.join(downloadDir, `${filename}.%(ext)s`),
         url
       ]
+
       const child = spawn(ytDlpPath, args)
+      downloadProcesses.set(url, { process: child, filename: filename, outputPath: downloadDir })
+
       child.stdout.on('data', (data) => {
         const text = data.toString()
         console.log('yt-dlp stdout:', text)
@@ -122,9 +136,10 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           mainWindow.webContents.send('download-progress', { url, percent })
         }
       })
+
       child.on('error', (err) => {
         console.error('[yt-dlp spawn error]', err)
-        reject(new Error(`yt-dlp spawn failed: ${err.message}`))
+        reject({ success: false, message: `yt-dlp spawn failed: ${err.message}` })
       })
 
       child.on('close', (code) => {
@@ -133,9 +148,37 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           mainWindow.webContents.send('download-done', { url })
           resolve({ success: true })
         } else {
-          reject(new Error(`yt-dlp exited with code ${code}`))
+          reject({ success: false, message: `yt-dlp exited with code ${code}` })
         }
       })
     })
+  })
+
+  ipcMain.handle('download-stop', async (_, url: string) => {
+    try {
+      const task = downloadProcesses.get(url)
+      if (!task) {
+        return { success: false, message: 'No download process found' }
+      }
+      const { filename, outputPath } = task
+      const files = await fs.promises.readdir(outputPath)
+      for (const file of files) {
+        if (file.startsWith(filename)) {
+          const filePath = path.join(outputPath, file)
+          try {
+            await fs.promises.unlink(filePath)
+            console.log(`[INFO] Deleted: ${filePath}`)
+          } catch (err) {
+            console.error(`[ERROR] Failed to delete: ${filePath}`, err)
+          }
+        }
+      }
+      task.process.kill()
+      downloadProcesses.delete(url)
+      return { success: true }
+    } catch (error) {
+      console.error('Error stopping download:', error)
+      return { success: false, message: 'Failed to stop download' }
+    }
   })
 }

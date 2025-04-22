@@ -7,11 +7,12 @@ import Thumbnail from './Thumbnail'
 
 export type DownloadItemProps = {
   url: string
-  status: 'loding' | 'normal' | 'downloading' | 'completed' | 'failed'
+  status: 'loding' | 'normal' | 'downloading' | 'stop' | 'completed' | 'failed'
   percent?: number
   isCompleted: boolean
   info?: VideoInfo | null
   onDownload: (url: string) => void
+  onStop: (url: string) => void
 }
 
 export default function DownloadItem(props: DownloadItemProps): React.JSX.Element {
@@ -41,6 +42,8 @@ export default function DownloadItem(props: DownloadItemProps): React.JSX.Elemen
         return '동영상 다운로드'
       case 'downloading':
         return '다운로드 중'
+      case 'stop':
+        return '다운로드 중지'
       case 'completed':
         return '다운로드 완료'
       case 'failed':
@@ -83,10 +86,17 @@ export default function DownloadItem(props: DownloadItemProps): React.JSX.Elemen
           <Button
             variant="outlined"
             onClick={() => {
-              if (props.status !== 'normal') {
-                return
+              switch (props.status) {
+                case 'normal':
+                case 'stop':
+                  props.onDownload(props.url)
+                  break
+                case 'downloading':
+                  props.onStop(props.url)
+                  break
+                default:
+                  break
               }
-              props.onDownload(props.url)
             }}
           >
             {statusToText(props.status)}

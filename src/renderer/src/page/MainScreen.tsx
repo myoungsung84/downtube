@@ -12,9 +12,6 @@ export default function MainScreen(): React.JSX.Element {
       setDownloadList((prev) =>
         prev.map((item) => {
           if (item.url !== url) return item
-          if ((item.percent ?? 0) >= percent) {
-            return item
-          }
           return { ...item, percent }
         })
       )
@@ -50,6 +47,13 @@ export default function MainScreen(): React.JSX.Element {
             prev.map((item) => (item.url === _url ? { ...item, status: 'downloading' } : item))
           )
           await window.api.download(url)
+        },
+        onStop: async (_url) => {
+          console.log('다운로드 중지:', _url)
+          setDownloadList((prev) =>
+            prev.map((item) => (item.url === _url ? { ...item, status: 'stop' } : item))
+          )
+          await window.api.stopDownload(url)
         }
       }
       setDownloadList((prev) => [...prev, baseItem])
