@@ -102,6 +102,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     if (!fs.existsSync(downloadDir)) {
       fs.mkdirSync(downloadDir, { recursive: true })
     }
+    console.log('ffmpegPath:', ffmpegPath)
 
     return new Promise((resolve, reject) => {
       const timestamp = Math.floor(Date.now() / 1000).toString()
@@ -135,6 +136,10 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           const percent = Math.round(parseFloat(match[1]))
           mainWindow.webContents.send('download-progress', { url, percent })
         }
+      })
+
+      child.stderr.on('data', (data) => {
+        console.error('[yt-dlp stderr]', data.toString())
       })
 
       child.on('error', (err) => {
