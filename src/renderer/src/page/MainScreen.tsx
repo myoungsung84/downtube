@@ -8,20 +8,19 @@ export default function MainScreen(): React.JSX.Element {
   const [downloadList, setDownloadList] = useState<DownloadItemProps[]>([])
 
   useEffect(() => {
-    window.api.onDownloadProgress(({ url, percent }) => {
+    window.api.onDownloadProgress(({ url, current, percent }) => {
       setDownloadList((prev) =>
         prev.map((item) => {
           if (item.url !== url) return item
-          return { ...item, percent }
+          return { ...item, current, percent }
         })
       )
     })
     window.api.onDownloadDone(({ url }) => {
-      console.log('다운로드 완료:', url)
       setDownloadList((prev) =>
         prev.map((item) =>
           item.url === url
-            ? { ...item, percent: 100, status: 'completed', isCompleted: true }
+            ? { ...item, percent: 100, status: 'completed', current: 'complete', isCompleted: true }
             : item
         )
       )
@@ -39,17 +38,18 @@ export default function MainScreen(): React.JSX.Element {
         url,
         status: 'loding',
         info: null,
+        current: null,
         percent: 0,
         isCompleted: false,
         onDownload: async (_url) => {
-          console.log('다운로드 시작:', _url)
           setDownloadList((prev) =>
-            prev.map((item) => (item.url === _url ? { ...item, status: 'downloading' } : item))
+            prev.map((item) =>
+              item.url === _url ? { ...item, current: 'init', status: 'downloading' } : item
+            )
           )
           await window.api.download(url)
         },
         onStop: async (_url) => {
-          console.log('다운로드 중지:', _url)
           setDownloadList((prev) =>
             prev.map((item) => (item.url === _url ? { ...item, status: 'stop' } : item))
           )

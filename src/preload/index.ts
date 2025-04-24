@@ -6,7 +6,13 @@ const api = {
   downloadInfo: (url: string) => ipcRenderer.invoke('download-info', url),
   download: (url: string) => ipcRenderer.invoke('download-video', url),
   stopDownload: (url: string) => ipcRenderer.invoke('download-stop', url),
-  onDownloadProgress: (callback: (data: { url: string; percent: number }) => void) => {
+  onDownloadProgress: (
+    callback: (data: {
+      url: string
+      current: 'video' | 'audio' | 'complete' | 'init' | null
+      percent: number
+    }) => void
+  ) => {
     ipcRenderer.on('download-progress', (_event, data) => {
       callback(data)
     })

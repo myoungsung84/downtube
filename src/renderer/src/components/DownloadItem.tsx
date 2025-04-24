@@ -8,6 +8,7 @@ import Thumbnail from './Thumbnail'
 export type DownloadItemProps = {
   url: string
   status: 'loding' | 'normal' | 'downloading' | 'stop' | 'completed' | 'failed'
+  current: 'video' | 'audio' | 'complete' | 'init' | null
   percent?: number
   isCompleted: boolean
   info?: VideoInfo | null
@@ -49,6 +50,21 @@ export default function DownloadItem(props: DownloadItemProps): React.JSX.Elemen
       case 'failed':
       default:
         return '다운로드 실패'
+    }
+  }
+
+  const infoText = (cur: string): string => {
+    switch (cur) {
+      case 'video':
+        return '비디오 다운로드 중'
+      case 'audio':
+        return '오디오 다운로드 중'
+      case 'complete':
+        return '다운로드 완료'
+      case 'init':
+        return '초기화 중 입니다. 잠시만 기다려 주세요.'
+      default:
+        return ''
     }
   }
 
@@ -103,8 +119,13 @@ export default function DownloadItem(props: DownloadItemProps): React.JSX.Elemen
           </Button>
         </Stack>
       </Stack>
-      <Box sx={{ width: '100%', mt: 1 }}>
+      <Box sx={{ width: '100%', mt: 1 }} justifyContent={'center'}>
         <LinearProgress variant="determinate" value={props.percent ?? 0} />
+        {props.current !== null && (
+          <Typography variant="caption" sx={{ mt: 1 }}>
+            {infoText(props.current)} / {props.percent}%
+          </Typography>
+        )}
       </Box>
     </Stack>
   )

@@ -5,6 +5,12 @@ interface AppAPI {
   downloadInfo: (url: string) => Promise<VideoInfo>
   download: (url: string) => Promise<{ success: boolean }>
   stopDownload: (url: string) => Promise<boolean>
-  onDownloadProgress: (callback: (data: { url: string; percent: number }) => void) => void
+  onDownloadProgress: (
+    callback: (data: {
+      url: string
+      current: 'video' | 'audio' | 'complete' | 'init' | null
+      percent: number
+    }) => void
+  ) => void
   onDownloadDone: (callback: (data: { url: string }) => void) => void
 }

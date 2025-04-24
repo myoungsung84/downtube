@@ -2,25 +2,37 @@ import { VideoInfo } from '@src/types/video-info.types'
 import { spawn } from 'child_process'
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { app } from 'electron'
+import ffmpegStatic from 'ffmpeg-static'
+import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
+import treeKill from 'tree-kill'
 
 const isWindows = process.platform === 'win32'
 
+const registeredHandlers = new Set<string>()
+
 type DownloadTask = {
-  process: ReturnType<typeof spawn>
+  videoProcess?: ReturnType<typeof spawn>
+  audioProcess?: ReturnType<typeof spawn>
   filename: string
   outputPath: string
 }
-
 const downloadProcesses = new Map<string, DownloadTask>()
+
+/**
+ * ms 단위로 대기하는 Promise 반환
+ * @param ms 대기 시간 (ms)
+ * @returns Promise
+ */
+const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
 
 /**
  * yt-dlp, ffmpeg 등 실행 파일 경로 반환
  * @param filename 실행 파일명 (확장자 제외)
  * @returns 실행 가능한 절대 경로
  */
-export function locateBinary(filename: string): string {
+function locateBinary(filename: string): string {
   const binaryName = isWindows ? `${filename}.exe` : filename
 
   let resolvedPath: string
@@ -40,24 +52,39 @@ export function locateBinary(filename: string): string {
   return resolvedPath
 }
 
-const registeredHandlers = new Set<string>()
-
 /**
  * IPC 핸들러 등록
  * @param channel
  * @param handler
  * @returns
  */
-export function safeSetHandler(
-  channel: string,
-  handler: Parameters<typeof ipcMain.handle>[1]
-): void {
+function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
     console.warn(`[${channel}] already registered, skipping`)
     return
   }
   ipcMain.handle(channel, handler)
   registeredHandlers.add(channel)
+}
+
+/**
+ * 다운로드 진행률을 메인 윈도우에 전송
+ * @param mainWindow 메인 윈도우
+ * @param current 다운로드 타입 (video/audio)
+ * @param text yt-dlp 출력 텍스트
+ */
+function sendProgress(
+  mainWindow: BrowserWindow,
+  current: 'video' | 'audio' | 'complete' | 'init' | null,
+  url: string,
+  text: string
+): void {
+  const match = text.match(/\[download\]\s+(\d{1,3}\.\d)%/)
+  if (match) {
+    const percent = Math.round(parseFloat(match[1]))
+    console.log(`[${current}] download progress: ${percent}%`)
+    mainWindow.webContents.send('download-progress', { url, current, percent })
+  }
 }
 
 /**
@@ -75,7 +102,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
 
   safeSetHandler('download-info', async (_, url: string) => {
     const ytDlpPath = locateBinary('yt-dlp')
-    return new Promise((resolve, reject) => {
+    return new Promise((res, rej) => {
       const args = [
         '--no-check-certificate',
         '--no-cache-dir',
@@ -84,93 +111,115 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         '--dump-json',
         url
       ]
-      const child = spawn(ytDlpPath, args)
+      const p = spawn(ytDlpPath, args)
       let json = ''
-      child.stdout.on('data', (data) => {
+      p.stdout.on('data', (data) => {
         json += data.toString()
       })
-      child.stderr.on('data', (data) => {
+      p.stderr.on('data', (data) => {
         console.error('[yt-dlp stderr]', data.toString())
       })
-      child.on('error', (err) => {
+      p.on('error', (err) => {
         console.error('[yt-dlp error]', err)
-        reject(new Error(`yt-dlp spawn failed: ${err.message}`))
+        rej(new Error(`yt-dlp spawn failed: ${err.message}`))
       })
-      child.on('close', (code) => {
+      p.on('close', (code) => {
         if (code === 0) {
           try {
             const info: VideoInfo = JSON.parse(json) as VideoInfo
-            resolve(info)
+            res(info)
           } catch (e) {
-            reject(new Error(`Invalid JSON from yt-dlp: ${e}`))
+            rej(new Error(`Invalid JSON from yt-dlp: ${e}`))
           }
         } else {
-          reject(new Error(`yt-dlp exited with code ${code}`))
+          rej(new Error(`yt-dlp exited with code ${code}`))
         }
       })
     })
   })
 
   safeSetHandler('download-video', async (_, url: string) => {
+    ffmpeg.setFfmpegPath(ffmpegStatic as string)
     if (downloadProcesses.has(url)) {
       return { success: false, message: 'Already downloading' }
     }
-    const ffmpegPath = locateBinary('ffmpeg')
+
     const ytDlpPath = locateBinary('yt-dlp')
-
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
-    if (!fs.existsSync(downloadDir)) {
-      fs.mkdirSync(downloadDir, { recursive: true })
-    }
+    if (!fs.existsSync(downloadDir)) fs.mkdirSync(downloadDir, { recursive: true })
 
-    return new Promise((resolve, reject) => {
-      const timestamp = Math.floor(Date.now() / 1000).toString()
-      const filename = `${timestamp}_VOD`
+    const timestamp = Math.floor(Date.now() / 1000).toString()
+    const baseName = `${timestamp}_VOD`
+    const videoFile = path.join(downloadDir, `${baseName}_video.%(ext)s`)
+    const audioFile = path.join(downloadDir, `${baseName}_audio.%(ext)s`)
+    const outputFile = path.join(downloadDir, `${baseName}.mkv`)
+
+    const task: DownloadTask = {
+      filename: baseName,
+      outputPath: downloadDir
+    }
+    downloadProcesses.set(url, task)
+
+    await new Promise<void>((res, rej) => {
       const args = [
-        '--no-cache-dir',
-        '--no-warnings',
-        '--no-check-certificate',
         '--no-playlist',
         '--format',
-        'bv*+ba/best',
-        '--merge-output-format',
-        'mkv',
-        '--ffmpeg-location',
-        path.dirname(ffmpegPath),
+        'bv*',
         '--no-part',
         '--restrict-filenames',
         '--output',
-        path.join(downloadDir, `${filename}.%(ext)s`),
+        videoFile,
         url
       ]
+      const videoProc = spawn(ytDlpPath, args)
+      task.videoProcess = videoProc
 
-      const child = spawn(ytDlpPath, args)
-      downloadProcesses.set(url, { process: child, filename: filename, outputPath: downloadDir })
-
-      child.stdout.on('data', (data) => {
-        const text = data.toString()
-        console.log('yt-dlp stdout:', text)
-        const match = text.match(/\[download\]\s+(\d{1,3}\.\d)%/)
-        if (match) {
-          const percent = Math.round(parseFloat(match[1]))
-          mainWindow.webContents.send('download-progress', { url, percent })
-        }
+      videoProc.on('close', (code) => (code === 0 ? res() : rej(`video download failed: ${code}`)))
+      videoProc.stdout.on('data', (data) => {
+        sendProgress(mainWindow, 'video', url, data.toString())
       })
+      videoProc.on('error', (err) => rej(err))
+    })
 
-      child.on('error', (err) => {
-        console.error('[yt-dlp spawn error]', err)
-        reject({ success: false, message: `yt-dlp spawn failed: ${err.message}` })
+    await new Promise<void>((res, rej) => {
+      const args = [
+        '--no-playlist',
+        '--format',
+        'ba',
+        '--no-part',
+        '--restrict-filenames',
+        '--output',
+        audioFile,
+        url
+      ]
+      const audioProc = spawn(ytDlpPath, args)
+      task.audioProcess = audioProc
+
+      audioProc.on('close', (code) => (code === 0 ? res() : rej(`audio download failed: ${code}`)))
+      audioProc.stdout.on('data', (data) => {
+        sendProgress(mainWindow, 'audio', url, data.toString())
       })
+      audioProc.on('error', (err) => rej(err))
+    })
 
-      child.on('close', (code) => {
-        console.log('yt-dlp process exited with code:', code)
-        if (code === 0) {
-          mainWindow.webContents.send('download-done', { url })
+    return new Promise((resolve, reject) => {
+      const mergedVideo = videoFile.replace('%(ext)s', 'mp4')
+      const mergedAudio = audioFile.replace('%(ext)s', 'webm')
+      ffmpeg(mergedVideo)
+        .input(mergedAudio)
+        .outputOptions('-c copy')
+        .save(outputFile)
+        .on('end', () => {
+          fs.unlinkSync(mergedVideo)
+          fs.unlinkSync(mergedAudio)
+          downloadProcesses.delete(url)
+          mainWindow.webContents.send('download-done', { url, file: outputFile })
           resolve({ success: true })
-        } else {
-          reject({ success: false, message: `yt-dlp exited with code ${code}` })
-        }
-      })
+        })
+        .on('error', (err) => {
+          downloadProcesses.delete(url)
+          reject({ success: false, message: err.message })
+        })
     })
   })
 
@@ -178,8 +227,32 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     try {
       const task = downloadProcesses.get(url)
       if (!task) {
-        return { success: false, message: 'No download process found' }
+        return { success: false, message: 'No download task found' }
       }
+
+      if (task.videoProcess && !task.videoProcess.killed && task.videoProcess.pid) {
+        treeKill(task.videoProcess.pid, 'SIGKILL', (err) => {
+          if (err) {
+            console.error(`[ERROR] Failed to kill video process: ${err.message}`)
+          } else {
+            console.log(`[INFO] Killed video process for ${url}`)
+          }
+        })
+      }
+
+      if (task.audioProcess && !task.audioProcess.killed && task.audioProcess.pid) {
+        treeKill(task.audioProcess.pid, 'SIGKILL', (err) => {
+          if (err) {
+            console.error(`[ERROR] Failed to kill audio process: ${err.message}`)
+          } else {
+            console.log(`[INFO] Killed audio process for ${url}`)
+          }
+        })
+      }
+
+      downloadProcesses.delete(url)
+      await wait(1000)
+
       const { filename, outputPath } = task
       const files = await fs.promises.readdir(outputPath)
       for (const file of files) {
@@ -193,8 +266,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           }
         }
       }
-      task.process.kill()
-      downloadProcesses.delete(url)
       return { success: true }
     } catch (error) {
       console.error('Error stopping download:', error)
