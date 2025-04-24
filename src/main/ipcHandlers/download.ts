@@ -34,22 +34,9 @@ const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res,
  */
 function locateYtDlp(): string {
   const binaryName = isWindows ? `yt-dlp.exe` : 'yt-dlp'
-
-  let resolvedPath: string
-
-  if (!app.isPackaged) {
-    resolvedPath = path.resolve(__dirname, '../../bin', binaryName)
-    log.info('[dev] binary path:', resolvedPath)
-  } else {
-    resolvedPath = path.resolve(process.resourcesPath, 'bin', binaryName)
-    log.info('[prod] binary path:', resolvedPath)
-  }
-
-  if (!fs.existsSync(resolvedPath)) {
-    log.warn(`[locateYtDlp] Binary not found at: ${resolvedPath}`)
-  }
-
-  return resolvedPath
+  return app.isPackaged
+    ? path.resolve(process.resourcesPath, 'bin', binaryName)
+    : path.resolve(__dirname, '../../bin', binaryName)
 }
 
 /**
@@ -57,20 +44,9 @@ function locateYtDlp(): string {
  * @returns ffmpeg 바이너리 경로
  */
 function locateFfmpeg(): string {
-  const ffmpeg = isWindows ? 'ffmpeg.exe' : 'ffmpeg'
-  let resolvedPath: string
-
-  if (!app.isPackaged) {
-    resolvedPath = ffmpegStatic as string
-    log.info('[prod] ffmpeg path:', resolvedPath)
-  } else {
-    resolvedPath = path.join(process.resourcesPath, 'bin', ffmpeg)
-    log.info('[dev] ffmpeg path:', resolvedPath)
-  }
-  if (!fs.existsSync(resolvedPath)) {
-    log.warn(`[locateFfmpeg] ffmpeg not found at: ${resolvedPath}`)
-  }
-  return resolvedPath
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'bin', isWindows ? 'ffmpeg.exe' : 'ffmpeg')
+    : (ffmpegStatic as string)
 }
 
 /**
@@ -190,6 +166,8 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         'bv*',
         '--no-part',
         '--restrict-filenames',
+        '--no-warnings',
+        '--no-check-certificate',
         '--output',
         videoFile,
         url
@@ -211,6 +189,8 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         'ba',
         '--no-part',
         '--restrict-filenames',
+        '--no-warnings',
+        '--no-check-certificate',
         '--output',
         audioFile,
         url
