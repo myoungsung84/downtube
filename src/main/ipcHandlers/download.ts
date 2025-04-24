@@ -40,12 +40,32 @@ export function locateBinary(filename: string): string {
   return resolvedPath
 }
 
+const registeredHandlers = new Set<string>()
+
+/**
+ * IPC 핸들러 등록
+ * @param channel
+ * @param handler
+ * @returns
+ */
+export function safeSetHandler(
+  channel: string,
+  handler: Parameters<typeof ipcMain.handle>[1]
+): void {
+  if (registeredHandlers.has(channel)) {
+    console.warn(`[${channel}] already registered, skipping`)
+    return
+  }
+  ipcMain.handle(channel, handler)
+  registeredHandlers.add(channel)
+}
+
 /**
  * 다운로드 핸들러
  * @param mainWindow 메인 윈도우
  */
 export const downloadHandler = (mainWindow: BrowserWindow): void => {
-  ipcMain.handle('download-dir-open', async () => {
+  safeSetHandler('download-dir-open', async () => {
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
     if (!fs.existsSync(downloadDir)) {
       mkdirSync(downloadDir, { recursive: true })
@@ -53,7 +73,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     await shell.openPath(downloadDir)
   })
 
-  ipcMain.handle('download-info', async (_, url: string) => {
+  safeSetHandler('download-info', async (_, url: string) => {
     const ytDlpPath = locateBinary('yt-dlp')
     return new Promise((resolve, reject) => {
       const args = [
@@ -91,7 +111,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     })
   })
 
-  ipcMain.handle('download-video', async (_, url: string) => {
+  safeSetHandler('download-video', async (_, url: string) => {
     if (downloadProcesses.has(url)) {
       return { success: false, message: 'Already downloading' }
     }
@@ -102,7 +122,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     if (!fs.existsSync(downloadDir)) {
       fs.mkdirSync(downloadDir, { recursive: true })
     }
-    console.log('ffmpegPath:', ffmpegPath)
 
     return new Promise((resolve, reject) => {
       const timestamp = Math.floor(Date.now() / 1000).toString()
@@ -138,10 +157,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         }
       })
 
-      child.stderr.on('data', (data) => {
-        console.error('[yt-dlp stderr]', data.toString())
-      })
-
       child.on('error', (err) => {
         console.error('[yt-dlp spawn error]', err)
         reject({ success: false, message: `yt-dlp spawn failed: ${err.message}` })
@@ -159,7 +174,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     })
   })
 
-  ipcMain.handle('download-stop', async (_, url: string) => {
+  safeSetHandler('download-stop', async (_, url: string) => {
     try {
       const task = downloadProcesses.get(url)
       if (!task) {
