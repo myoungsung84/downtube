@@ -46,6 +46,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.0.2",
     "axios": "^1.8.4",
+    "electron-log": "^5.3.4",
     "electron-updater": "^6.3.9",
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.3",

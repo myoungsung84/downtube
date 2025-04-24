@@ -1,7 +1,11 @@
 import axios from 'axios'
 import { execSync } from 'child_process'
+import { app } from 'electron'
+import log from 'electron-log'
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'fs'
+import fs from 'fs'
 import { join } from 'path'
+import path from 'path'
 
 const BIN_DIR = join(__dirname, '../../bin')
 const YTDLP_PATH = join(BIN_DIR, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
@@ -10,6 +14,14 @@ const YTDLP_RELEASE_URL = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/l
 interface GitHubAsset {
   name: string
   browser_download_url: string
+}
+
+function setupLogdir(): void {
+  const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+  if (!fs.existsSync(downloadDir)) {
+    mkdirSync(downloadDir, { recursive: true })
+  }
+  log.transports.file.resolvePathFn = () => path.join(downloadDir, 'down-tube.log')
 }
 
 async function updateYtDlp(): Promise<void> {
@@ -54,5 +66,6 @@ async function updateYtDlp(): Promise<void> {
 export async function initializeApp(): Promise<void> {
   console.log('[init] 앱 초기화 시작')
   await updateYtDlp()
+  setupLogdir()
   console.log('[init] 앱 초기화 완료')
 }

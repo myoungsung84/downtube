@@ -2,6 +2,8 @@ build/
 node_modules/
 dist/
 out/
+bin/ffmpeg.exe
+bin/ffmpeg
 .vscode/
 .DS_Store
 .eslintcache

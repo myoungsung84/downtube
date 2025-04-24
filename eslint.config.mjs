@@ -33,7 +33,6 @@ export default tseslint.config(
     }
   },
 
-  // ✅ simple-import-sort & unused-imports 추가 블록
   {
     files: ['**/*.{ts,tsx}'],
     plugins: {
@@ -41,11 +40,8 @@ export default tseslint.config(
       'unused-imports': eslintPluginUnusedImports
     },
     rules: {
-      // import 정렬
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
-
-      // unused imports 제거
       'unused-imports/no-unused-imports': 'warn',
       'unused-imports/no-unused-vars': [
         'warn',
