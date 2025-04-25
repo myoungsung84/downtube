@@ -1,17 +1,9 @@
-import MainScreen from '@renderer/page/MainScreen'
-import { HashRouter, Route, Routes } from 'react-router-dom'
+import { RouterProvider } from 'react-router-dom'
 
-import Player from './page/Player'
+import { router } from './router'
 
 function App(): React.JSX.Element {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<MainScreen />} />
-        <Route path="/player" element={<Player />} />
-      </Routes>
-    </HashRouter>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App

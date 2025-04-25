@@ -3,6 +3,7 @@ import { spawn } from 'child_process'
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { app } from 'electron'
 import log from 'electron-log'
+import glob from 'fast-glob'
 import ffmpegStatic from 'ffmpeg-static'
 import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
@@ -86,6 +87,18 @@ function sendProgress(
 }
 
 /**
+ * glob 패턴을 사용하여 파일 검색
+ * @param dir 검색할 디렉토리
+ * @param pattern glob 패턴
+ * @returns 파일 경로 배열
+ */
+async function findRealDownloadedFile(dir: string, pattern: string): Promise<string> {
+  const files = await glob(pattern, { cwd: dir, absolute: true })
+  if (files.length === 0) throw new Error(`No file found for pattern: ${pattern}`)
+  return files[0]
+}
+
+/**
  * 다운로드 핸들러
  * @param mainWindow 메인 윈도우
  */
@@ -116,7 +129,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           hash: `/player?url=${encodeURIComponent(videoUrl)}`
         })
 
-    log.info('[yt-dlp] player window opened', playerUrl)
     await playerWindow.loadURL(playerUrl)
 
     playerWindow.show()
@@ -134,8 +146,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     const ytDlpPath = locateYtDlp()
     return new Promise((res, rej) => {
       const args = [
-        '--cookies-from-browser',
-        'chrome',
         '--no-check-certificate',
         '--no-cache-dir',
         '--no-warnings',
@@ -164,7 +174,6 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
                 (f) => f.ext === 'mp4' && f.acodec !== 'none' && f.vcodec !== 'none' && f.url
               )
               .sort((a, b) => (b.height ?? 0) - (a.height ?? 0))[0]
-            log.info('bestMp4', bestCombined?.url)
             res({
               ...info,
               best_url: bestCombined?.url ?? ''
@@ -249,9 +258,10 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
       audioProc.on('error', (err) => rej(err))
     })
 
+    const mergedVideo = await findRealDownloadedFile(downloadDir, `${baseName}_video.*`)
+    const mergedAudio = await findRealDownloadedFile(downloadDir, `${baseName}_audio.*`)
+
     return new Promise((resolve, reject) => {
-      const mergedVideo = videoFile.replace('%(ext)s', 'mp4')
-      const mergedAudio = audioFile.replace('%(ext)s', 'webm')
       ffmpeg(mergedVideo)
         .input(mergedAudio)
         .outputOptions('-c copy')
