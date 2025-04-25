@@ -2,8 +2,10 @@ import { Box } from '@mui/material'
 import React from 'react'
 
 export default function Player(): React.JSX.Element {
-  const searchParams = new URLSearchParams(window.location.search)
+  const hash = window.location.hash
+  const searchParams = new URLSearchParams(hash.split('?')[1] || '')
   const url = searchParams.get('url') ?? ''
+
   return (
     <Box
       sx={{
@@ -15,7 +17,7 @@ export default function Player(): React.JSX.Element {
         alignItems: 'center',
         margin: 0,
         padding: 0,
-        overflow: 'hidden' // 넘치는 영상 잘라내기 방지
+        overflow: 'hidden'
       }}
     >
       <Box

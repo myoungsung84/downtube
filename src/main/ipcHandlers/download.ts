@@ -94,17 +94,21 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     if (playerWindow && !playerWindow.isDestroyed()) {
       playerWindow.close()
     }
+
     playerWindow = new BrowserWindow({
       width: 800,
       height: 450,
+      show: false,
+      autoHideMenuBar: true,
       webPreferences: {
+        preload: path.join(__dirname, '../preload/index.js'),
         contextIsolation: true
       }
     })
 
     const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
     const playerUrl = !app.isPackaged
-      ? `http://localhost:${devPort}/player?url=${encodeURIComponent(videoUrl)}`
+      ? `http://localhost:${devPort}/#/player?url=${encodeURIComponent(videoUrl)}`
       : url.format({
           pathname: path.join(__dirname, '../renderer/index.html'),
           protocol: 'file:',
@@ -112,7 +116,10 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
           hash: `/player?url=${encodeURIComponent(videoUrl)}`
         })
 
+    log.info('[yt-dlp] player window opened', playerUrl)
     await playerWindow.loadURL(playerUrl)
+
+    playerWindow.show()
     playerWindow.webContents.openDevTools({ mode: 'detach' })
   })
   safeSetHandler('download-dir-open', async () => {

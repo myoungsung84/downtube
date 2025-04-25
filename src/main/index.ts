@@ -23,6 +23,10 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  mainWindow.on('close', () => {
+    app.quit()
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -34,7 +38,6 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-
   downloadHandler(mainWindow)
 }
 
