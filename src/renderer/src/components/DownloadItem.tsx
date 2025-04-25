@@ -14,6 +14,7 @@ export type DownloadItemProps = {
   info?: VideoInfo | null
   onDownload: (url: string) => void
   onStop: (url: string) => void
+  onPlayer: (url: string) => void
 }
 
 export default function DownloadItem(props: DownloadItemProps): React.JSX.Element {
@@ -72,7 +73,12 @@ export default function DownloadItem(props: DownloadItemProps): React.JSX.Elemen
   return (
     <Stack sx={{ padding: 2, borderBottom: '1px solid #ccc' }}>
       <Stack direction="row" alignItems="flex-start">
-        <Thumbnail url={info.thumbnail} w={151} h={85} />
+        <Thumbnail
+          url={info.thumbnail}
+          w={151}
+          h={85}
+          onClick={() => props.onPlayer(info.best_url ?? '')}
+        />
         <Stack alignItems="flex-start" sx={{ ml: 2, flex: 1, width: 300 }}>
           <Typography
             noWrap

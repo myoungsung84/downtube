@@ -13,5 +13,9 @@ export interface VideoInfo {
     width?: number
     filesize?: number
     tbr?: number
+    url: string
+    acodec: string
+    vcodec: string
   }>
+  best_url?: string
 }

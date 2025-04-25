@@ -54,6 +54,9 @@ export default function MainScreen(): React.JSX.Element {
             prev.map((item) => (item.url === _url ? { ...item, status: 'stop' } : item))
           )
           await window.api.stopDownload(url)
+        },
+        onPlayer: async (_url) => {
+          await window.api.playVideo(_url)
         }
       }
       setDownloadList((prev) => [...prev, baseItem])

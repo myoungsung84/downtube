@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 interface AppAPI {
+  playVideo: (url: string) => Promise<void>
   openDownloadDir: () => Promise<void>
   downloadInfo: (url: string) => Promise<VideoInfo>
   download: (url: string) => Promise<{ success: boolean }>

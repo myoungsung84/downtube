@@ -8,9 +8,9 @@ import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import treeKill from 'tree-kill'
+import url from 'url'
 
 const isWindows = process.platform === 'win32'
-
 const registeredHandlers = new Set<string>()
 
 type DownloadTask = {
@@ -20,6 +20,7 @@ type DownloadTask = {
   outputPath: string
 }
 const downloadProcesses = new Map<string, DownloadTask>()
+let playerWindow: BrowserWindow | null = null
 
 /**
  * ms 단위로 대기하는 Promise 반환
@@ -89,6 +90,31 @@ function sendProgress(
  * @param mainWindow 메인 윈도우
  */
 export const downloadHandler = (mainWindow: BrowserWindow): void => {
+  safeSetHandler('download-player', async (_, videoUrl: string) => {
+    if (playerWindow && !playerWindow.isDestroyed()) {
+      playerWindow.close()
+    }
+    playerWindow = new BrowserWindow({
+      width: 800,
+      height: 450,
+      webPreferences: {
+        contextIsolation: true
+      }
+    })
+
+    const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
+    const playerUrl = !app.isPackaged
+      ? `http://localhost:${devPort}/player?url=${encodeURIComponent(videoUrl)}`
+      : url.format({
+          pathname: path.join(__dirname, '../renderer/index.html'),
+          protocol: 'file:',
+          slashes: true,
+          hash: `/player?url=${encodeURIComponent(videoUrl)}`
+        })
+
+    await playerWindow.loadURL(playerUrl)
+    playerWindow.webContents.openDevTools({ mode: 'detach' })
+  })
   safeSetHandler('download-dir-open', async () => {
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
     if (!fs.existsSync(downloadDir)) {
@@ -101,6 +127,8 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     const ytDlpPath = locateYtDlp()
     return new Promise((res, rej) => {
       const args = [
+        '--cookies-from-browser',
+        'chrome',
         '--no-check-certificate',
         '--no-cache-dir',
         '--no-warnings',
@@ -124,7 +152,16 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
         if (code === 0) {
           try {
             const info: VideoInfo = JSON.parse(json) as VideoInfo
-            res(info)
+            const bestCombined = info.formats
+              ?.filter(
+                (f) => f.ext === 'mp4' && f.acodec !== 'none' && f.vcodec !== 'none' && f.url
+              )
+              .sort((a, b) => (b.height ?? 0) - (a.height ?? 0))[0]
+            log.info('bestMp4', bestCombined?.url)
+            res({
+              ...info,
+              best_url: bestCombined?.url ?? ''
+            })
           } catch (e) {
             rej(new Error(`Invalid JSON from yt-dlp: ${e}`))
           }
