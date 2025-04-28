@@ -14,7 +14,10 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
-    }
+    },
+    icon: app.isPackaged
+      ? join(process.resourcesPath, 'assets', 'icon.png')
+      : join(__dirname, '../assets/icon.png')
   })
 
   mainWindow.on('ready-to-show', () => {

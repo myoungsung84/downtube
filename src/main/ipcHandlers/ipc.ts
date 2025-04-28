@@ -151,7 +151,6 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     await playerWindow.loadURL(playerUrl)
 
     playerWindow.show()
-    playerWindow.webContents.openDevTools({ mode: 'detach' })
   })
 
   safeSetHandler('download-dir-open', async () => {

@@ -1,6 +1,7 @@
 import { Box, Button, Container, IconButton, Stack, TextField, Typography } from '@mui/material'
 import { useAssetPath } from '@renderer/hooks/useAssetPath'
 import { JSX, useRef } from 'react'
+
 type NavigationBarProps = {
   onSubmit: (url: string) => void
   onDirectory?: () => void
@@ -16,37 +17,36 @@ export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarPr
         borderBottom: '1px solid #ccc'
       }}
     >
-      <Stack spacing={3}>
-        {/* 상단 바: 파일 버튼 좌측, 제목 중앙 */}
+      <Stack spacing={2}>
         <Stack direction="row" alignItems="center">
-          {/* 왼쪽: 파일 버튼 */}
           <Box sx={{ flex: 1 }}>
             <IconButton color="primary" onClick={onDirectory}>
-              {iconPath ? <img src={iconPath} alt="folder" width={24} height={24} /> : null}
+              {iconPath ? <img src={iconPath} alt="folder" width={32} height={32} /> : null}
             </IconButton>
           </Box>
-
-          {/* 가운데: 앱 제목 */}
           <Box sx={{ flex: 2, textAlign: 'center' }}>
-            <Typography variant="h6">DownTube</Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 'bold'
+              }}
+            >
+              DownTube
+            </Typography>
           </Box>
-
-          {/* 오른쪽: 여백 또는 버튼 자리 (원하면 채워도 됨) */}
           <Box sx={{ flex: 1 }} />
         </Stack>
-
-        {/* URL 입력 영역 */}
         <Stack direction="row" spacing={1}>
           <TextField
             inputRef={url}
             label="YouTube URL"
             placeholder="https://www.youtube.com/watch?v=example"
             variant="outlined"
-            sx={{ flex: 8 }}
+            sx={{ flex: 8, fontSize: 10 }}
           />
           <Button
-            variant="contained"
-            color="primary"
+            variant="outlined"
+            color="info"
             sx={{ flex: 2 }}
             onClick={() => {
               if (url.current && url.current.value) {
