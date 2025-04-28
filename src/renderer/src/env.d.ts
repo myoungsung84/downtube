@@ -14,4 +14,5 @@ interface AppAPI {
     }) => void
   ) => void
   onDownloadDone: (callback: (data: { url: string }) => void) => void
+  resolveAssetPath: (filename: string) => Promise<string>
 }

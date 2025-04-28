@@ -1,13 +1,13 @@
 import { VideoInfo } from '@src/types/video-info.types'
 import { spawn } from 'child_process'
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import { BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
 import { app } from 'electron'
 import log from 'electron-log'
 import glob from 'fast-glob'
 import ffmpegStatic from 'ffmpeg-static'
 import ffmpeg from 'fluent-ffmpeg'
-import fs, { mkdirSync } from 'fs'
-import path from 'path'
+import fs, { mkdirSync, readFileSync } from 'fs'
+import path, { join } from 'path'
 import treeKill from 'tree-kill'
 import url from 'url'
 
@@ -102,7 +102,26 @@ async function findRealDownloadedFile(dir: string, pattern: string): Promise<str
  * 다운로드 핸들러
  * @param mainWindow 메인 윈도우
  */
-export const downloadHandler = (mainWindow: BrowserWindow): void => {
+export const ipcHandler = (mainWindow: BrowserWindow): void => {
+  safeSetHandler('resolve-asset-path', (_, filename: string) => {
+    const basePath = app.isPackaged
+      ? join(process.resourcesPath, 'assets')
+      : join(process.cwd(), 'assets')
+
+    const filePath = join(basePath, filename)
+
+    const ext = filename.split('.').pop()
+
+    if (ext === 'svg') {
+      const svgData = readFileSync(filePath)
+      const base64 = svgData.toString('base64')
+      return `data:image/svg+xml;base64,${base64}`
+    } else {
+      const image = nativeImage.createFromPath(filePath)
+      return image.toDataURL()
+    }
+  })
+
   safeSetHandler('download-player', async (_, videoUrl: string) => {
     if (playerWindow && !playerWindow.isDestroyed()) {
       playerWindow.close()
@@ -134,6 +153,7 @@ export const downloadHandler = (mainWindow: BrowserWindow): void => {
     playerWindow.show()
     playerWindow.webContents.openDevTools({ mode: 'detach' })
   })
+
   safeSetHandler('download-dir-open', async () => {
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
     if (!fs.existsSync(downloadDir)) {

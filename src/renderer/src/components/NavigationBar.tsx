@@ -1,6 +1,6 @@
 import { Box, Button, Container, IconButton, Stack, TextField, Typography } from '@mui/material'
+import { useAssetPath } from '@renderer/hooks/useAssetPath'
 import { JSX, useRef } from 'react'
-
 type NavigationBarProps = {
   onSubmit: (url: string) => void
   onDirectory?: () => void
@@ -8,15 +8,21 @@ type NavigationBarProps = {
 
 export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarProps): JSX.Element {
   const url = useRef<HTMLInputElement>(null)
+  const iconPath = useAssetPath('folder.svg')
   return (
-    <Container>
+    <Container
+      sx={{
+        padding: 2,
+        borderBottom: '1px solid #ccc'
+      }}
+    >
       <Stack spacing={3}>
         {/* 상단 바: 파일 버튼 좌측, 제목 중앙 */}
         <Stack direction="row" alignItems="center">
           {/* 왼쪽: 파일 버튼 */}
           <Box sx={{ flex: 1 }}>
             <IconButton color="primary" onClick={onDirectory}>
-              파일
+              {iconPath ? <img src={iconPath} alt="folder" width={24} height={24} /> : null}
             </IconButton>
           </Box>
 

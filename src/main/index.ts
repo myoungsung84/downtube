@@ -2,9 +2,8 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
-import icon from '../../resources/icon.png?asset'
 import { initializeApp } from './common/initializeApp'
-import { downloadHandler } from './ipcHandlers/download'
+import { ipcHandler } from './ipcHandlers/ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -12,7 +11,6 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -38,7 +36,7 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-  downloadHandler(mainWindow)
+  ipcHandler(mainWindow)
 }
 
 app.whenReady().then(async () => {

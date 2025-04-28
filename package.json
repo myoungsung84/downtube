@@ -24,12 +24,20 @@
   "build": {
     "files": [
       "out/**",
-      "bin/**"
+      "bin/**",
+      "assets/**"
     ],
     "extraResources": [
       {
         "from": "bin",
         "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "assets",
+        "to": "assets",
         "filter": [
           "**/*"
         ]
