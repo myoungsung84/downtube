@@ -1,6 +1,9 @@
 # downtube
 
-An Electron application with React and TypeScript
+유튜브 영상을 다운로드 할 수 있는 프로그램
+
+## 적용 기술 및 라이브러리
+electron, nodejs, typescript, yt-dlp, ffmpeg
 
 ## 필수
 ``
