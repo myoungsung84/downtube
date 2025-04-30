@@ -23,7 +23,6 @@ for window
 https://nodejs.org
 
 for mac os
-
 brew install node
 ```
 
