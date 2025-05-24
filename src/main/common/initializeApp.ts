@@ -7,7 +7,7 @@ import fs from 'fs'
 import { join } from 'path'
 import path from 'path'
 
-const BIN_DIR = join(__dirname, '../../bin')
+const BIN_DIR = app.isPackaged ? join(process.resourcesPath, 'bin') : join(__dirname, '../../bin')
 const YTDLP_PATH = join(BIN_DIR, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
 const YTDLP_RELEASE_URL = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest'
 
