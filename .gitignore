@@ -8,3 +8,4 @@ bin/ffmpeg
 .DS_Store
 .eslintcache
 *.log*
+Desktop.ini
