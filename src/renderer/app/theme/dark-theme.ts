@@ -62,8 +62,6 @@ const darkTheme = createTheme({
     // ==============================
     MuiCssBaseline: {
       styleOverrides: `
-      @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
-
       body {
         background: linear-gradient(
           180deg,

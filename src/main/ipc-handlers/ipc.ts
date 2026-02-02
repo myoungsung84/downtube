@@ -1,34 +1,17 @@
 import { VideoInfo } from '@src/types/video-info.types'
 import { spawn } from 'child_process'
-import { BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
-import { app } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
 import log from 'electron-log'
-import glob from 'fast-glob'
-import ffmpegStatic from 'ffmpeg-static'
-import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync, readFileSync } from 'fs'
 import path, { join } from 'path'
-import treeKill from 'tree-kill'
 import url from 'url'
+
+import { downloadsQueue, onDownloadsEvent } from '../downloads'
+import type { DownloadJob } from '../downloads/download.types'
 
 const isWindows = process.platform === 'win32'
 const registeredHandlers = new Set<string>()
-
-type DownloadTask = {
-  videoProcess?: ReturnType<typeof spawn>
-  audioProcess?: ReturnType<typeof spawn>
-  filename: string
-  outputPath: string
-}
-const downloadProcesses = new Map<string, DownloadTask>()
 let playerWindow: BrowserWindow | null = null
-
-/**
- * ms 단위로 대기하는 Promise 반환
- * @param ms 대기 시간 (ms)
- * @returns Promise
- */
-const wait = (ms: number): Promise<void> => new Promise((res) => setTimeout(res, ms))
 
 /**
  * yt-dlp 바이너리 경로를 찾는 함수
@@ -42,20 +25,9 @@ function locateYtDlp(): string {
 }
 
 /**
- * ffmpeg 바이너리 경로를 찾는 함수
- * @returns ffmpeg 바이너리 경로
- */
-function locateFfmpeg(): string {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'bin', isWindows ? 'ffmpeg.exe' : 'ffmpeg')
-    : (ffmpegStatic as string)
-}
-
-/**
  * IPC 핸들러 등록
  * @param channel
  * @param handler
- * @returns
  */
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -67,49 +39,46 @@ function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.hand
 }
 
 /**
- * 다운로드 진행률을 메인 윈도우에 전송
- * @param mainWindow 메인 윈도우
- * @param current 다운로드 타입 (video/audio)
- * @param text yt-dlp 출력 텍스트
- */
-function sendProgress(
-  mainWindow: BrowserWindow,
-  current: 'video' | 'audio' | 'complete' | 'init' | null,
-  url: string,
-  text: string
-): void {
-  const match = text.match(/\[download\]\s+(\d{1,3}\.\d)%/)
-  if (match) {
-    const percent = Math.round(parseFloat(match[1]))
-    log.info(`[${current}] download progress: ${percent}%`)
-    mainWindow.webContents.send('download-progress', { url, current, percent })
-  }
-}
-
-/**
- * glob 패턴을 사용하여 파일 검색
- * @param dir 검색할 디렉토리
- * @param pattern glob 패턴
- * @returns 파일 경로 배열
- */
-async function findRealDownloadedFile(dir: string, pattern: string): Promise<string> {
-  const files = await glob(pattern, { cwd: dir, absolute: true })
-  if (files.length === 0) throw new Error(`No file found for pattern: ${pattern}`)
-  return files[0]
-}
-
-/**
  * 다운로드 핸들러
  * @param mainWindow 메인 윈도우
  */
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
+  // ------------------------------------------------------------
+  // ✅ downloads 이벤트 → 기존 renderer 이벤트 채널로 브릿지
+  // ------------------------------------------------------------
+  const off = onDownloadsEvent((ev) => {
+    if (ev.type !== 'job-updated') return
+
+    const job = ev.job
+
+    // 진행률
+    if (job.progress.current && (job.status === 'running' || job.status === 'completed')) {
+      mainWindow.webContents.send('download-progress', {
+        url: job.url,
+        current: job.progress.current,
+        percent: job.progress.percent
+      })
+    }
+
+    // 완료
+    if (job.status === 'completed' && job.outputFile) {
+      mainWindow.webContents.send('download-done', { url: job.url, file: job.outputFile })
+    }
+
+    // 실패(기존엔 이벤트가 없었는데, 필요하면 추가 가능)
+    // if (job.status === 'failed') { ... }
+  })
+
+  mainWindow.on('closed', () => off())
+
+  // ------------------------------------------------------------
+  // 기존 핸들러들 유지
+  // ------------------------------------------------------------
   safeSetHandler('resolve-asset-path', (_, filename: string) => {
     const basePath = app.isPackaged
       ? join(process.resourcesPath, 'assets')
       : join(process.cwd(), 'assets')
-
     const filePath = join(basePath, filename)
-
     const ext = filename.split('.').pop()
 
     if (ext === 'svg') {
@@ -149,7 +118,6 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         })
 
     await playerWindow.loadURL(playerUrl)
-
     playerWindow.show()
   })
 
@@ -173,6 +141,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         url
       ]
       const p = spawn(ytDlpPath, args)
+
       let json = ''
       p.stdout.on('data', (data) => {
         json += data.toString()
@@ -193,6 +162,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
                 (f) => f.ext === 'mp4' && f.acodec !== 'none' && f.vcodec !== 'none' && f.url
               )
               .sort((a, b) => (b.height ?? 0) - (a.height ?? 0))[0]
+
             res({
               ...info,
               best_url: bestCombined?.url ?? ''
@@ -207,147 +177,46 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     })
   })
 
+  // ------------------------------------------------------------
+  // ✅ download-video: 즉시 실행 → 큐 enqueue
+  // ------------------------------------------------------------
   safeSetHandler('download-video', async (_, url: string) => {
-    const ffmpegPath = locateFfmpeg()
-    ffmpeg.setFfmpegPath(ffmpegPath)
-    log.info('ffmpeg path:', ffmpegPath)
-    if (downloadProcesses.has(url)) {
+    if (downloadsQueue.hasUrl(url)) {
       return { success: false, message: 'Already downloading' }
     }
 
-    const ytDlpPath = locateYtDlp()
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
-    if (!fs.existsSync(downloadDir)) fs.mkdirSync(downloadDir, { recursive: true })
 
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_VOD`
-    const videoFile = path.join(downloadDir, `${baseName}_video.%(ext)s`)
-    const audioFile = path.join(downloadDir, `${baseName}_audio.%(ext)s`)
-    const outputFile = path.join(downloadDir, `${baseName}.mkv`)
 
-    const task: DownloadTask = {
+    const job: DownloadJob = {
+      id: `${timestamp}:${Math.random().toString(16).slice(2)}`,
+      url,
+      type: 'video',
+      status: 'queued',
       filename: baseName,
-      outputPath: downloadDir
+      outputDir: downloadDir,
+      progress: { percent: 0, current: null },
+      createdAt: Date.now()
     }
-    downloadProcesses.set(url, task)
 
-    await new Promise<void>((res, rej) => {
-      const args = [
-        '--no-playlist',
-        '--format',
-        'bv*',
-        '--no-part',
-        '--restrict-filenames',
-        '--no-warnings',
-        '--no-check-certificate',
-        '--output',
-        videoFile,
-        url
-      ]
-      const videoProc = spawn(ytDlpPath, args)
-      task.videoProcess = videoProc
-
-      videoProc.on('close', (code) => (code === 0 ? res() : rej(`video download failed: ${code}`)))
-      videoProc.stdout.on('data', (data) => {
-        sendProgress(mainWindow, 'video', url, data.toString())
-      })
-      videoProc.on('error', (err) => rej(err))
-    })
-
-    await new Promise<void>((res, rej) => {
-      const args = [
-        '--no-playlist',
-        '--format',
-        'ba',
-        '--no-part',
-        '--restrict-filenames',
-        '--no-warnings',
-        '--no-check-certificate',
-        '--output',
-        audioFile,
-        url
-      ]
-      const audioProc = spawn(ytDlpPath, args)
-      task.audioProcess = audioProc
-
-      audioProc.on('close', (code) => (code === 0 ? res() : rej(`audio download failed: ${code}`)))
-      audioProc.stdout.on('data', (data) => {
-        sendProgress(mainWindow, 'audio', url, data.toString())
-      })
-      audioProc.on('error', (err) => rej(err))
-    })
-
-    const mergedVideo = await findRealDownloadedFile(downloadDir, `${baseName}_video.*`)
-    const mergedAudio = await findRealDownloadedFile(downloadDir, `${baseName}_audio.*`)
-
-    return new Promise((resolve, reject) => {
-      ffmpeg(mergedVideo)
-        .input(mergedAudio)
-        .outputOptions('-c copy')
-        .save(outputFile)
-        .on('end', () => {
-          log.info('[ffmpeg] Merging completed')
-          fs.unlinkSync(mergedVideo)
-          fs.unlinkSync(mergedAudio)
-          downloadProcesses.delete(url)
-          mainWindow.webContents.send('download-done', { url, file: outputFile })
-          resolve({ success: true })
-        })
-        .on('error', (err) => {
-          log.error('[ffmpeg error]', err)
-          downloadProcesses.delete(url)
-          reject({ success: false, message: err.message })
-        })
-    })
+    downloadsQueue.enqueue(job)
+    return { success: true }
   })
 
+  // ------------------------------------------------------------
+  // ✅ download-stop: 프로세스 kill → 큐 cancel
+  // ------------------------------------------------------------
   safeSetHandler('download-stop', async (_, url: string) => {
     try {
-      const task = downloadProcesses.get(url)
-      if (!task) {
-        return { success: false, message: 'No download task found' }
-      }
-
-      if (task.videoProcess && !task.videoProcess.killed && task.videoProcess.pid) {
-        treeKill(task.videoProcess.pid, 'SIGKILL', (err) => {
-          if (err) {
-            log.error(`[ERROR] Failed to kill video process: ${err.message}`)
-          } else {
-            log.info(`[INFO] Killed video process for ${url}`)
-          }
-        })
-      }
-
-      if (task.audioProcess && !task.audioProcess.killed && task.audioProcess.pid) {
-        treeKill(task.audioProcess.pid, 'SIGKILL', (err) => {
-          if (err) {
-            log.error(`[ERROR] Failed to kill audio process: ${err.message}`)
-          } else {
-            log.info(`[INFO] Killed audio process for ${url}`)
-          }
-        })
-      }
-
-      downloadProcesses.delete(url)
-      await wait(1000)
-
-      const { filename, outputPath } = task
-      const files = await fs.promises.readdir(outputPath)
-      for (const file of files) {
-        if (file.startsWith(filename)) {
-          const filePath = path.join(outputPath, file)
-          try {
-            await fs.promises.unlink(filePath)
-            log.info(`[INFO] Deleted: ${filePath}`)
-          } catch (err) {
-            log.error(`[ERROR] Failed to delete: ${filePath}`, err)
-          }
-        }
-      }
-      return { success: true }
+      return await downloadsQueue.cancelByUrl(url)
     } catch (error) {
       log.error('Error stopping download:', error)
       return { success: false, message: 'Failed to stop download' }
     }
   })
+
+  // (옵션) Renderer가 리스트를 한 번에 받고 싶으면
+  // safeSetHandler('downloads-list', async () => downloadsQueue.getJobs())
 }
