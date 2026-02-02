@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import React from 'react'
 
-export default function Player(): React.JSX.Element {
+export default function PlayerScreen(): React.JSX.Element {
   const hash = window.location.hash
   const searchParams = new URLSearchParams(hash.split('?')[1] || '')
   const url = searchParams.get('url') ?? ''

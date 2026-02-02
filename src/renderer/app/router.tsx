@@ -1,16 +1,16 @@
-import MainScreen from '@renderer/pages/MainScreen'
-import Player from '@renderer/pages/Player'
+import MainPage from '@renderer/pages/main-page'
+import PlayerPage from '@renderer/pages/player-page'
 import { createHashRouter } from 'react-router-dom'
 
 export const router = createHashRouter(
   [
     {
       path: '/',
-      element: <MainScreen />
+      element: <MainPage />
     },
     {
       path: '/player',
-      element: <Player />
+      element: <PlayerPage />
     }
   ],
   {
