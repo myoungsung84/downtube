@@ -1,12 +1,12 @@
 import { Box, Button, Stack, Typography } from '@mui/material'
+import InfoText from '@renderer/features/downloads/components/DownloadMetaInfo'
+import Thumbnail from '@renderer/shared/components/ui/Thumbnail'
 import type { VideoInfo } from '@src/types/video-info.types'
 import _ from 'lodash'
 import * as React from 'react'
 
 import DownloadItemSkeleton from './DownloadItemSkeleton'
 import DownloadListProgress from './DownloadListProgress'
-import InfoText from './InfoText'
-import Thumbnail from './Thumbnail'
 
 export type DownloadItemProps = {
   url: string

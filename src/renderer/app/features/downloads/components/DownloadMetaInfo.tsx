@@ -11,7 +11,7 @@ export type InfoTextProps = {
   viewCount?: number
 }
 
-export default function InfoText({
+export default function DownloadMetaInfo({
   uploder,
   duration,
   viewCount

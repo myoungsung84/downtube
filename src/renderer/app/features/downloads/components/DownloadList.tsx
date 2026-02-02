@@ -1,6 +1,8 @@
 import PlaylistRemoveIcon from '@mui/icons-material/InboxOutlined'
 import { Stack, Typography } from '@mui/material'
-import DownloadItem, { DownloadItemProps } from '@renderer/components/DownloadItem'
+import DownloadItem, {
+  DownloadItemProps
+} from '@renderer/features/downloads/components/DownloadItem'
 export type DownloadListProps = {
   items: DownloadItemProps[]
 }

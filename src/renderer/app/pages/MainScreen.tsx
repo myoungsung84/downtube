@@ -1,7 +1,7 @@
 import { Stack } from '@mui/material'
-import { DownloadItemProps } from '@renderer/components/DownloadItem'
-import DownloadList from '@renderer/components/DownloadList'
-import NavigationBar from '@renderer/components/NavigationBar'
+import { DownloadItemProps } from '@renderer/features/downloads/components/DownloadItem'
+import DownloadList from '@renderer/features/downloads/components/DownloadList'
+import NavigationBar from '@renderer/shared/components/ui/NavigationBar'
 import { useEffect, useState } from 'react'
 
 export default function MainScreen(): React.JSX.Element {

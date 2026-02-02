@@ -1,6 +1,6 @@
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import SearchIcon from '@mui/icons-material/Search'
 import { Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
-import { useAssetPath } from '@renderer/hooks/useAssetPath'
 import { JSX, useRef } from 'react'
 
 type NavigationBarProps = {
@@ -10,7 +10,6 @@ type NavigationBarProps = {
 
 export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarProps): JSX.Element {
   const url = useRef<HTMLInputElement>(null)
-  const iconPath = useAssetPath('folder.svg')
 
   const handleSubmit = (): void => {
     if (url.current && url.current.value) {
@@ -59,21 +58,15 @@ export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarPr
                 },
                 '&:active': {
                   transform: 'translateY(0)'
-                },
-                '& img': {
-                  display: 'block',
-                  width: 28,
-                  height: 28,
-                  filter: 'brightness(1.05) contrast(1.05) drop-shadow(0 2px 6px rgba(0,0,0,0.25))',
-                  transition: 'transform 120ms ease, filter 140ms ease'
-                },
-                '&:hover img': {
-                  transform: 'scale(1.06)',
-                  filter: 'brightness(1.1) contrast(1.08) drop-shadow(0 4px 10px rgba(0,0,0,0.32))'
                 }
               }}
             >
-              {iconPath ? <img src={iconPath} alt="folder" width={28} height={28} /> : null}
+              <FolderOpenOutlinedIcon
+                sx={{
+                  fontSize: 28,
+                  color: 'warning.main'
+                }}
+              />
             </IconButton>
           </Stack>
 

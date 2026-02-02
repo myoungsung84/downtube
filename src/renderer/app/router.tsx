@@ -1,5 +1,5 @@
-import MainScreen from '@renderer/page/MainScreen'
-import Player from '@renderer/page/Player'
+import MainScreen from '@renderer/pages/MainScreen'
+import Player from '@renderer/pages/Player'
 import { createHashRouter } from 'react-router-dom'
 
 export const router = createHashRouter(

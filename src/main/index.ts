@@ -2,8 +2,8 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
-import { initializeApp } from './common/initializeApp'
-import { ipcHandler } from './ipcHandlers/ipc'
+import { initializeApp } from './common/initialize-app'
+import { ipcHandler } from './ipc-handlers/ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
