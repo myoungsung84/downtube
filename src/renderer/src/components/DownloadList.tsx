@@ -8,15 +8,22 @@ export type DownloadListProps = {
 
 export default function DownloadList({ items }: DownloadListProps): React.JSX.Element {
   const emptyIcon = useAssetPath('empty.svg')
+
   return (
-    <Stack>
+    <Stack spacing={1} sx={{ padding: 2 }}>
       {items.map((item, index) => (
         <DownloadItem key={index} {...item} />
       ))}
       {items.length === 0 && (
-        <Stack height={'540px'} sx={{ padding: 2 }} alignItems="center" justifyContent={'center'}>
-          <img src={emptyIcon} alt="empty" width={100} height={100} />
-          <Typography variant="caption" sx={{ color: '#ccc' }}>
+        <Stack height="540px" alignItems="center" justifyContent="center" spacing={2}>
+          <img src={emptyIcon} alt="empty" width={120} height={120} style={{ opacity: 0.6 }} />
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              fontWeight: 500
+            }}
+          >
             리스트가 비어 있습니다.
           </Typography>
         </Stack>

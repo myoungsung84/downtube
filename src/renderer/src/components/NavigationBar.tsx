@@ -1,4 +1,13 @@
-import { Box, Button, Container, IconButton, Stack, TextField, Typography } from '@mui/material'
+import SearchIcon from '@mui/icons-material/Search'
+import {
+  Box,
+  Container,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography
+} from '@mui/material'
 import { useAssetPath } from '@renderer/hooks/useAssetPath'
 import { JSX, useRef } from 'react'
 
@@ -10,25 +19,45 @@ type NavigationBarProps = {
 export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarProps): JSX.Element {
   const url = useRef<HTMLInputElement>(null)
   const iconPath = useAssetPath('folder.svg')
+
+  const handleSubmit = (): void => {
+    if (url.current && url.current.value) {
+      onSubmit(url.current.value)
+      url.current.value = ''
+    }
+  }
+
   return (
     <Container
       sx={{
-        padding: 2,
-        borderBottom: '1px solid #ccc'
+        p: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider'
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={2.5}>
         <Stack direction="row" alignItems="center">
           <Box sx={{ flex: 1 }}>
-            <IconButton color="primary" onClick={onDirectory}>
-              {iconPath ? <img src={iconPath} alt="folder" width={32} height={32} /> : null}
+            <IconButton
+              color="primary"
+              onClick={onDirectory}
+              sx={{
+                padding: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(59, 130, 246, 0.08)'
+                }
+              }}
+            >
+              {iconPath ? <img src={iconPath} alt="folder" width={28} height={28} /> : null}
             </IconButton>
           </Box>
           <Box sx={{ flex: 2, textAlign: 'center' }}>
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
-                fontWeight: 'bold'
+                fontWeight: 700,
+                color: 'text.primary',
+                letterSpacing: '-0.5px'
               }}
             >
               DownTube
@@ -36,28 +65,53 @@ export default function NavigationBar({ onSubmit, onDirectory }: NavigationBarPr
           </Box>
           <Box sx={{ flex: 1 }} />
         </Stack>
-        <Stack direction="row" spacing={1}>
-          <TextField
-            inputRef={url}
-            label="YouTube URL"
-            placeholder="https://www.youtube.com/watch?v=example"
-            variant="outlined"
-            sx={{ flex: 8, fontSize: 10 }}
-          />
-          <Button
-            variant="outlined"
-            color="info"
-            sx={{ flex: 2 }}
-            onClick={() => {
-              if (url.current && url.current.value) {
-                onSubmit(url.current.value)
-                url.current.value = ''
-              }
-            }}
-          >
-            검색
-          </Button>
-        </Stack>
+
+        <TextField
+          inputRef={url}
+          placeholder="YouTube URL을 입력하세요"
+          variant="outlined"
+          fullWidth
+          size="medium"
+          onKeyDown={(e): void => {
+            if (e.key === 'Enter') {
+              handleSubmit()
+            }
+          }}
+          sx={{
+            '& .MuiInputBase-input': {
+              fontSize: '0.9rem'
+            }
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    color="primary"
+                    onClick={handleSubmit}
+                    edge="end"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      paddingX: 3,
+                      paddingY: 1,
+                      marginRight: 0,
+                      borderRadius: 1.5,
+                      color: 'text.primary'
+                    }}
+                  >
+                    검색
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+          }}
+        />
       </Stack>
     </Container>
   )

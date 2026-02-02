@@ -1,27 +1,81 @@
-import { Box } from '@mui/material'
+import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined'
+import { Box, SxProps } from '@mui/material'
+import * as React from 'react'
 
-export type ThumbnailProps = {
-  url: string | undefined | null
+type ThumbnailProps = {
+  url?: string | null
   w: number | string
   h: number | string
   onClick?: () => void
+  alt?: string
+  sx?: SxProps
 }
 
-export default function Thumbnail({ url, w, h, onClick }: ThumbnailProps): React.JSX.Element {
+export default function Thumbnail({
+  url,
+  w,
+  h,
+  onClick,
+  alt = 'thumbnail',
+  sx
+}: ThumbnailProps): React.JSX.Element {
+  const safeUrl = url ?? undefined
+
+  const [failed, setFailed] = React.useState(false)
+
+  // url이 바뀌면 실패 상태 초기화
+  React.useEffect(() => {
+    setFailed(false)
+  }, [safeUrl])
+
+  const showImage = Boolean(safeUrl) && !failed
+
   return (
     <Box
-      component={'img'}
+      onClick={onClick}
       sx={{
         width: w,
         height: h,
-        background: `url('${url}')`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
         borderRadius: 1,
-        flexShrink: 0
+        overflow: 'hidden',
+        bgcolor: '#000',
+        flexShrink: 0,
+        cursor: onClick ? 'pointer' : 'default',
+
+        // hover는 "조용하게"만
+        transition: 'filter 120ms ease',
+        '&:hover': onClick ? { filter: 'brightness(1.05)' } : undefined,
+        ...sx
       }}
-      onClick={onClick}
-    />
+      role={onClick ? 'button' : undefined}
+    >
+      {showImage ? (
+        <Box
+          component="img"
+          src={safeUrl}
+          alt={alt}
+          onError={() => setFailed(true)}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            display: 'grid',
+            placeItems: 'center',
+            color: 'rgba(255,255,255,0.35)',
+            bgcolor: 'rgba(255,255,255,0.04)'
+          }}
+        >
+          <BrokenImageOutlinedIcon sx={{ fontSize: 28 }} />
+        </Box>
+      )}
+    </Box>
   )
 }

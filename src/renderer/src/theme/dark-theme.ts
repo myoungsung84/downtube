@@ -5,45 +5,45 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     background: {
-      default: '#0F0F0F',
-      paper: '#181818'
+      default: '#0B0E14',
+      paper: '#13171F'
     },
     primary: {
-      main: '#3B82F6',
-      light: '#60A5FA',
-      dark: '#2563EB'
+      main: '#5B8DEF',
+      light: '#7BA5F5',
+      dark: '#4A7AD9'
     },
     secondary: {
-      main: '#8B5CF6',
-      light: '#A78BFA',
-      dark: '#7C3AED'
+      main: '#9D6FFF',
+      light: '#B48FFF',
+      dark: '#8A5FE6'
     },
     text: {
-      primary: '#E5E5E5',
-      secondary: '#A1A1A1',
-      disabled: '#6B6B6B'
+      primary: '#E8EDF4',
+      secondary: '#9CA9BA',
+      disabled: '#5F6B7A'
     },
     success: {
-      main: '#22C55E',
-      light: '#4ADE80',
-      dark: '#16A34A'
+      main: '#2DD4BF',
+      light: '#5EEAD4',
+      dark: '#14B8A6'
     },
     error: {
-      main: '#EF4444',
-      light: '#F87171',
-      dark: '#DC2626'
+      main: '#F87171',
+      light: '#FCA5A5',
+      dark: '#EF4444'
     },
     warning: {
-      main: '#F59E0B',
-      light: '#FBBF24',
-      dark: '#D97706'
+      main: '#FBBF24',
+      light: '#FCD34D',
+      dark: '#F59E0B'
     },
     info: {
-      main: '#06B6D4',
-      light: '#22D3EE',
-      dark: '#0891B2'
+      main: '#38BDF8',
+      light: '#7DD3FC',
+      dark: '#0EA5E9'
     },
-    divider: '#262626'
+    divider: '#1C2331'
   },
   shape: {
     borderRadius: 8
@@ -62,9 +62,9 @@ const darkTheme = createTheme({
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
         
         body {
-          backgroundColor: #0F0F0F;
+          backgroundColor: #0B0E14;
           scrollbarWidth: thin;
-          scrollbarColor: #262626 #0F0F0F;
+          scrollbarColor: #1C2331 #0B0E14;
         }
       `
     },
@@ -74,12 +74,12 @@ const darkTheme = createTheme({
           textTransform: 'none',
           fontWeight: 600,
           '&:hover': {
-            backgroundColor: 'rgba(59, 130, 246, 0.08)'
+            backgroundColor: 'rgba(91, 141, 239, 0.08)'
           }
         },
         contained: {
           '&:hover': {
-            backgroundColor: '#2563EB'
+            backgroundColor: '#4A7AD9'
           }
         }
       }
@@ -88,7 +88,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          border: '1px solid #262626'
+          border: '1px solid #1C2331'
         }
       }
     },
@@ -104,13 +104,13 @@ const darkTheme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
-              borderColor: '#262626'
+              borderColor: '#1C2331'
             },
             '&:hover fieldset': {
-              borderColor: '#404040'
+              borderColor: '#2A3447'
             },
             '&.Mui-focused fieldset': {
-              borderColor: '#3B82F6'
+              borderColor: '#5B8DEF'
             }
           }
         }
@@ -127,7 +127,7 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)'
+            backgroundColor: 'rgba(91, 141, 239, 0.08)'
           }
         }
       }
