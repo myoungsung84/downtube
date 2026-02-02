@@ -10,12 +10,10 @@ export default function MainScreen(): React.JSX.Element {
   useEffect(() => {
     window.api.onDownloadProgress(({ url, current, percent }) => {
       setDownloadList((prev) =>
-        prev.map((item) => {
-          if (item.url !== url) return item
-          return { ...item, current, percent }
-        })
+        prev.map((item) => (item.url !== url ? item : { ...item, current, percent }))
       )
     })
+
     window.api.onDownloadDone(({ url }) => {
       setDownloadList((prev) =>
         prev.map((item) =>
@@ -34,9 +32,10 @@ export default function MainScreen(): React.JSX.Element {
         console.warn(`[INFO] 이미 등록된 URL입니다: ${url}`)
         return
       }
+
       const baseItem: DownloadItemProps = {
         url,
-        status: 'loding',
+        status: 'loading', // ✅ 오타 수정 (loding -> loading)
         info: null,
         current: null,
         percent: 0,
@@ -47,25 +46,26 @@ export default function MainScreen(): React.JSX.Element {
               item.url === _url ? { ...item, current: 'init', status: 'downloading' } : item
             )
           )
-          await window.api.download(url)
+          await window.api.download(_url)
         },
         onStop: async (_url) => {
           setDownloadList((prev) =>
             prev.map((item) => (item.url === _url ? { ...item, status: 'stop' } : item))
           )
-          await window.api.stopDownload(url)
+          await window.api.stopDownload(_url)
         },
         onPlayer: async (_url) => {
           await window.api.playVideo(_url)
         }
       }
+
       setDownloadList((prev) => [...prev, baseItem])
+
       const info = await window.api.downloadInfo(url)
+
       setDownloadList((prev) => {
         const exists = prev.some((item) => item.url === url)
-        if (!exists) {
-          throw new Error(`URL not found in list: ${url}`)
-        }
+        if (!exists) throw new Error(`URL not found in list: ${url}`)
         return prev.map((item) => (item.url === url ? { ...item, status: 'normal', info } : item))
       })
     } catch (error) {
@@ -78,11 +78,11 @@ export default function MainScreen(): React.JSX.Element {
     <Stack sx={{ height: '100vh' }}>
       <NavigationBar
         onSubmit={handleDownloadInfo}
-        onDirectory={() => {
-          window.api.openDownloadDir()
-        }}
+        onDirectory={() => window.api.openDownloadDir()}
       />
-      <Stack sx={{ flexGrow: 1, overflowY: 'auto' }}>
+
+      {/* ✅ flex children에서 스크롤/가시성 안정화 핵심: flex:1 + minHeight:0 */}
+      <Stack sx={{ flex: 1, minHeight: 0 }}>
         <DownloadList items={downloadList} />
       </Stack>
     </Stack>

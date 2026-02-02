@@ -57,26 +57,46 @@ const darkTheme = createTheme({
     }
   },
   components: {
+    // ==============================
+    // CssBaseline
+    // ==============================
     MuiCssBaseline: {
       styleOverrides: `
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
-        
-        body {
-          backgroundColor: #0B0E14;
-          scrollbarWidth: thin;
-          scrollbarColor: #1C2331 #0B0E14;
-        }
-      `
+      @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+      body {
+        background: linear-gradient(
+          180deg,
+          #0E1420 0%,
+          #090D15 50%,
+          #0E1420 100%
+        );
+        background-attachment: fixed;
+        min-height: 100vh;
+        scrollbar-width: thin;
+        scrollbar-color: #1E2A44 #0E1420;
+      }
+
+      #root {
+        min-height: 100vh;
+      }
+    `
     },
+
+    // ==============================
+    // Button
+    // ==============================
     MuiButton: {
       styleOverrides: {
         root: {
           textTransform: 'none',
           fontWeight: 600,
+
           '&:hover': {
             backgroundColor: 'rgba(91, 141, 239, 0.08)'
           }
         },
+
         contained: {
           '&:hover': {
             backgroundColor: '#4A7AD9'
@@ -84,6 +104,10 @@ const darkTheme = createTheme({
         }
       }
     },
+
+    // ==============================
+    // Card
+    // ==============================
     MuiCard: {
       styleOverrides: {
         root: {
@@ -92,6 +116,10 @@ const darkTheme = createTheme({
         }
       }
     },
+
+    // ==============================
+    // Paper
+    // ==============================
     MuiPaper: {
       styleOverrides: {
         root: {
@@ -99,6 +127,10 @@ const darkTheme = createTheme({
         }
       }
     },
+
+    // ==============================
+    // TextField
+    // ==============================
     MuiTextField: {
       styleOverrides: {
         root: {
@@ -106,9 +138,11 @@ const darkTheme = createTheme({
             '& fieldset': {
               borderColor: '#1C2331'
             },
+
             '&:hover fieldset': {
               borderColor: '#2A3447'
             },
+
             '&.Mui-focused fieldset': {
               borderColor: '#5B8DEF'
             }
@@ -116,6 +150,10 @@ const darkTheme = createTheme({
         }
       }
     },
+
+    // ==============================
+    // Chip
+    // ==============================
     MuiChip: {
       styleOverrides: {
         root: {
@@ -123,6 +161,10 @@ const darkTheme = createTheme({
         }
       }
     },
+
+    // ==============================
+    // IconButton
+    // ==============================
     MuiIconButton: {
       styleOverrides: {
         root: {
