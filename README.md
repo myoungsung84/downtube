@@ -121,16 +121,16 @@ src/
 
 ## 주요 IPC 채널
 
-| 채널 | 설명 |
-|------|------|
-| `download-info` | 영상 정보 조회 (썸네일, 제목, 길이 등) |
-| `download-video` | 영상 다운로드 시작 |
-| `download-stop` | 영상 다운로드 중단 |
-| `download-player` | 플레이어 윈도우 열기 |
-| `download-dir-open` | 다운로드 폴더 열기 |
-| `resolve-asset-path` | 애셋 경로 해석 |
-| `download-progress` | 진행률 업데이트 이벤트 |
-| `download-done` | 다운로드 완료 이벤트 |
+| 채널                 | 설명                                   |
+| -------------------- | -------------------------------------- |
+| `download-info`      | 영상 정보 조회 (썸네일, 제목, 길이 등) |
+| `download-video`     | 영상 다운로드 시작                     |
+| `download-stop`      | 영상 다운로드 중단                     |
+| `download-player`    | 플레이어 윈도우 열기                   |
+| `download-dir-open`  | 다운로드 폴더 열기                     |
+| `resolve-asset-path` | 애셋 경로 해석                         |
+| `download-progress`  | 진행률 업데이트 이벤트                 |
+| `download-done`      | 다운로드 완료 이벤트                   |
 
 ## 개발 팁
 
