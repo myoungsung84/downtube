@@ -35,9 +35,6 @@ export function hasRunningTask(jobId: string): boolean {
   return currentTask?.jobId === jobId
 }
 
-/** ---------------------------------------------------------
- *  ✅ one-time resolved binaries (reduce spam + init cost)
- *  --------------------------------------------------------- */
 let _ffmpegPath: string | null = null
 let _ytDlpPath: string | null = null
 let _binariesLogged = false
@@ -63,9 +60,6 @@ function ensureBinaries(): { ffmpegPath: string; ytDlpPath: string } {
   return { ffmpegPath: _ffmpegPath, ytDlpPath: _ytDlpPath }
 }
 
-/** ---------------------------------------------------------
- *  ✅ structured logging / timing
- *  --------------------------------------------------------- */
 function ctx(job: DownloadJob): string {
   return `[dl] id=${job.id.slice(0, 8)} type=${job.type} name=${job.filename}`
 }
@@ -83,9 +77,6 @@ async function step<T>(label: string, job: DownloadJob, fn: () => Promise<T>): P
   }
 }
 
-/** ---------------------------------------------------------
- *  ✅ process kill (awaitable)
- *  --------------------------------------------------------- */
 const killAsync = (p?: ReturnType<typeof spawn>): Promise<void> => {
   return new Promise((resolve) => {
     if (!p || p.killed || !p.pid) return resolve()
@@ -97,11 +88,6 @@ const killAsync = (p?: ReturnType<typeof spawn>): Promise<void> => {
   })
 }
 
-/**
- * ✅ glob이 느려질 수 있으니:
- * 1) readdir 1회로 prefix 찾기 (fast)
- * 2) fallback으로 glob(findRealDownloadedFile)
- */
 async function resolveByPrefix(args: {
   job: DownloadJob
   dir: string
@@ -152,15 +138,12 @@ export function runDownloadJob(
       if (current === 'video') task.videoProcess = proc
       if (current === 'audio') task.audioProcess = proc
 
-      // ✅ 시작 체감 개선 (퍼센트 없더라도 "진행중" 표시 가능하게)
       onProgress({ current, percent: 0 })
 
       proc.stdout.on('data', (data) => sendPercent(current, data.toString()))
       proc.stderr.on('data', (data) => {
-        // ✅ 일부 환경에서 progress가 stderr로 나옴
         const t = data.toString()
         sendPercent(current, t)
-        // 너무 시끄러우면 error가 아니라 debug로 내려도 됨
         log.error(`${ctx(job)} yt-dlp:${current} stderr`, t)
       })
 
@@ -179,9 +162,6 @@ export function runDownloadJob(
   }
 
   return (async () => {
-    // =========================================================
-    // AUDIO ONLY
-    // =========================================================
     if (job.type === 'audio') {
       const args = [
         '--no-playlist',
@@ -205,7 +185,6 @@ export function runDownloadJob(
 
       await runYtDlp(args, 'audio')
 
-      // ✅ 대부분 baseName.mp3로 확정 가능 (glob 스캔 줄이기)
       const expected = path.join(downloadDir, `${baseName}.mp3`)
       const real = await step('output:audio', job, async () => {
         if (fs.existsSync(expected)) return expected
@@ -216,11 +195,6 @@ export function runDownloadJob(
       return { outputFile: real }
     }
 
-    // =========================================================
-    // VIDEO (video+audio merge)
-    // =========================================================
-
-    // video
     await runYtDlp(
       [
         '--no-playlist',
@@ -237,7 +211,6 @@ export function runDownloadJob(
       'video'
     )
 
-    // audio
     await runYtDlp(
       [
         '--no-playlist',

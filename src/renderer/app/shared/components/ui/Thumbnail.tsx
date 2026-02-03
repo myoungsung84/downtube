@@ -23,7 +23,6 @@ export default function Thumbnail({
 
   const [failed, setFailed] = React.useState(false)
 
-  // url이 바뀌면 실패 상태 초기화
   React.useEffect(() => {
     setFailed(false)
   }, [safeUrl])
@@ -42,7 +41,6 @@ export default function Thumbnail({
         flexShrink: 0,
         cursor: onClick ? 'pointer' : 'default',
 
-        // hover는 "조용하게"만
         transition: 'filter 120ms ease',
         '&:hover': onClick ? { filter: 'brightness(1.05)' } : undefined,
         ...sx

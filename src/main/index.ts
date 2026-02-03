@@ -7,7 +7,7 @@ import { ipcHandler } from './ipc-handlers/ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 1300,
+    width: 1000,
     height: 800,
     show: false,
     autoHideMenuBar: true,

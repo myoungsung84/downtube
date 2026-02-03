@@ -1,4 +1,3 @@
-// src/theme/dark-theme.ts
 import { createTheme } from '@mui/material/styles'
 
 const darkTheme = createTheme({
@@ -57,9 +56,6 @@ const darkTheme = createTheme({
     }
   },
   components: {
-    // ==============================
-    // CssBaseline
-    // ==============================
     MuiCssBaseline: {
       styleOverrides: `
       body {
@@ -81,9 +77,6 @@ const darkTheme = createTheme({
     `
     },
 
-    // ==============================
-    // Button
-    // ==============================
     MuiButton: {
       styleOverrides: {
         root: {
@@ -103,9 +96,6 @@ const darkTheme = createTheme({
       }
     },
 
-    // ==============================
-    // Card
-    // ==============================
     MuiCard: {
       styleOverrides: {
         root: {
@@ -115,9 +105,6 @@ const darkTheme = createTheme({
       }
     },
 
-    // ==============================
-    // Paper
-    // ==============================
     MuiPaper: {
       styleOverrides: {
         root: {
@@ -126,9 +113,6 @@ const darkTheme = createTheme({
       }
     },
 
-    // ==============================
-    // TextField
-    // ==============================
     MuiTextField: {
       styleOverrides: {
         root: {
@@ -149,9 +133,6 @@ const darkTheme = createTheme({
       }
     },
 
-    // ==============================
-    // Chip
-    // ==============================
     MuiChip: {
       styleOverrides: {
         root: {
@@ -160,9 +141,6 @@ const darkTheme = createTheme({
       }
     },
 
-    // ==============================
-    // IconButton
-    // ==============================
     MuiIconButton: {
       styleOverrides: {
         root: {

@@ -6,7 +6,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import App from './App'
+import App from './app'
 import darkTheme from './theme/dark-theme'
 
 createRoot(document.getElementById('root')!).render(
