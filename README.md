@@ -122,20 +122,20 @@ src/
 
 ## 주요 IPC 채널
 
-| 채널                  | 설명                                  |
-| --------------------- | ------------------------------------- |
-| `download-video`      | 비디오 다운로드 큐 추가               |
-| `download-audio`      | 오디오 다운로드 큐 추가               |
-| `download-playlist`   | 플레이리스트 항목 큐 추가             |
-| `download-set-type`   | 대기 항목 타입 변경                   |
-| `download-stop`       | 다운로드 중단                         |
-| `download-remove`     | 큐/리스트에서 항목 제거               |
-| `downloads-list`      | 현재 큐 목록 조회                     |
-| `downloads-start`     | 큐 시작/재개                          |
-| `downloads-pause`     | 큐 일시정지                           |
-| `downloads:event`     | 큐 이벤트 스트림 (job-added/updated)  |
-| `download-player`     | 플레이어 윈도우 열기                  |
-| `download-dir-open`   | 다운로드 폴더 열기                    |
+| 채널                | 설명                                                                 |
+| ------------------- | -------------------------------------------------------------------- |
+| `download-video`    | 비디오 다운로드 큐 추가                                                |
+| `download-audio`    | 오디오 다운로드 큐 추가                                                |
+| `download-playlist` | 플레이리스트 항목 큐 추가 (limit 적용)                               |
+| `download-set-type` | 대기 항목 타입 변경 (queued 상태만 가능)                             |
+| `download-stop`     | 다운로드 중단 (running/queued)                                       |
+| `download-remove`   | 큐/리스트에서 항목 제거 (running 제외)                               |
+| `downloads-list`    | 현재 큐 목록 조회                                                    |
+| `downloads-start`   | 큐 시작/재개                                                         |
+| `downloads-pause`   | 큐 일시정지                                                          |
+| `downloads:event`   | 큐 이벤트 스트림 (job-added/job-updated/job-removed/queue-state)     |
+| `download-player`   | 플레이어 윈도우 열기                                                 |
+| `download-dir-open` | 다운로드 폴더 열기                                                   |
 
 ## 개발 팁
 
