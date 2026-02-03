@@ -6,23 +6,12 @@ import fs, { mkdirSync, readFileSync } from 'fs'
 import path, { join } from 'path'
 import url from 'url'
 
+import type { DownloadJob } from '../../types/download.types'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
-import type { DownloadJob } from '../downloads/download.types'
+import { locateYtDlp } from '../downloads/yt-dlp-utils'
 
-const isWindows = process.platform === 'win32'
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
-
-/**
- * yt-dlp 바이너리 경로를 찾는 함수
- * @returns yt-dlp 바이너리 경로
- */
-function locateYtDlp(): string {
-  const binaryName = isWindows ? `yt-dlp.exe` : 'yt-dlp'
-  return app.isPackaged
-    ? path.resolve(process.resourcesPath, 'bin', binaryName)
-    : path.resolve(__dirname, '../../bin', binaryName)
-}
 
 /**
  * IPC 핸들러 등록
@@ -44,9 +33,15 @@ function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.hand
  */
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
   // ------------------------------------------------------------
-  // ✅ downloads 이벤트 → 기존 renderer 이벤트 채널로 브릿지
+  // ✅ downloads 이벤트 → renderer로 브릿지
+  //   - 기존 호환: download-progress / download-done 유지
+  //   - 신규: downloads:event로 raw 이벤트 전달 (job-added 포함)
   // ------------------------------------------------------------
   const off = onDownloadsEvent((ev) => {
+    // ✅ 새 채널: 화면이 리스트를 직접 구성할 수 있게 raw 이벤트 전달
+    mainWindow.webContents.send('downloads:event', ev)
+
+    // ✅ 기존 채널 유지(너 기존 DownloadsScreen 코드가 onDownloadProgress/onDownloadDone 쓰는걸로 보임)
     if (ev.type !== 'job-updated') return
 
     const job = ev.job
@@ -65,8 +60,10 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       mainWindow.webContents.send('download-done', { url: job.url, file: job.outputFile })
     }
 
-    // 실패(기존엔 이벤트가 없었는데, 필요하면 추가 가능)
-    // if (job.status === 'failed') { ... }
+    // 실패도 필요하면 여기에 추가 가능
+    // if (job.status === 'failed') {
+    //   mainWindow.webContents.send('download-failed', { url: job.url, error: job.error ?? '' })
+    // }
   })
 
   mainWindow.on('closed', () => off())
@@ -178,7 +175,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   })
 
   // ------------------------------------------------------------
-  // ✅ download-video: 즉시 실행 → 큐 enqueue
+  // ✅ download-video: 큐 enqueue
   // ------------------------------------------------------------
   safeSetHandler('download-video', async (_, url: string) => {
     if (downloadsQueue.hasUrl(url)) {
@@ -186,7 +183,6 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
 
     const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
-
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_VOD`
 
@@ -206,6 +202,82 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   })
 
   // ------------------------------------------------------------
+  // ✅ download-audio: 큐 enqueue (오디오 전용)
+  // ------------------------------------------------------------
+  safeSetHandler('download-audio', async (_, url: string) => {
+    if (downloadsQueue.hasUrl(url)) {
+      return { success: false, message: 'Already downloading' }
+    }
+
+    const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+    const timestamp = Math.floor(Date.now() / 1000).toString()
+    const baseName = `${timestamp}_AUD`
+
+    const job: DownloadJob = {
+      id: `${timestamp}:${Math.random().toString(16).slice(2)}`,
+      url,
+      type: 'audio',
+      status: 'queued',
+      filename: baseName,
+      outputDir: downloadDir,
+      progress: { percent: 0, current: null },
+      createdAt: Date.now()
+    }
+
+    downloadsQueue.enqueue(job)
+    return { success: true }
+  })
+
+  // ------------------------------------------------------------
+  // ✅ download-playlist: playlist URL → 아이템별 enqueue
+  //   - type: 'video' | 'audio'
+  //   - playlistLimit: 과다운로드 방지
+  // ------------------------------------------------------------
+  safeSetHandler(
+    'download-playlist',
+    async (
+      _,
+      payload: {
+        url: string
+        type: 'video' | 'audio'
+        playlistLimit?: number
+        filenamePrefix?: string
+      }
+    ) => {
+      const playlistUrl = payload.url
+      const type = payload.type
+      const playlistLimit = payload.playlistLimit ?? 50
+
+      const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+
+      // prefix는 요청에서 받거나 timestamp 기반
+      const timestamp = Math.floor(Date.now() / 1000).toString()
+      const filenamePrefix = payload.filenamePrefix ?? `${timestamp}_PL`
+
+      const res = await downloadsQueue.enqueuePlaylist({
+        playlistUrl,
+        type,
+        outputDir: downloadDir,
+        filenamePrefix,
+        playlistLimit
+      })
+
+      return { success: true, ...res }
+    }
+  )
+
+  // ------------------------------------------------------------
+  // ✅ download-set-type: 리스트 아이템에서 오디오/비디오 변경
+  //   - queued 상태에서만 변경 가능
+  // ------------------------------------------------------------
+  safeSetHandler(
+    'download-set-type',
+    async (_, payload: { id: string; type: 'video' | 'audio' }) => {
+      return downloadsQueue.setType(payload.id, payload.type)
+    }
+  )
+
+  // ------------------------------------------------------------
   // ✅ download-stop: 프로세스 kill → 큐 cancel
   // ------------------------------------------------------------
   safeSetHandler('download-stop', async (_, url: string) => {
@@ -217,6 +289,24 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
   })
 
+  // ------------------------------------------------------------
   // (옵션) Renderer가 리스트를 한 번에 받고 싶으면
-  // safeSetHandler('downloads-list', async () => downloadsQueue.getJobs())
+  // ------------------------------------------------------------
+  safeSetHandler('downloads-list', async () => downloadsQueue.getJobs())
+
+  // ------------------------------------------------------------
+  // ✅ queue control: start / pause
+  // - enqueue는 자동 시작 안 함
+  // - Start/Resume 버튼에서 downloads-start 호출
+  // - Pause 버튼에서 downloads-pause 호출
+  // ------------------------------------------------------------
+  safeSetHandler('downloads-start', async () => {
+    downloadsQueue.start()
+    return { success: true }
+  })
+
+  safeSetHandler('downloads-pause', async () => {
+    await downloadsQueue.pause()
+    return { success: true }
+  })
 }

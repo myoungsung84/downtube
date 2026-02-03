@@ -1,81 +1,128 @@
 import { spawn } from 'child_process'
-import { app } from 'electron'
 import log from 'electron-log'
-import glob from 'fast-glob'
-import ffmpegStatic from 'ffmpeg-static'
 import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import treeKill from 'tree-kill'
 
-import type { DownloadJob } from './download.types'
-import { parseYtDlpPercent } from './yt-dlp-parser'
-
-const isWindows = process.platform === 'win32'
+import type { DownloadJob } from '../../types/download.types'
+import {
+  findRealDownloadedFile,
+  locateFfmpeg,
+  locateYtDlp,
+  parseYtDlpPercent
+} from './yt-dlp-utils'
 
 type RunningTask = {
   videoProcess?: ReturnType<typeof spawn>
   audioProcess?: ReturnType<typeof spawn>
   filename: string
   outputDir: string
+  stopRequested?: boolean
+}
+
+class DownloadStoppedError extends Error {
+  code = 'ERR_DOWNLOAD_STOPPED'
+  constructor(public phase: 'video' | 'audio' | 'merge') {
+    super(`Download stopped by user during ${phase}`)
+    this.name = 'DownloadStoppedError'
+  }
 }
 
 let currentTask: { jobId: string; task: RunningTask } | null = null
 
-function locateYtDlp(): string {
-  const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp'
-
-  if (app.isPackaged) {
-    return path.resolve(process.resourcesPath, 'bin', binaryName)
-  }
-
-  // dev: 다양한 cwd/appPath 케이스를 강제로 커버
-  const candidates = [
-    path.resolve(app.getAppPath(), 'bin', binaryName),
-    path.resolve(app.getAppPath(), '..', 'bin', binaryName),
-    path.resolve(app.getAppPath(), '../..', 'bin', binaryName),
-
-    path.resolve(process.cwd(), 'bin', binaryName),
-    path.resolve(process.cwd(), '..', 'bin', binaryName),
-    path.resolve(process.cwd(), '../..', 'bin', binaryName)
-  ]
-
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p
-  }
-
-  // 디버깅용 로그(경로 후보 확인)
-  log.error('[yt-dlp] not found. candidates=', candidates)
-  return candidates[0]
-}
-
-function locateFfmpeg(): string {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'bin', isWindows ? 'ffmpeg.exe' : 'ffmpeg')
-    : (ffmpegStatic as string)
-}
-
-async function findRealDownloadedFile(dir: string, pattern: string): Promise<string> {
-  const files = await glob(pattern, { cwd: dir, absolute: true })
-  if (files.length === 0) throw new Error(`No file found for pattern: ${pattern}`)
-  return files[0]
-}
-
 export function hasRunningTask(jobId: string): boolean {
   return currentTask?.jobId === jobId
+}
+
+/** ---------------------------------------------------------
+ *  ✅ one-time resolved binaries (reduce spam + init cost)
+ *  --------------------------------------------------------- */
+let _ffmpegPath: string | null = null
+let _ytDlpPath: string | null = null
+let _binariesLogged = false
+
+function ensureBinaries(): { ffmpegPath: string; ytDlpPath: string } {
+  if (!_ffmpegPath) {
+    _ffmpegPath = locateFfmpeg()
+    ffmpeg.setFfmpegPath(_ffmpegPath)
+  }
+  if (!_ytDlpPath) {
+    _ytDlpPath = locateYtDlp()
+  }
+
+  if (!_binariesLogged) {
+    _binariesLogged = true
+    log.info('[dl] binaries', {
+      ffmpegPath: _ffmpegPath,
+      ytDlpPath: _ytDlpPath,
+      ytDlpExists: fs.existsSync(_ytDlpPath)
+    })
+  }
+
+  return { ffmpegPath: _ffmpegPath, ytDlpPath: _ytDlpPath }
+}
+
+/** ---------------------------------------------------------
+ *  ✅ structured logging / timing
+ *  --------------------------------------------------------- */
+function ctx(job: DownloadJob): string {
+  return `[dl] id=${job.id.slice(0, 8)} type=${job.type} name=${job.filename}`
+}
+
+async function step<T>(label: string, job: DownloadJob, fn: () => Promise<T>): Promise<T> {
+  const t0 = Date.now()
+  log.info(`${ctx(job)} step=${label} start`)
+  try {
+    const v = await fn()
+    log.info(`${ctx(job)} step=${label} ok ms=${Date.now() - t0}`)
+    return v
+  } catch (e) {
+    log.warn(`${ctx(job)} step=${label} fail ms=${Date.now() - t0}`, e)
+    throw e
+  }
+}
+
+/** ---------------------------------------------------------
+ *  ✅ process kill (awaitable)
+ *  --------------------------------------------------------- */
+const killAsync = (p?: ReturnType<typeof spawn>): Promise<void> => {
+  return new Promise((resolve) => {
+    if (!p || p.killed || !p.pid) return resolve()
+
+    treeKill(p.pid, 'SIGKILL', (err) => {
+      if (err) log.error(`[dl] kill fail pid=${p.pid} msg=${err.message}`)
+      resolve()
+    })
+  })
+}
+
+/**
+ * ✅ glob이 느려질 수 있으니:
+ * 1) readdir 1회로 prefix 찾기 (fast)
+ * 2) fallback으로 glob(findRealDownloadedFile)
+ */
+async function resolveByPrefix(args: {
+  job: DownloadJob
+  dir: string
+  prefix: string
+  fallbackPattern: string
+}): Promise<string> {
+  const { job, dir, prefix, fallbackPattern } = args
+  return step(`resolve:${prefix}`, job, async () => {
+    const files = await fs.promises.readdir(dir)
+    const hit = files.find((f) => f.startsWith(prefix + '.'))
+    if (hit) return path.join(dir, hit)
+    return findRealDownloadedFile(dir, fallbackPattern)
+  })
 }
 
 export function runDownloadJob(
   job: DownloadJob,
   onProgress: (p: { percent?: number; current: DownloadJob['progress']['current'] }) => void
 ): Promise<{ outputFile: string }> {
-  const ffmpegPath = locateFfmpeg()
-  ffmpeg.setFfmpegPath(ffmpegPath)
-  log.info('ffmpeg path:', ffmpegPath)
+  const { ffmpegPath, ytDlpPath } = ensureBinaries()
 
-  const ytDlpPath = locateYtDlp()
-  log.info('[yt-dlp] path', ytDlpPath)
-  log.info('[yt-dlp] exists', fs.existsSync(ytDlpPath))
   const downloadDir = job.outputDir
   if (!fs.existsSync(downloadDir)) mkdirSync(downloadDir, { recursive: true })
 
@@ -83,24 +130,99 @@ export function runDownloadJob(
   const videoFile = path.join(downloadDir, `${baseName}_video.%(ext)s`)
   const audioFile = path.join(downloadDir, `${baseName}_audio.%(ext)s`)
   const outputFile = path.join(downloadDir, `${baseName}.mkv`)
+  const audioOnlyFile = path.join(downloadDir, `${baseName}.%(ext)s`)
 
-  const task: RunningTask = {
-    filename: baseName,
-    outputDir: downloadDir
-  }
+  const task: RunningTask = { filename: baseName, outputDir: downloadDir, stopRequested: false }
   currentTask = { jobId: job.id, task }
 
+  log.info(`${ctx(job)} start url=${job.url}`)
   onProgress({ current: 'init' })
 
-  const send = (current: 'video' | 'audio', text: string): void => {
+  const sendPercent = (current: 'video' | 'audio', text: string): void => {
     const percent = parseYtDlpPercent(text)
     if (percent != null) onProgress({ current, percent })
   }
 
+  const runYtDlp = (args: string[], current: 'video' | 'audio'): Promise<void> => {
+    return step(`yt-dlp:${current}`, job, async () => {
+      if (task.stopRequested) throw new DownloadStoppedError(current)
+
+      const proc = spawn(ytDlpPath, args, { windowsHide: true })
+
+      if (current === 'video') task.videoProcess = proc
+      if (current === 'audio') task.audioProcess = proc
+
+      // ✅ 시작 체감 개선 (퍼센트 없더라도 "진행중" 표시 가능하게)
+      onProgress({ current, percent: 0 })
+
+      proc.stdout.on('data', (data) => sendPercent(current, data.toString()))
+      proc.stderr.on('data', (data) => {
+        // ✅ 일부 환경에서 progress가 stderr로 나옴
+        const t = data.toString()
+        sendPercent(current, t)
+        // 너무 시끄러우면 error가 아니라 debug로 내려도 됨
+        log.error(`${ctx(job)} yt-dlp:${current} stderr`, t)
+      })
+
+      await new Promise<void>((res, rej) => {
+        proc.on('error', (err) => {
+          if (task.stopRequested) return rej(new DownloadStoppedError(current))
+          rej(err)
+        })
+
+        proc.on('close', (code) => {
+          if (task.stopRequested) return rej(new DownloadStoppedError(current))
+          code === 0 ? res() : rej(new Error(`${current} download failed: ${code}`))
+        })
+      })
+    })
+  }
+
   return (async () => {
-    // video
-    await new Promise<void>((res, rej) => {
+    // =========================================================
+    // AUDIO ONLY
+    // =========================================================
+    if (job.type === 'audio') {
       const args = [
+        '--no-playlist',
+        '-x',
+        '--audio-format',
+        'mp3',
+        '--audio-quality',
+        '0',
+        '--ffmpeg-location',
+        ffmpegPath,
+
+        '--no-part',
+        '--restrict-filenames',
+        '--no-warnings',
+        '--no-check-certificate',
+
+        '--output',
+        audioOnlyFile,
+        job.url
+      ]
+
+      await runYtDlp(args, 'audio')
+
+      // ✅ 대부분 baseName.mp3로 확정 가능 (glob 스캔 줄이기)
+      const expected = path.join(downloadDir, `${baseName}.mp3`)
+      const real = await step('output:audio', job, async () => {
+        if (fs.existsSync(expected)) return expected
+        return findRealDownloadedFile(downloadDir, `${baseName}.*`)
+      })
+
+      onProgress({ current: 'complete', percent: 100 })
+      return { outputFile: real }
+    }
+
+    // =========================================================
+    // VIDEO (video+audio merge)
+    // =========================================================
+
+    // video
+    await runYtDlp(
+      [
         '--no-playlist',
         '--format',
         'bv*',
@@ -111,22 +233,13 @@ export function runDownloadJob(
         '--output',
         videoFile,
         job.url
-      ]
-      const videoProc = spawn(ytDlpPath, args)
-      task.videoProcess = videoProc
-
-      videoProc.stdout.on('data', (data) => send('video', data.toString()))
-      videoProc.stderr.on('data', (data) => log.error('[yt-dlp video stderr]', data.toString()))
-
-      videoProc.on('error', (err) => rej(err))
-      videoProc.on('close', (code) =>
-        code === 0 ? res() : rej(new Error(`video download failed: ${code}`))
-      )
-    })
+      ],
+      'video'
+    )
 
     // audio
-    await new Promise<void>((res, rej) => {
-      const args = [
+    await runYtDlp(
+      [
         '--no-playlist',
         '--format',
         'ba',
@@ -137,42 +250,52 @@ export function runDownloadJob(
         '--output',
         audioFile,
         job.url
-      ]
-      const audioProc = spawn(ytDlpPath, args)
-      task.audioProcess = audioProc
+      ],
+      'audio'
+    )
 
-      audioProc.stdout.on('data', (data) => send('audio', data.toString()))
-      audioProc.stderr.on('data', (data) => log.error('[yt-dlp audio stderr]', data.toString()))
-
-      audioProc.on('error', (err) => rej(err))
-      audioProc.on('close', (code) =>
-        code === 0 ? res() : rej(new Error(`audio download failed: ${code}`))
-      )
+    const mergedVideo = await resolveByPrefix({
+      job,
+      dir: downloadDir,
+      prefix: `${baseName}_video`,
+      fallbackPattern: `${baseName}_video.*`
     })
 
-    const mergedVideo = await findRealDownloadedFile(downloadDir, `${baseName}_video.*`)
-    const mergedAudio = await findRealDownloadedFile(downloadDir, `${baseName}_audio.*`)
+    const mergedAudio = await resolveByPrefix({
+      job,
+      dir: downloadDir,
+      prefix: `${baseName}_audio`,
+      fallbackPattern: `${baseName}_audio.*`
+    })
 
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg(mergedVideo)
-        .input(mergedAudio)
-        .outputOptions('-c copy')
-        .save(outputFile)
-        .on('end', () => {
-          try {
-            fs.unlinkSync(mergedVideo)
-            fs.unlinkSync(mergedAudio)
-          } catch (e) {
-            log.warn('[cleanup warn]', e)
-          }
-          resolve()
-        })
-        .on('error', (err) => reject(err))
+    await step('ffmpeg:merge', job, async () => {
+      if (task.stopRequested) throw new DownloadStoppedError('merge')
+
+      await new Promise<void>((resolve, reject) => {
+        ffmpeg(mergedVideo)
+          .input(mergedAudio)
+          .outputOptions('-c copy')
+          .save(outputFile)
+          .on('end', () => {
+            try {
+              fs.unlinkSync(mergedVideo)
+              fs.unlinkSync(mergedAudio)
+            } catch (e) {
+              log.warn(`${ctx(job)} cleanup warn`, e)
+            }
+            resolve()
+          })
+          .on('error', (err) => {
+            if (task.stopRequested) return reject(new DownloadStoppedError('merge'))
+            reject(err)
+          })
+      })
     })
 
     onProgress({ current: 'complete', percent: 100 })
     return { outputFile }
   })().finally(() => {
+    log.info(`${ctx(job)} end`)
     currentTask = null
   })
 }
@@ -181,34 +304,38 @@ export async function stopCurrentJobAndCleanup(job: DownloadJob): Promise<void> 
   const task = currentTask?.jobId === job.id ? currentTask.task : null
   if (!task) return
 
-  const kill = (p?: ReturnType<typeof spawn>): void => {
-    if (p && !p.killed && p.pid) {
-      treeKill(p.pid, 'SIGKILL', (err) => {
-        if (err) log.error(`[ERROR] Failed to kill process: ${err.message}`)
-      })
-    }
-  }
+  task.stopRequested = true
+  log.warn(`${ctx(job)} stop requested`)
 
-  kill(task.videoProcess)
-  kill(task.audioProcess)
+  await step('stop:kill', job, async () => {
+    await Promise.all([killAsync(task.videoProcess), killAsync(task.audioProcess)])
+  })
 
-  // 파일 정리 (기존 download-stop 로직 최대한 유지)
-  const { filename, outputDir } = task
-  await new Promise((r) => setTimeout(r, 800))
+  await step('stop:cleanup', job, async () => {
+    const { filename, outputDir } = task
+    await new Promise((r) => setTimeout(r, 200))
 
-  try {
-    const files = await fs.promises.readdir(outputDir)
-    for (const file of files) {
-      if (file.startsWith(filename)) {
-        const filePath = path.join(outputDir, file)
+    try {
+      const files = await fs.promises.readdir(outputDir)
+      for (const file of files) {
+        if (!file.startsWith(filename)) continue
         try {
-          await fs.promises.unlink(filePath)
+          await fs.promises.unlink(path.join(outputDir, file))
         } catch (e) {
-          log.warn('[cleanup unlink warn]', e)
+          log.warn(`${ctx(job)} cleanup unlink warn`, e)
         }
       }
+    } catch (e) {
+      log.warn(`${ctx(job)} cleanup readdir warn`, e)
     }
-  } catch (e) {
-    log.warn('[cleanup readdir warn]', e)
-  }
+  })
+}
+
+export function isDownloadStoppedError(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e != null &&
+    // @ts-expect-error - runtime check
+    (e.code === 'ERR_DOWNLOAD_STOPPED' || e.name === 'DownloadStoppedError')
+  )
 }

@@ -1,4 +1,4 @@
-import type { DownloadQueueEvent } from './download.types'
+import type { DownloadQueueEvent } from '../../types/download.types'
 import { DownloadQueue } from './download-queue'
 
 type Listener = (ev: DownloadQueueEvent) => void
