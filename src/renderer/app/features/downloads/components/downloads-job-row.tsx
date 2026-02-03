@@ -23,9 +23,9 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
-  Tooltip,
   Typography
 } from '@mui/material'
+import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
 import React, { useState } from 'react'
 
@@ -284,75 +284,67 @@ export default function DownloadsJobRow(props: {
 
             <Stack spacing={1.5} alignItems="flex-end">
               <Stack direction="row" spacing={1}>
-                <Tooltip
+                <AppTooltip
                   title={canToggle ? '비디오 또는 오디오만 선택' : '대기중인 항목만 변경 가능'}
                 >
-                  <span>
-                    <ToggleButtonGroup
-                      size="small"
-                      exclusive
-                      value={job.type}
-                      disabled={!canToggle}
-                      onChange={(_, v) => {
-                        if (!v) return
-                        props.onToggleType(job.id, v)
-                      }}
-                      sx={{
-                        '& .MuiToggleButton-root': {
-                          px: 1.5,
-                          py: 0.75,
-                          fontWeight: 600,
-                          fontSize: '0.8rem'
-                        }
-                      }}
-                    >
-                      <ToggleButton value="video">
-                        <VideoLibraryIcon sx={{ fontSize: 16 }} />
-                      </ToggleButton>
-                      <ToggleButton value="audio">
-                        <AudiotrackIcon sx={{ fontSize: 16 }} />
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  </span>
-                </Tooltip>
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={job.type}
+                    disabled={!canToggle}
+                    onChange={(_, v) => {
+                      if (!v) return
+                      props.onToggleType(job.id, v)
+                    }}
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        px: 1.5,
+                        py: 0.75,
+                        fontWeight: 600,
+                        fontSize: '0.8rem'
+                      }
+                    }}
+                  >
+                    <ToggleButton value="video">
+                      <VideoLibraryIcon sx={{ fontSize: 16 }} />
+                    </ToggleButton>
+                    <ToggleButton value="audio">
+                      <AudiotrackIcon sx={{ fontSize: 16 }} />
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </AppTooltip>
               </Stack>
 
               <Stack direction="row" spacing={1}>
-                <Tooltip title="다시 시도">
-                  <span>
-                    <IconButton
-                      sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                      disabled={!canRetry}
-                      onClick={() => void props.onRetry(job)}
-                    >
-                      <ReplayIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
+                <AppTooltip title="다시 시도">
+                  <IconButton
+                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
+                    disabled={!canRetry}
+                    onClick={() => void props.onRetry(job)}
+                  >
+                    <ReplayIcon fontSize="small" />
+                  </IconButton>
+                </AppTooltip>
 
-                <Tooltip title="중단">
-                  <span>
-                    <IconButton
-                      sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                      disabled={!canStop}
-                      onClick={() => void props.onStop(job)}
-                    >
-                      <StopIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
+                <AppTooltip title="중단">
+                  <IconButton
+                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
+                    disabled={!canStop}
+                    onClick={() => void props.onStop(job)}
+                  >
+                    <StopIcon fontSize="small" />
+                  </IconButton>
+                </AppTooltip>
 
-                <Tooltip title="삭제">
-                  <span>
-                    <IconButton
-                      sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                      disabled={!canDelete}
-                      onClick={() => void props.onDelete(job)}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
+                <AppTooltip title="삭제">
+                  <IconButton
+                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
+                    disabled={!canDelete}
+                    onClick={() => void props.onDelete(job)}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </AppTooltip>
               </Stack>
             </Stack>
           </Stack>

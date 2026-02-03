@@ -1,12 +1,12 @@
-import ToastProvider from '@renderer/shared/providers/toast/toast-provider'
+import AppProviders from '@renderer/shared/providers/app-providers'
 import { RouterProvider } from 'react-router-dom'
 
 import { router } from './router'
 
 export default function App(): React.JSX.Element {
   return (
-    <ToastProvider>
+    <AppProviders>
       <RouterProvider router={router} />
-    </ToastProvider>
+    </AppProviders>
   )
 }
