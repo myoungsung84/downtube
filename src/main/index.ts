@@ -17,8 +17,8 @@ function createWindow(): void {
       contextIsolation: true
     },
     icon: app.isPackaged
-      ? join(process.resourcesPath, 'assets', 'icon.png')
-      : join(__dirname, '../assets/icon.png')
+      ? join(process.resourcesPath, 'assets', 'app-icon-256.png')
+      : join(__dirname, '../assets/app-icon-256.png')
   })
 
   mainWindow.on('ready-to-show', () => {

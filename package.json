@@ -24,7 +24,7 @@
   "build": {
     "appId": "com.shining.downtube",
     "productName": "Downtube",
-    "icon": "assets/icon",
+    "icon": "assets/app-icon.ico",
     "files": [
       "out/**",
       "bin/**",
