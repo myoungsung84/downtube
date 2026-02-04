@@ -1,14 +1,14 @@
 html {
   min-height: 100%;
-  background-color: #0B0E14;
+  background-color: #0b0e14;
   color-scheme: dark;
 }
 
-body {  
+body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #0B0E14;
+  background-color: #0b0e14;
   background-attachment: fixed;
 }
 
@@ -19,13 +19,13 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0E14; /* ✅ html과 같은 톤으로 */
+  background: #0b0e14; /* ✅ html과 같은 톤으로 */
 }
 
 ::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
-  border: 2px solid #0B0E14; /* ✅ track과 맞추기 */
+  border: 2px solid #0b0e14; /* ✅ track과 맞추기 */
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -33,10 +33,10 @@ body {
 }
 
 ::-webkit-scrollbar-corner {
-  background: #0B0E14;
+  background: #0b0e14;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) #0B0E14;
+  scrollbar-color: rgba(255, 255, 255, 0.25) #0b0e14;
 }

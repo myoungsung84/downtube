@@ -122,20 +122,20 @@ src/
 
 ## 주요 IPC 채널
 
-| 채널                | 설명                                                                 |
-| ------------------- | -------------------------------------------------------------------- |
-| `download-video`    | 비디오 다운로드 큐 추가                                                |
-| `download-audio`    | 오디오 다운로드 큐 추가                                                |
-| `download-playlist` | 플레이리스트 항목 큐 추가 (limit 적용)                               |
-| `download-set-type` | 대기 항목 타입 변경 (queued 상태만 가능)                             |
-| `download-stop`     | 다운로드 중단 (running/queued)                                       |
-| `download-remove`   | 큐/리스트에서 항목 제거 (running 제외)                               |
-| `downloads-list`    | 현재 큐 목록 조회                                                    |
-| `downloads-start`   | 큐 시작/재개                                                         |
-| `downloads-pause`   | 큐 일시정지                                                          |
-| `downloads:event`   | 큐 이벤트 스트림 (job-added/job-updated/job-removed/queue-state)     |
-| `download-player`   | 플레이어 윈도우 열기                                                 |
-| `download-dir-open` | 다운로드 폴더 열기                                                   |
+| 채널                | 설명                                                             |
+| ------------------- | ---------------------------------------------------------------- |
+| `download-video`    | 비디오 다운로드 큐 추가                                          |
+| `download-audio`    | 오디오 다운로드 큐 추가                                          |
+| `download-playlist` | 플레이리스트 항목 큐 추가 (limit 적용)                           |
+| `download-set-type` | 대기 항목 타입 변경 (queued 상태만 가능)                         |
+| `download-stop`     | 다운로드 중단 (running/queued)                                   |
+| `download-remove`   | 큐/리스트에서 항목 제거 (running 제외)                           |
+| `downloads-list`    | 현재 큐 목록 조회                                                |
+| `downloads-start`   | 큐 시작/재개                                                     |
+| `downloads-pause`   | 큐 일시정지                                                      |
+| `downloads:event`   | 큐 이벤트 스트림 (job-added/job-updated/job-removed/queue-state) |
+| `download-player`   | 플레이어 윈도우 열기                                             |
+| `download-dir-open` | 다운로드 폴더 열기                                               |
 
 ## 개발 팁
 
@@ -155,12 +155,13 @@ DownTube는 **MIT License**로 배포됩니다.
 
 본 애플리케이션은 다음과 같은 외부 오픈소스 도구를 사용하며, 각 도구의 라이선스 조건을 존중합니다:
 
-- **yt-dlp**  
-  - License: Public Domain (Unlicense)  
+- **yt-dlp**
+
+  - License: Public Domain (Unlicense)
   - Repository: https://github.com/yt-dlp/yt-dlp
 
-- **FFmpeg**  
-  - License: LGPL-2.1+ 또는 GPL-2.0+ (빌드 설정에 따라 다름)  
+- **FFmpeg**
+  - License: LGPL-2.1+ 또는 GPL-2.0+ (빌드 설정에 따라 다름)
   - Website: https://ffmpeg.org
 
 ### 라이선스 및 사용 관련 안내

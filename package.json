@@ -8,18 +8,17 @@
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
+    "lint:ci": "eslint . --max-warnings=0",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "start": "electron-vite preview",
     "dev": "electron-vite dev",
+    "start": "electron-vite preview",
     "build": "npm run typecheck && electron-vite build",
-    "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac:arm64": "electron-vite build && electron-builder --mac --arm64",
-    "build:mac:x64": "electron-vite build && electron-builder --mac --x64",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:win": "bash scripts/build-win.sh",
+    "build:mac": "bash scripts/build-mac.sh",
+    "release:win": "bash scripts/release-win.sh",
+    "postinstall": "electron-builder install-app-deps"
   },
   "build": {
     "appId": "com.shining.downtube",

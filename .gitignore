@@ -9,3 +9,4 @@ bin/ffmpeg
 .eslintcache
 *.log*
 Desktop.ini
+releases/
