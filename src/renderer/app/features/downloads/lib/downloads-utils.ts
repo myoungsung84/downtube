@@ -1,3 +1,9 @@
+import { SvgIconComponent } from '@mui/icons-material'
+import CancelIcon from '@mui/icons-material/Cancel'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DownloadingIcon from '@mui/icons-material/Downloading'
+import ErrorIcon from '@mui/icons-material/Error'
+import ScheduleIcon from '@mui/icons-material/Schedule'
 import type { DownloadJob } from '@src/types/download.types'
 
 export function isPlaylistUrl(input: string): boolean {
@@ -9,20 +15,61 @@ export function isPlaylistUrl(input: string): boolean {
   }
 }
 
-export function statusLabel(status: DownloadJob['status']): string {
+export function paletteMain(
+  color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'
+): string {
+  // MUI palette에는 default.main 없음
+  if (color === 'default') return 'text.secondary'
+  return `${color}.main`
+}
+
+export function resolveDownloadStatus(status: DownloadJob['status']): {
+  label: string
+  color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'
+  icon: SvgIconComponent
+} {
   switch (status) {
     case 'queued':
-      return '대기중'
+      return {
+        label: '대기중',
+        color: 'default',
+        icon: ScheduleIcon
+      }
+
     case 'running':
-      return '다운로드중'
+      return {
+        label: '다운로드중',
+        color: 'info',
+        icon: DownloadingIcon
+      }
+
     case 'completed':
-      return '완료'
+      return {
+        label: '완료',
+        color: 'success',
+        icon: CheckCircleIcon
+      }
+
     case 'failed':
-      return '실패'
+      return {
+        label: '실패',
+        color: 'error',
+        icon: ErrorIcon
+      }
+
     case 'cancelled':
-      return '취소됨'
+      return {
+        label: '취소됨',
+        color: 'warning',
+        icon: CancelIcon
+      }
+
     default:
-      return status
+      return {
+        label: status,
+        color: 'default',
+        icon: ScheduleIcon
+      }
   }
 }
 

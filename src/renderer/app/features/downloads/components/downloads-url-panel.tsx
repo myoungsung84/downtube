@@ -38,7 +38,7 @@ export default function DownloadsUrlPanel(props: {
     >
       <Stack spacing={2}>
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <SearchIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+          <SearchIcon sx={{ color: 'primary.main', fontSize: 26 }} />
           <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.125rem' }}>
             영상 URL 입력
           </Typography>
@@ -63,7 +63,7 @@ export default function DownloadsUrlPanel(props: {
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
-              fontSize: '1rem',
+              fontSize: '0.8rem',
               '&:hover': {
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
               }
@@ -84,7 +84,7 @@ export default function DownloadsUrlPanel(props: {
                     disabled={props.submitting !== null}
                     sx={{
                       fontWeight: 700,
-                      fontSize: '0.95rem',
+                      fontSize: '0.9rem',
                       px: 4,
                       py: 1.25,
                       borderRadius: 2

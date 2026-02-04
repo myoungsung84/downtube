@@ -4,10 +4,10 @@ import DownloadIcon from '@mui/icons-material/Download'
 import DownloadingIcon from '@mui/icons-material/Downloading'
 import ErrorIcon from '@mui/icons-material/Error'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import SettingsSuggestOutlinedIcon from '@mui/icons-material/SettingsSuggestOutlined'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import {
   Alert,
@@ -119,7 +119,7 @@ export default function DownloadsQueuePanel(props: {
                   '&:hover': { bgcolor: 'action.selected' }
                 }}
               >
-                <HelpOutlineIcon />
+                <SettingsSuggestOutlinedIcon />
               </IconButton>
             </AppTooltip>
           </Stack>
@@ -248,14 +248,19 @@ export default function DownloadsQueuePanel(props: {
           </Stack>
         </Stack>
 
-        <Collapse in={props.showAdvanced} unmountOnExit>
+        <Collapse
+          in={props.showAdvanced}
+          unmountOnExit
+          timeout={100}
+          easing="ease-out"
+          collapsedSize={0}
+        >
           <Stack spacing={2}>
             <Divider />
 
             <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 2 }}>
-              <Typography variant="body2" fontWeight={600}>
-                💡 새로 추가할 영상의 기본 설정을 지정할 수 있어요. 이미 추가된 항목은 개별적으로
-                변경 가능합니다.
+              <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
+                💡 이 설정은 새로 추가되는 영상에만 적용됩니다.
               </Typography>
             </Alert>
 

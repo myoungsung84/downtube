@@ -1,21 +1,14 @@
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AudiotrackIcon from '@mui/icons-material/Audiotrack'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
-import DownloadIcon from '@mui/icons-material/Download'
-import DownloadingIcon from '@mui/icons-material/Downloading'
 import ErrorIcon from '@mui/icons-material/Error'
 import ReplayIcon from '@mui/icons-material/Replay'
 import StopIcon from '@mui/icons-material/Stop'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
-import WarningIcon from '@mui/icons-material/Warning'
 import {
-  Alert,
-  AlertTitle,
   alpha,
   Box,
-  Button,
-  Chip,
-  Collapse,
   Fade,
   IconButton,
   LinearProgress,
@@ -23,22 +16,24 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
-  Typography
+  Typography,
+  useTheme
 } from '@mui/material'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
-import React, { useState } from 'react'
+import React from 'react'
 
 import {
   formatDuration,
   formatPercent,
   getErrorMessage,
   inferTitle,
-  statusLabel,
+  paletteMain,
+  resolveDownloadStatus,
   statusTone
 } from '../lib/downloads-utils'
 
-const actionBtnSx = { width: 36, height: 36 } as const
+const actionBtnSx = { width: 32, height: 32 } as const
 
 export default function DownloadsJobRow(props: {
   job: DownloadJob
@@ -49,13 +44,14 @@ export default function DownloadsJobRow(props: {
   onDelete: (job: DownloadJob) => void
 }): React.JSX.Element {
   const { job } = props
+  const theme = useTheme()
   const tone = statusTone(job.status)
-  const [showDetails, setShowDetails] = useState(false)
 
   const info: DownloadInfo | undefined = job.info
   const thumb = info?.thumbnail
   const uploader = info?.uploader
   const channel = info?.channel
+  const displayChannel = channel || uploader
   const durationText = info?.duration != null ? formatDuration(info.duration) : undefined
 
   const canToggle = job.status === 'queued'
@@ -67,352 +63,326 @@ export default function DownloadsJobRow(props: {
   const showProgressBar = job.status === 'running'
   const errorInfo = job.error ? getErrorMessage(job.error) : null
 
-  const chips: Array<{
-    label: string
-    tone?: 'default' | 'success' | 'error' | 'warning' | 'info'
-  }> = []
-
-  if (info?.extractor) chips.push({ label: `${info.extractor}`, tone: 'default' })
-  if (info?.formatsCount != null)
-    chips.push({ label: `${info.formatsCount} formats`, tone: 'default' })
-  if (info?.isLive != null) {
-    chips.push({ label: info.isLive ? 'LIVE' : 'VOD', tone: info.isLive ? 'warning' : 'default' })
-  }
-  if (info?.availability) {
-    const av = info.availability.toLowerCase()
-    const toneHint: 'default' | 'warning' | 'error' = av.includes('private')
-      ? 'error'
-      : av.includes('unavailable')
-        ? 'error'
-        : av.includes('unlisted')
-          ? 'warning'
-          : 'default'
-    chips.push({ label: info.availability, tone: toneHint })
-  }
-
-  const metaLine1 = [uploader, channel].filter(Boolean).join(' · ')
-  const metaLine2 = [durationText ? `${durationText}` : null, info?.id ? `ID: ${info.id}` : null]
-    .filter(Boolean)
-    .join(' · ')
+  const statusMeta = resolveDownloadStatus(job.status)
+  const StatusIcon = statusMeta.icon
+  const statusMain = paletteMain(statusMeta.color)
 
   return (
     <Fade in>
       <Paper
-        elevation={props.isCurrent ? 6 : 2}
+        elevation={props.isCurrent ? 4 : 1}
         sx={{
-          p: 2.5,
+          p: 2,
           borderRadius: 3,
-          border: '2px solid',
+          border: '1px solid',
           borderColor: props.isCurrent ? 'primary.main' : tone.borderColor,
           backgroundColor: tone.bg,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <Stack spacing={2}>
-          <Stack
-            direction="row"
-            spacing={2.5}
-            alignItems="flex-start"
-            justifyContent="space-between"
-          >
-            <Stack spacing={1.5} sx={{ minWidth: 0, flex: 1 }}>
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+        <Stack direction={'column'} spacing={2}>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            {/* 썸네일 */}
+            <Box
+              sx={{
+                width: 180,
+                aspectRatio: '16/9',
+                borderRadius: 2,
+                overflow: 'hidden',
+                flexShrink: 0,
+                bgcolor: alpha(theme.palette.common.white, 0.06),
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: 1,
+                position: 'relative'
+              }}
+            >
+              {thumb ? (
+                <Box
+                  component="img"
+                  src={thumb}
+                  alt=""
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'hidden',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
                 <Box
                   sx={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                    bgcolor: (theme) => alpha(theme.palette.common.white, 0.06),
-                    border: '2px solid',
-                    borderColor: 'divider',
-                    boxShadow: 2
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: alpha(theme.palette.action.hover, 0.5)
                   }}
                 >
-                  {thumb ? (
-                    <Box
-                      component="img"
-                      src={thumb}
-                      alt=""
-                      sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: (theme) => alpha(theme.palette.action.hover, 0.5)
-                      }}
+                  <VideoLibraryIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
+                </Box>
+              )}
+
+              {/* 타입 뱃지 */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  bgcolor: 'rgba(0,0,0,0.7)',
+                  color: 'white',
+                  borderRadius: 1,
+                  px: 1,
+                  py: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  backdropFilter: 'blur(4px)'
+                }}
+              >
+                {job.type === 'audio' ? (
+                  <AudiotrackIcon sx={{ fontSize: 12 }} />
+                ) : (
+                  <VideoLibraryIcon sx={{ fontSize: 12 }} />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{ fontSize: '0.65rem', fontWeight: 700, lineHeight: 1 }}
+                >
+                  {job.type}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* 컨텐츠 */}
+            <Stack
+              sx={{ minWidth: 0, flex: 1, height: '100%', minHeight: 90 }}
+              justifyContent="space-between"
+            >
+              {/* 상단 정보 */}
+              <Stack spacing={1}>
+                <Typography
+                  fontWeight={700}
+                  sx={{ fontSize: '1rem', lineHeight: 1.3, mb: 0.5, mr: 1 }}
+                  title={inferTitle(job)}
+                  noWrap
+                >
+                  {inferTitle(job)}
+                </Typography>
+
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 0.5 }}>
+                  {displayChannel && (
+                    <Stack direction="row" spacing={0.6} alignItems="center">
+                      <AccountCircleIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        sx={{ fontSize: '0.8rem', maxWidth: 180 }}
+                      >
+                        {displayChannel}
+                      </Typography>
+                    </Stack>
+                  )}
+
+                  {durationText && (
+                    <Stack direction="row" spacing={0.6} alignItems="center">
+                      <AccessTimeIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: '0.8rem' }}
+                      >
+                        {durationText}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Stack>
+
+              {/* 상태 + 액션 */}
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mt: showProgressBar ? 1 : 2 }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0, mr: 2 }}>
+                  {errorInfo ? (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      sx={{ color: 'error.main' }}
                     >
-                      <VideoLibraryIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
-                    </Box>
+                      <ErrorIcon sx={{ fontSize: 16 }} />
+                      <Typography
+                        variant="caption"
+                        noWrap
+                        fontWeight={600}
+                        title={errorInfo.description}
+                      >
+                        {errorInfo.title}
+                      </Typography>
+                    </Stack>
+                  ) : (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      sx={{ color: statusMain }}
+                    >
+                      <StatusIcon sx={{ fontSize: 16 }} />
+                      <Typography variant="caption" fontWeight={600}>
+                        {statusMeta.label}
+                      </Typography>
+                    </Stack>
                   )}
                 </Box>
 
-                <Stack spacing={0.75} sx={{ minWidth: 0, flex: 1 }}>
-                  <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
-                    {job.status === 'running' ? (
-                      <DownloadingIcon
+                <Paper
+                  elevation={0}
+                  sx={{
+                    bgcolor: alpha(theme.palette.action.active, 0.04),
+                    borderRadius: 2,
+                    p: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5
+                  }}
+                >
+                  <AppTooltip title={canToggle ? '형식 변경' : '변경 불가'}>
+                    <ToggleButtonGroup
+                      size="small"
+                      exclusive
+                      value={job.type}
+                      disabled={!canToggle}
+                      onChange={(_, v) => v && props.onToggleType(job.id, v)}
+                      sx={{
+                        height: 32,
+                        '& .MuiToggleButton-root': {
+                          border: 'none',
+                          borderRadius: 1.5,
+                          px: 1,
+                          py: 0.5,
+                          color: 'text.secondary',
+                          transition: 'all 120ms ease',
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(255,255,255,0.12)',
+                            color: 'text.primary',
+                            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)'
+                          },
+
+                          '&.Mui-selected:hover': {
+                            bgcolor: 'rgba(255,255,255,0.16)'
+                          }
+                        }
+                      }}
+                    >
+                      <ToggleButton value="video">
+                        <VideoLibraryIcon sx={{ fontSize: 16 }} />
+                      </ToggleButton>
+                      <ToggleButton value="audio">
+                        <AudiotrackIcon sx={{ fontSize: 16 }} />
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                  </AppTooltip>
+
+                  <Box sx={{ width: 1, height: 16, bgcolor: 'divider', mx: 0.5 }} />
+
+                  <Stack direction="row" spacing={0.5}>
+                    <AppTooltip title="다시 시도">
+                      <IconButton
+                        size="small"
+                        disabled={!canRetry}
+                        onClick={() => props.onRetry(job)}
+                        sx={actionBtnSx}
+                      >
+                        <ReplayIcon fontSize="small" />
+                      </IconButton>
+                    </AppTooltip>
+
+                    <AppTooltip title="중단">
+                      <IconButton
+                        size="small"
+                        disabled={!canStop}
+                        onClick={() => props.onStop(job)}
+                        sx={actionBtnSx}
+                      >
+                        <StopIcon fontSize="small" />
+                      </IconButton>
+                    </AppTooltip>
+
+                    <AppTooltip title="삭제">
+                      <IconButton
+                        size="small"
+                        disabled={!canDelete}
+                        onClick={() => props.onDelete(job)}
                         sx={{
-                          color: 'primary.main',
-                          fontSize: 22,
-                          animation: 'spin 2s linear infinite',
-                          '@keyframes spin': {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' }
+                          ...actionBtnSx,
+                          '&:hover': {
+                            color: 'error.main',
+                            bgcolor: alpha(theme.palette.error.main, 0.1)
                           }
                         }}
-                      />
-                    ) : job.status === 'completed' ? (
-                      <CheckCircleIcon sx={{ color: 'success.main', fontSize: 22 }} />
-                    ) : job.status === 'failed' ? (
-                      <ErrorIcon sx={{ color: 'error.main', fontSize: 22 }} />
-                    ) : job.status === 'cancelled' ? (
-                      <WarningIcon sx={{ color: 'warning.main', fontSize: 22 }} />
-                    ) : (
-                      <DownloadIcon sx={{ color: 'action.active', fontSize: 22 }} />
-                    )}
-
-                    <Typography
-                      noWrap
-                      fontWeight={700}
-                      sx={{ minWidth: 0, fontSize: '1rem', flex: 1 }}
-                      title={inferTitle(job)}
-                    >
-                      {inferTitle(job)}
-                    </Typography>
-
-                    <Chip
-                      size="small"
-                      label={statusLabel(job.status)}
-                      color={tone.chipColor ?? 'default'}
-                      variant="filled"
-                      sx={{ fontWeight: 700, px: 1.5 }}
-                    />
-                  </Stack>
-
-                  {metaLine1 ? (
-                    <Typography
-                      noWrap
-                      variant="body2"
-                      sx={{ opacity: 0.75, fontSize: '0.85rem', pl: 3.5 }}
-                      title={metaLine1}
-                    >
-                      {metaLine1}
-                    </Typography>
-                  ) : null}
-
-                  {metaLine2 ? (
-                    <Typography
-                      noWrap
-                      variant="body2"
-                      sx={{ opacity: 0.6, fontSize: '0.8rem', pl: 3.5 }}
-                      title={metaLine2}
-                    >
-                      {metaLine2}
-                    </Typography>
-                  ) : null}
-
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ pl: 3.5 }}>
-                    <Chip
-                      size="small"
-                      icon={
-                        job.type === 'audio' ? (
-                          <AudiotrackIcon sx={{ fontSize: 14 }} />
-                        ) : (
-                          <VideoLibraryIcon sx={{ fontSize: 14 }} />
-                        )
-                      }
-                      label={job.type === 'audio' ? '오디오' : '비디오'}
-                      color={job.type === 'audio' ? 'info' : 'default'}
-                      variant="outlined"
-                      sx={{ fontWeight: 600, height: 24 }}
-                    />
-
-                    {chips.length > 0 && showDetails ? (
-                      <>
-                        {chips.map((c, idx) => (
-                          <Chip
-                            key={`${c.label}-${idx}`}
-                            size="small"
-                            label={c.label}
-                            color={c.tone ?? 'default'}
-                            variant="outlined"
-                            sx={{ height: 24, fontWeight: 500 }}
-                          />
-                        ))}
-                      </>
-                    ) : null}
-
-                    {chips.length > 0 ? (
-                      <Button
-                        size="small"
-                        onClick={() => setShowDetails(!showDetails)}
-                        sx={{ minWidth: 'auto', px: 1, fontSize: '0.75rem' }}
                       >
-                        {showDetails ? '간단히' : '자세히'}
-                      </Button>
-                    ) : null}
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </AppTooltip>
                   </Stack>
-                </Stack>
-              </Stack>
-
-              {job.status === 'running' && job.progress?.current ? (
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ pl: 10.5 }}>
-                  <Typography
-                    variant="body2"
-                    color="primary"
-                    fontWeight={700}
-                    sx={{ fontSize: '0.875rem' }}
-                  >
-                    {job.progress.current}
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={formatPercent(job.progress.percent)}
-                    color="primary"
-                    variant="filled"
-                    sx={{ fontWeight: 700, height: 22 }}
-                  />
-                </Stack>
-              ) : null}
-            </Stack>
-
-            <Stack spacing={1.5} alignItems="flex-end">
-              <Stack direction="row" spacing={1}>
-                <AppTooltip
-                  title={canToggle ? '비디오 또는 오디오만 선택' : '대기중인 항목만 변경 가능'}
-                >
-                  <ToggleButtonGroup
-                    size="small"
-                    exclusive
-                    value={job.type}
-                    disabled={!canToggle}
-                    onChange={(_, v) => {
-                      if (!v) return
-                      props.onToggleType(job.id, v)
-                    }}
-                    sx={{
-                      '& .MuiToggleButton-root': {
-                        px: 1.5,
-                        py: 0.75,
-                        fontWeight: 600,
-                        fontSize: '0.8rem'
-                      }
-                    }}
-                  >
-                    <ToggleButton value="video">
-                      <VideoLibraryIcon sx={{ fontSize: 16 }} />
-                    </ToggleButton>
-                    <ToggleButton value="audio">
-                      <AudiotrackIcon sx={{ fontSize: 16 }} />
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </AppTooltip>
-              </Stack>
-
-              <Stack direction="row" spacing={1}>
-                <AppTooltip title="다시 시도">
-                  <IconButton
-                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                    disabled={!canRetry}
-                    onClick={() => void props.onRetry(job)}
-                  >
-                    <ReplayIcon fontSize="small" />
-                  </IconButton>
-                </AppTooltip>
-
-                <AppTooltip title="중단">
-                  <IconButton
-                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                    disabled={!canStop}
-                    onClick={() => void props.onStop(job)}
-                  >
-                    <StopIcon fontSize="small" />
-                  </IconButton>
-                </AppTooltip>
-
-                <AppTooltip title="삭제">
-                  <IconButton
-                    sx={{ ...actionBtnSx, bgcolor: 'action.hover' }}
-                    disabled={!canDelete}
-                    onClick={() => void props.onDelete(job)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </AppTooltip>
+                </Paper>
               </Stack>
             </Stack>
           </Stack>
 
-          {showProgressBar ? (
-            <Box sx={{ px: 10.5 }}>
-              <LinearProgress
-                variant="determinate"
-                value={percent}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 4,
-                    background: (theme) =>
-                      `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`
-                  }
-                }}
-              />
-            </Box>
-          ) : null}
-
-          {errorInfo ? (
-            <Alert
-              severity="error"
-              variant="outlined"
-              sx={{ borderRadius: 2, borderWidth: 2, '& .MuiAlert-icon': { fontSize: 22 } }}
-            >
-              <AlertTitle sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
-                {errorInfo.title}
-              </AlertTitle>
-              <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                {errorInfo.description}
-              </Typography>
-            </Alert>
-          ) : null}
-
-          {job.status === 'completed' ? (
-            <Alert
-              severity="success"
-              variant="filled"
-              icon={<CheckCircleIcon fontSize="medium" />}
-              sx={{ borderRadius: 2, boxShadow: 2, '& .MuiAlert-icon': { fontSize: 22 } }}
-            >
-              <Typography variant="body2" sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                ✨ 다운로드 완료! 저장 폴더에서 확인하세요
-              </Typography>
-            </Alert>
-          ) : null}
-
-          {showDetails ? (
-            <Collapse in>
-              <Box sx={{ pl: 10.5, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                <Typography
-                  variant="body2"
+          {/* 진행 */}
+          <Stack direction={'column'} spacing={0.5}>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <StatusIcon
                   sx={{
-                    opacity: 0.6,
-                    fontSize: '0.8rem',
-                    wordBreak: 'break-all',
-                    fontFamily: 'monospace'
+                    fontSize: 16,
+                    color: statusMain,
+                    ...(job.status === 'running' && {
+                      animation: 'spin 2s linear infinite',
+                      '@keyframes spin': {
+                        '0%': { transform: 'rotate(0deg)' },
+                        '100%': { transform: 'rotate(360deg)' }
+                      }
+                    })
                   }}
+                />
+                <Typography
+                  variant="caption"
+                  color={statusMain}
+                  sx={{ fontSize: '0.75rem', textTransform: 'uppercase' }}
                 >
-                  {job.url}
+                  {job.progress?.current ?? 'download pending...'}
                 </Typography>
-              </Box>
-            </Collapse>
-          ) : null}
+              </Stack>
+
+              <Typography variant="caption" color={statusMain} fontWeight={700}>
+                {formatPercent(job.progress?.percent ?? 0)}
+              </Typography>
+            </Stack>
+
+            <LinearProgress
+              variant="determinate"
+              value={percent}
+              sx={{
+                mt: 0.5,
+                height: 4,
+                borderRadius: 2,
+                bgcolor: alpha(theme.palette.common.white, 0.08),
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: statusMain
+                }
+              }}
+            />
+          </Stack>
         </Stack>
       </Paper>
     </Fade>

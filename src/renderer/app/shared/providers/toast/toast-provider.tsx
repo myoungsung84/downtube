@@ -20,7 +20,7 @@ export default function ToastProvider({
     open: false,
     message: '',
     severity: 'info',
-    duration: 5000
+    duration: 3000
   })
 
   const hideToast = useCallback(() => {
@@ -33,7 +33,7 @@ export default function ToastProvider({
         open: true,
         message,
         severity,
-        duration: options?.duration ?? 5000
+        duration: options?.duration ?? 3000
       })
     },
     []
@@ -60,6 +60,7 @@ export default function ToastProvider({
             boxShadow: 4,
             fontSize: '0.95rem',
             minWidth: 300,
+            color: 'white',
             '& .MuiAlert-message': { flex: 1 }
           }}
         >
