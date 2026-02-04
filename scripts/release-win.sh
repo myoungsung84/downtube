@@ -23,7 +23,12 @@ if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
 fi
 
 bash scripts/build.sh
-ZIP_PATH="$(bash scripts/build-win.sh)"
+
+# build-win.sh 출력이 로그에 섞여도 마지막 줄만 ZIP 경로로 취급
+ZIP_PATH="$(bash scripts/build-win.sh | tail -n 1)"
+
+# CRLF/공백 방어
+ZIP_PATH="$(printf '%s' "$ZIP_PATH" | tr -d '\r')"
 
 if [ -z "${ZIP_PATH:-}" ] || [ ! -f "$ZIP_PATH" ]; then
   echo "Error: asset not found: $ZIP_PATH"
