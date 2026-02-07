@@ -24,6 +24,9 @@
     "appId": "com.shining.downtube",
     "productName": "Downtube",
     "icon": "assets/app-icon.ico",
+    "mac": {
+      "icon": "assets/app-icon.icns"
+    },
     "files": [
       "out/**",
       "bin/**",
