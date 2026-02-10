@@ -1,9 +1,10 @@
 name: downtube-llm
 
 services:
-  llama:
+  llama-cpu:
+    profiles: ["cpu"]
     image: ghcr.io/ggml-org/llama.cpp:server
-    container_name: downtube-llm
+    container_name: downtube-llm-cpu
     ports:
       - "${LLM_PORT:-18080}:${LLM_PORT:-18080}"
     volumes:
@@ -17,4 +18,26 @@ services:
       - 0.0.0.0
       - --port
       - "${LLM_PORT:-18080}"
-    restart: unless-stopped
+
+  llama-gpu:
+    profiles: ["gpu"]
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: downtube-llm-gpu
+    ports:
+      - "${LLM_PORT:-18080}:${LLM_PORT:-18080}"
+    volumes:
+      - ./models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    command:
+      - -m
+      - /models/${MODEL_FILE}
+      - -c
+      - "8192"
+      - --host
+      - 0.0.0.0
+      - --port
+      - "${LLM_PORT:-18080}"

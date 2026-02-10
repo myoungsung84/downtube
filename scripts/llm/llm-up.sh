@@ -1,94 +1,115 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Docker 실행 여부 체크 (up에만)
+# -------------------------
+# Preconditions
+# -------------------------
 if ! command -v docker >/dev/null 2>&1; then
-  echo "❌ docker command not found. Docker Desktop 설치/설정을 확인해줘."
+  echo "❌ ERROR: docker not found. Install or configure Docker Desktop."
   exit 1
 fi
 if ! docker info >/dev/null 2>&1; then
-  echo "❌ Docker가 실행 중이 아니야. Docker Desktop을 먼저 실행해줘."
+  echo "⛔ ERROR: Docker is not running. Start Docker Desktop first."
   exit 1
 fi
-
 if ! command -v curl >/dev/null 2>&1; then
-  echo "❌ curl not found. (Windows Git Bash는 보통 기본 포함)"
+  echo "❌ ERROR: curl not found."
   exit 1
 fi
 
-cd "$(dirname "$0")/../llm"
+# -------------------------
+# Resolve paths (repoRoot/llm fixed)
+# -------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LLM_DIR="$REPO_ROOT/llm"
+ENV_FILE="$LLM_DIR/.env"
+COMPOSE_FILE="$LLM_DIR/compose.yml"
+MODELS_DIR="$LLM_DIR/models"
 
-# env 로드
-if [ -f ".env" ]; then
-  # shellcheck disable=SC1091
-  source ".env"
+cd "$LLM_DIR"
+
+# -------------------------
+# Load env
+# -------------------------
+if [ -f "$ENV_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
 fi
 
 : "${LLM_PORT:=18080}"
 : "${MODEL_FILE:=qwen2.5-7b-instruct-q4_k_m.gguf}"
 : "${MODEL_URL:=}"
-: "${LLM_HEALTH_TIMEOUT_SEC:=180}"  # 기본 3분
+: "${LLM_HEALTH_TIMEOUT_SEC:=180}"
+: "${LLM_PROFILE:=cpu}"   # cpu | gpu
 
-mkdir -p models
+mkdir -p "$MODELS_DIR"
+MODEL_PATH="$MODELS_DIR/${MODEL_FILE}"
 
-MODEL_PATH="models/${MODEL_FILE}"
-
-# 모델 자동 다운로드
+# -------------------------
+# Download model if missing
+# -------------------------
 if [ ! -f "$MODEL_PATH" ]; then
-  if [ -z "$MODEL_URL" ]; then
-    echo "❌ Model not found: $MODEL_PATH"
-    echo "   그리고 MODEL_URL이 비어있어 자동 다운로드도 못함. llm/.env 확인해줘."
+  if [ -z "${MODEL_URL:-}" ]; then
+    echo "❌ ERROR: Model file not found and MODEL_URL is empty."
+    echo "       Expected: $MODEL_PATH"
     exit 1
   fi
 
-  echo "⬇️  Download model → $MODEL_PATH"
-  echo "   URL: $MODEL_URL"
-  echo "   (중단돼도 재개 가능: curl -L -C - ... )"
+  echo "⬇️  Downloading model"
+  echo "   → $MODEL_PATH"
+  echo "   🌐 $MODEL_URL"
 
-  # -L: redirect follow
-  # -C -: resume
-  # -o: output
   curl -L -C - --fail --retry 3 --retry-delay 2 \
     -o "$MODEL_PATH" \
     "$MODEL_URL"
 
-  echo "✅ Model downloaded"
+  echo "✅ Model download complete"
 fi
 
-docker compose up -d
+# -------------------------
+# Start containers
+# -------------------------
+PROFILE="cpu"
+[ "${LLM_PROFILE:-cpu}" = "gpu" ] && PROFILE="gpu"
+
+echo "🚀 Starting LLM (profile: $PROFILE)"
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile "$PROFILE" up -d
 
 echo
-echo "✅ LLM up → http://localhost:${LLM_PORT}"
+echo "🌐 LLM endpoint: http://localhost:${LLM_PORT}"
+echo "⏳ Waiting for health check (timeout: ${LLM_HEALTH_TIMEOUT_SEC}s)"
 
-echo "Health (waiting until ready, timeout: ${LLM_HEALTH_TIMEOUT_SEC}s):"
-
-# health ready 대기
+# -------------------------
+# Wait for /health
+# -------------------------
 start_ts="$(date +%s)"
 last_out=""
 
 while true; do
-  # -f: HTTP 4xx/5xx면 실패 코드로 처리 (그래도 we handle)
-  # --max-time: 네트워크 hang 방지
   out="$(curl -sS --max-time 2 "http://localhost:${LLM_PORT}/health" || true)"
   last_out="$out"
 
-  # 로딩 중이면 보통 {"error":{"message":"Loading model"...}} 형태
   if [ -n "$out" ] && ! echo "$out" | grep -q "Loading model"; then
-    echo "$out"
-    echo "✅ Ready"
+    echo "✅ LLM is ready"
     break
   fi
 
   now_ts="$(date +%s)"
   elapsed="$((now_ts - start_ts))"
+
   if [ "$elapsed" -ge "$LLM_HEALTH_TIMEOUT_SEC" ]; then
+    echo "⛔ ERROR: LLM did not become ready within timeout"
+    echo "Last response:"
     echo "$last_out"
-    echo "❌ Not ready (timeout). 컨테이너 로그를 확인해봐: docker logs -f downtube-llm"
+    echo "🔍 Check logs:"
+    echo "   docker compose --env-file \"$ENV_FILE\" -f \"$COMPOSE_FILE\" logs -f"
     exit 1
   fi
 
-  echo "… loading (${elapsed}s/${LLM_HEALTH_TIMEOUT_SEC}s)"
+  echo "… loading (${elapsed}s / ${LLM_HEALTH_TIMEOUT_SEC}s)"
   sleep 2
 done
 
-echo
+echo "🎉 Done."
