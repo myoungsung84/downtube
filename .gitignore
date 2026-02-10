@@ -72,3 +72,8 @@ creds.*
 # SSH keys (just in case)
 id_rsa
 id_ed25519
+
+# =========================
+# LLM artifacts
+# =========================
+llm/models/
