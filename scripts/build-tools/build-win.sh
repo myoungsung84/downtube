@@ -26,7 +26,7 @@ FFMPEG_FILENAME="$(basename "$FFMPEG_SRC")"
 
 cp "$FFMPEG_SRC" "$BIN_DIR/$FFMPEG_FILENAME"
 
-bash scripts/build.sh
+bash scripts/build-tools/build.sh
 
 electron-builder --win --dir >&2
 

@@ -22,7 +22,7 @@ if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
   fi
 fi
 
-bash scripts/build.sh
+bash scripts/build-tools/build.sh
 
 # build-win.sh 출력이 로그에 섞여도 마지막 줄만 ZIP 경로로 취급
 ZIP_PATH="$(bash scripts/build-win.sh | tail -n 1)"

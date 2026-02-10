@@ -42,12 +42,7 @@ env_get() {
   local file="$2"
   [ -f "$file" ] || return 0
 
-  # Use awk to:
-  # - skip comments/blank
-  # - match "^KEY="
-  # - print rest after first '='
   awk -v k="$key" '
-    BEGIN { FS="=" }
     /^[[:space:]]*#/ { next }
     /^[[:space:]]*$/ { next }
     {
@@ -207,6 +202,17 @@ if ! docker_running; then
   exit 1
 fi
 
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "❌ ERROR: compose file not found: $COMPOSE_FILE"
+  exit 1
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌ ERROR: env file not found: $ENV_FILE"
+  echo "   Create llm/.env (or copy from llm/.env.example if you have one)."
+  exit 1
+fi
+
 # -------------------------
 # Command dispatch
 # -------------------------
@@ -217,12 +223,17 @@ case "$CMD" in
   up)
     download_model_if_missing
     profile="$(detect_profile)"
+
+    # Avoid profile-switch leftovers / orphans
+    compose down --remove-orphans >/dev/null 2>&1 || true
+
     echo "🚀 Starting LLM (profile: $profile)"
     compose --profile "$profile" up -d
     compose ps
     wait_health
     echo "🎉 Done."
     ;;
+
   down)
     remove_orphans=0
     for arg in "$@"; do
@@ -231,27 +242,33 @@ case "$CMD" in
       esac
     done
 
+    # IMPORTANT: don't swallow errors here. If down fails, user must see it.
     if [ "$remove_orphans" -eq 1 ]; then
-      compose down --remove-orphans >/dev/null 2>&1 || true
+      compose down --remove-orphans
       echo "🧹 LLM down (orphans removed)"
     else
-      compose down >/dev/null 2>&1 || true
+      compose down
       echo "✅ LLM down"
     fi
     ;;
+
   restart)
-    "$0" down >/dev/null 2>&1 || true
+    "$0" down --remove-orphans
     "$0" up
     ;;
+
   status)
     compose ps
     ;;
+
   logs)
     compose logs "$@"
     ;;
+
   help|-h|--help|"")
     usage
     ;;
+
   *)
     echo "❌ Unknown command: $CMD"
     usage

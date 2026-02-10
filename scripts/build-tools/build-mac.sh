@@ -20,7 +20,7 @@ mkdir -p "$BIN_DIR"
 cp "$FFMPEG_SRC" "$BIN_DIR/$FFMPEG_FILENAME"
 
 # build (typecheck + electron-vite)
-bash "scripts/build.sh"
+bash "scripts/build-tools/build.sh"
 
 # package arm64
 electron-builder --mac --arm64
