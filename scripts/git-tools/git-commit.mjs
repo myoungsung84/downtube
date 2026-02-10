@@ -12,6 +12,15 @@ const SCRIPT_DIR = path.dirname(__filename)
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '../..')
 const GEN_SCRIPT = path.join(REPO_ROOT, 'scripts/git-tools/git-generate-commit.sh')
 
+const EMOJI = {
+  ok: '✅',
+  warn: '⚠️',
+  err: '❌',
+  run: '▶',
+  stop: '⛔',
+  info: 'ℹ️'
+}
+
 /**
  * @param {string} msg
  * @param {number} [code]
@@ -25,13 +34,14 @@ function die(msg, code = 1) {
 /**
  * @param {string} cmd
  * @param {string[]} args
- * @param {{ cwd?: string }} [opts]
+ * @param {{ cwd?: string, input?: string }} [opts]
  * @returns {CmdResult}
  */
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, {
     cwd: opts.cwd ?? REPO_ROOT,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    input: opts.input
   })
 
   return {
@@ -62,7 +72,7 @@ function hasStagedChanges() {
  */
 function getStagedFiles() {
   const r = run('git', ['diff', '--cached', '--name-only', '-z'])
-  if (r.status !== 0) die(`ERROR: failed to list staged files\n${r.stderr || r.stdout}`)
+  if (r.status !== 0) die(`${EMOJI.err} failed to list staged files\n${r.stderr || r.stdout}`)
   return (r.stdout || '').split('\0').filter(Boolean)
 }
 
@@ -116,23 +126,14 @@ async function prompt(question) {
  */
 async function selectCommitType() {
   console.log('')
-
   console.log('Select commit type:')
-
   console.log('  1) fix      - 버그/오작동/에러 수정')
-
   console.log('  2) feat     - 사용자 기능 추가')
-
   console.log('  3) refactor - 기능 동일, 구조 개선')
-
   console.log('  4) chore    - 빌드/스크립트/도구/의존성/설정/인프라')
-
   console.log('  5) docs     - 문서')
-
   console.log('  6) test     - 테스트')
-
   console.log('  7) perf     - 성능')
-
   console.log('')
 
   const a = await prompt('Type [1-7] (default: 4=chore): ')
@@ -150,9 +151,9 @@ async function selectCommitType() {
   }
 
   const t = map[n]
-  if (!t) die(`ERROR: invalid choice: ${a || '?'}`)
+  if (!t) die(`${EMOJI.err} invalid choice: ${a || '?'}`)
 
-  console.log(`✅ Selected type: ${t}\n`)
+  console.log(`${EMOJI.ok} Selected type: ${t}\n`)
   return t
 }
 
@@ -165,39 +166,32 @@ async function handleForbiddenFiles() {
 
   if (forbidden.length === 0) return
 
-  console.log('🚫 Forbidden staged files detected (should NOT be committed):')
-  for (const f of forbidden) {
-    console.log(`  - ${f}`)
-  }
-
+  console.log(`${EMOJI.warn} Forbidden staged files detected (should NOT be committed):`)
+  for (const f of forbidden) console.log(`  - ${f}`)
   console.log('')
-
   console.log('Choose action:')
-
   console.log('  1) abort (default)')
-
   console.log('  2) unstage forbidden files and continue')
-
   console.log('')
 
   const a = await prompt('Action [1/2]: ')
   const act = a ? Number(a) : 1
 
-  if (act === 1) die('Canceled.', 1)
-  if (act !== 2) die(`ERROR: invalid action: ${a}`)
+  if (act === 1) die(`${EMOJI.stop} canceled.`, 1)
+  if (act !== 2) die(`${EMOJI.err} invalid action: ${a}`)
 
   for (const f of forbidden) {
     let r = run('git', ['restore', '--staged', '--', f])
     if (r.status !== 0) {
       r = run('git', ['reset', '-q', 'HEAD', '--', f])
-      if (r.status !== 0) die(`ERROR: failed to unstage: ${f}\n${r.stderr || r.stdout}`)
+      if (r.status !== 0) die(`${EMOJI.err} failed to unstage: ${f}\n${r.stderr || r.stdout}`)
     }
   }
 
-  console.log('✅ Unstaged forbidden files.\n')
+  console.log(`${EMOJI.ok} Unstaged forbidden files.\n`)
 
   if (!hasStagedChanges()) {
-    die('ERROR: After filtering, no staged changes remain.\nTIP: stage valid files and retry.')
+    die(`${EMOJI.err} After filtering, no staged changes remain.\nTIP: stage valid files and retry.`)
   }
 }
 
@@ -219,10 +213,7 @@ function extractCommitMessage(genOut) {
   }
   if (end < 0) return ''
 
-  return lines
-    .slice(start + 1, end)
-    .join('\n')
-    .trim()
+  return lines.slice(start + 1, end).join('\n').trim()
 }
 
 /**
@@ -261,24 +252,65 @@ function runGenerator() {
 }
 
 /**
+ * @param {string} message
+ * @returns {CmdResult}
+ */
+function gitCommit(message) {
+  // stdin에서 커밋 메시지 받기 (인코딩/CRLF 영향 최소화)
+  return run('git', ['commit', '--file=-'], { input: message })
+}
+
+/**
+ * @returns {Promise<boolean>}
+ */
+async function confirmCommit() {
+  // default = yes
+  // 허용: 엔터/y/yes/n/no (그 외는 다시 질문)
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const a = await prompt('Commit now? [Y/n]: ')
+    const s = String(a ?? '').trim().toLowerCase()
+
+    if (!s) return true
+    if (s === 'y' || s === 'yes') return true
+    if (s === 'n' || s === 'no') return false
+
+    console.log(`${EMOJI.info} please answer y/yes or n/no.`)
+  }
+}
+
+/**
+ * @param {string} finalMsg
+ * @returns {string}
+ */
+function getSubjectLine(finalMsg) {
+  const first = finalMsg.split(/\r?\n/).find((l) => l.trim().length > 0)
+  return (first ?? '').trim()
+}
+
+/**
  * @returns {Promise<void>}
  */
 async function main() {
-  if (!fs.existsSync(GEN_SCRIPT)) die(`ERROR: generator not found: ${GEN_SCRIPT}`)
-  if (!isGitRepo()) die('ERROR: Not inside a git repository.')
-  if (!hasStagedChanges()) die('ERROR: No staged changes.\nTIP: git add -A')
+  process.on('SIGINT', () => {
+    console.log(`\n${EMOJI.stop} aborted.`)
+    process.exit(130)
+  })
+
+  if (!fs.existsSync(GEN_SCRIPT)) die(`${EMOJI.err} generator not found: ${GEN_SCRIPT}`)
+  if (!isGitRepo()) die(`${EMOJI.err} Not inside a git repository.`)
+  if (!hasStagedChanges()) die(`${EMOJI.err} No staged changes.\nTIP: git add -A`)
 
   const commitType = await selectCommitType()
   await handleForbiddenFiles()
 
-  console.log('▶ Running generator:')
-
+  console.log(`${EMOJI.run} Running generator:`)
   console.log(`  ${GEN_SCRIPT}\n`)
 
   const r = runGenerator()
   if (r.status !== 0) {
     die(
-      `ERROR: Failed to run generator (exit=${r.status ?? 'null'})\n\n----- generator output -----\n${r.stdout || r.stderr
+      `${EMOJI.err} Failed to run generator (exit=${r.status ?? 'null'})\n\n----- generator output -----\n${r.stdout || r.stderr
       }\n---------------------------`
     )
   }
@@ -286,28 +318,53 @@ async function main() {
   const block = extractCommitMessage(r.stdout || '')
   if (!block.trim()) {
     die(
-      `ERROR: Could not extract commit message from generator output.\n\n----- generator output -----\n${r.stdout || ''
+      `${EMOJI.err} Could not extract commit message from generator output.\n\n----- generator output -----\n${r.stdout || ''
       }\n---------------------------`
     )
   }
 
   const finalMsg = applyType(commitType, block)
+  const subject = getSubjectLine(finalMsg) || `${commitType}: update`
 
   console.log('\n===== COMMIT MESSAGE (PREVIEW) =====\n')
-
   console.log(finalMsg)
-
   console.log('\n====================================\n')
 
-  console.log('✅ Step 1~3 done. (No commit/push in this step)')
+  const ok = await confirmCommit()
+  if (!ok) {
+    console.log(`${EMOJI.stop} canceled. (no commit)`)
+    return
+  }
+
+  console.log(`${EMOJI.run} git commit ...`)
+  const c = gitCommit(finalMsg)
+
+  if (c.status !== 0) {
+    die(
+      `${EMOJI.err} git commit failed (exit=${c.status ?? 'null'})\n\n----- git output -----\n${c.stdout || c.stderr
+      }\n----------------------`
+    )
+  }
+
+  console.log(`${EMOJI.ok} committed: ${subject}`)
+
+  const status = run('git', ['status', '-sb'])
+  if (status.status === 0) {
+    const line = status.stdout.split(/\r?\n/).find((l) => l.trim().length > 0)
+    if (line) console.log(line.trim())
+  }
 }
 
-main().catch(
-  /** @param {unknown} e @returns {never} */(e) => {
-    const msg =
-      e && typeof e === 'object' && 'stack' in e
-        ? String(/** @type {{stack?: unknown}} */(e).stack)
-        : String(e)
-    die(`ERROR: ${msg}`, 1)
-  }
-)
+/**
+ * @param {unknown} e
+ * @returns {never}
+ */
+function crash(e) {
+  const msg =
+    e && typeof e === 'object' && 'stack' in e
+      ? String(/** @type {{stack?: unknown}} */(e).stack)
+      : String(e)
+  die(`${EMOJI.err} ${msg}`, 1)
+}
+
+main().catch(crash)
