@@ -7,7 +7,7 @@ import eslintPluginSimpleImportSort from 'eslint-plugin-simple-import-sort'
 import eslintPluginUnusedImports from 'eslint-plugin-unused-imports'
 
 export default tseslint.config(
-  { ignores: ['**/node_modules', '**/dist', '**/out'] },
+  { ignores: ['**/node_modules', '**/dist', '**/out', 'scripts/**/*.mjs'] },
 
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,

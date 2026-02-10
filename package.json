@@ -15,13 +15,12 @@
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run typecheck && electron-vite build",
-    "build:win": "bash scripts/build/build-win.sh",
-    "build:mac": "bash scripts/build/build-mac.sh",
-    "release:win": "bash scripts/release/release-win.sh",
+    "build:win": "bash scripts/build-tools/build-win.sh",
+    "build:mac": "bash scripts/build-tools/build-mac.sh",
+    "release:win": "bash scripts/release-tools/release-win.sh",
     "postinstall": "electron-builder install-app-deps",
-    "llm:up": "bash scripts/llm/llm-up.sh",
-    "llm:down": "bash scripts/llm/llm-down.sh",
-    "llm:commit": "node scripts/llm/llm-diff-commit.mjs"
+    "llm": "bash llm/llm.sh",
+    "git:commit": "node scripts/git-tools/git-commit.mjs"
   },
   "build": {
     "appId": "com.shining.downtube",
