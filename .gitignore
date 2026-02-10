@@ -1,12 +1,74 @@
-build/
+# =========================
+# Dependencies
+# =========================
 node_modules/
+
+# =========================
+# Build outputs / artifacts
+# =========================
+build/
 dist/
 out/
+releases/
+dist-electron/
+
+# (Electron/Crash dumps)
+*.dmp
+
+# =========================
+# Local runtime binaries (generated/copied during build)
+# =========================
 bin/ffmpeg.exe
 bin/ffmpeg
-.vscode/
-.DS_Store
-.eslintcache
+
+# =========================
+# Logs / caches
+# =========================
 *.log*
+.eslintcache
+pnpm-debug.log*
+yarn-error.log*
+npm-debug.log*
+
+.cache/
+.nyc_output/
+coverage/
+*.lcov
+*.pid
+
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
 Desktop.ini
-releases/
+Thumbs.db
+
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains
+.idea/
+*.iml
+
+# =========================
+# Env / Secrets (IMPORTANT)
+# =========================
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+secrets.*
+secret.*
+credentials.*
+creds.*
+
+# SSH keys (just in case)
+id_rsa
+id_ed25519
