@@ -20,7 +20,9 @@
     "release:win": "bash scripts/release-tools/release-win.sh",
     "postinstall": "electron-builder install-app-deps",
     "llm": "bash llm/llm.sh",
-    "git:commit": "node scripts/git-tools/git-commit.mjs"
+    "git:commit": "node scripts/git-tools/git-commit.mjs",
+    "git:pr": "bash scripts/git-tools/git-pr.sh",
+    "git:pr:merge": "bash scripts/git-tools/git-pr.sh --merge"
   },
   "build": {
     "appId": "com.shining.downtube",
