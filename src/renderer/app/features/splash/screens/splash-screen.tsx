@@ -28,7 +28,7 @@ export default function SplashScreen(): React.JSX.Element {
   const runInit = React.useCallback(async () => {
     setState(defaultRunningState)
 
-    const result = await window.appApi.initApp()
+    const result = await window.api.initApp()
     setState(result)
 
     if (result.status === 'ready') {
@@ -37,7 +37,7 @@ export default function SplashScreen(): React.JSX.Element {
   }, [navigate])
 
   React.useEffect(() => {
-    const unsubscribe = window.appApi.onInitState((nextState) => {
+    const unsubscribe = window.api.onInitState((nextState) => {
       setState(nextState)
 
       if (nextState.status === 'ready') {
