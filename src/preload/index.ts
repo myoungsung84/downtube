@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
+import type { InitState } from '../types/init.types'
 
 const api = {
   playVideo: (url: string) => ipcRenderer.invoke('download-player', url),
@@ -32,6 +33,14 @@ const api = {
     const handler = (_: unknown, ev: DownloadQueueEvent): void => callback(ev)
     ipcRenderer.on('downloads:event', handler)
     return () => ipcRenderer.removeListener('downloads:event', handler)
+  },
+
+  initApp: (): Promise<InitState> => ipcRenderer.invoke('app:init'),
+
+  onInitState: (callback: (state: InitState) => void) => {
+    const handler = (_: unknown, state: InitState): void => callback(state)
+    ipcRenderer.on('app:init-state', handler)
+    return () => ipcRenderer.removeListener('app:init-state', handler)
   }
 }
 

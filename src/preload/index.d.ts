@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
+import type { InitState } from '@src/types/init.types'
 
 interface AppAPI {
   playVideo: (url: string) => Promise<void>
@@ -31,6 +32,9 @@ interface AppAPI {
   listDownloads: () => Promise<DownloadJob[]>
 
   onDownloadsEvent: (callback: (ev: DownloadQueueEvent) => void) => () => void
+
+  initApp: () => Promise<InitState>
+  onInitState: (callback: (state: InitState) => void) => () => void
 }
 
 declare global {
