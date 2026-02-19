@@ -5,11 +5,15 @@ import path from 'path'
 import url from 'url'
 
 import type { DownloadJob } from '../../types/download.types'
+import type { InitState } from '../../types/init.types'
+import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
 import { downloadInfo } from '../downloads/yt-dlp-utils'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
+let initState: InitState = { status: 'idle' }
+let initInFlight: Promise<InitState> | null = null
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -21,11 +25,49 @@ function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.hand
 }
 
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
+  const broadcastInitState = (state: InitState): void => {
+    initState = state
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:init-state', state)
+    }
+  }
+
   const off = onDownloadsEvent((ev) => {
     mainWindow.webContents.send('downloads:event', ev)
   })
 
   mainWindow.on('closed', () => off())
+
+  safeSetHandler('app:init', async () => {
+    if (initState.status === 'ready') {
+      return initState
+    }
+
+    if (initInFlight) {
+      return initInFlight
+    }
+
+    broadcastInitState({ status: 'running', step: 'setting-up', progress: 0 })
+
+    initInFlight = initializeApp((state) => {
+      broadcastInitState(state)
+    })
+      .then((state) => {
+        broadcastInitState(state)
+        return state
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        const state: InitState = { status: 'error', message }
+        broadcastInitState(state)
+        return state
+      })
+      .finally(() => {
+        initInFlight = null
+      })
+
+    return initInFlight
+  })
 
   safeSetHandler('download-player', async (_, videoUrl: string) => {
     if (playerWindow && !playerWindow.isDestroyed()) {

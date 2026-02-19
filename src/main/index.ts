@@ -2,7 +2,6 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
-import { initializeApp } from './common/initialize-app'
 import { ipcHandler } from './ipc-handlers/ipc'
 
 function createWindow(): void {
@@ -35,17 +34,15 @@ function createWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/splash`)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/splash' })
   }
   ipcHandler(mainWindow)
 }
 
-app.whenReady().then(async () => {
-  await initializeApp()
-
+app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
   app.on('browser-window-created', (_, window) => {

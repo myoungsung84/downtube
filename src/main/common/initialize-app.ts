@@ -6,6 +6,8 @@ import log from 'electron-log'
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import path, { join } from 'path'
 
+import type { InitState } from '../../types/init.types'
+
 const YTDLP_RELEASE_URL = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest'
 
 interface GitHubAsset {
@@ -61,7 +63,11 @@ function assertMacBinary(ytdlpPath: string): void {
   }
 }
 
-async function updateYtDlp(): Promise<void> {
+type InitProgressReporter = (state: Extract<InitState, { status: 'running' }>) => void
+
+async function updateYtDlp(reportProgress?: InitProgressReporter): Promise<void> {
+  reportProgress?.({ status: 'running', step: 'checking-binaries', progress: 30 })
+
   const binDir = getBinDir()
   const ytdlpPath = getYtDlpPath(binDir)
   const localVersion = tryGetLocalYtDlpVersion(ytdlpPath)
@@ -90,6 +96,8 @@ async function updateYtDlp(): Promise<void> {
 
     console.log(`[yt-dlp] Updating: ${localVersion} -> ${latestVersion} (${assetName})`)
 
+    reportProgress?.({ status: 'running', step: 'downloading-binaries', progress: 60 })
+
     const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
 
     ensureDir(binDir)
@@ -99,20 +107,27 @@ async function updateYtDlp(): Promise<void> {
     // Fail fast if we accidentally downloaded a python script on macOS
     assertMacBinary(ytdlpPath)
 
+    reportProgress?.({ status: 'running', step: 'finalizing', progress: 90 })
+
     console.log('[yt-dlp] Update complete')
   } catch (error) {
     console.error('[yt-dlp] Update failed:', error)
   }
 }
 
-export async function initializeApp(): Promise<void> {
+export async function initializeApp(reportProgress?: InitProgressReporter): Promise<InitState> {
   console.log('[init] App initialization started')
+
+  reportProgress?.({ status: 'running', step: 'setting-up', progress: 10 })
 
   // Log file should be set early so we capture the rest
   setupLogdir()
 
   // Update yt-dlp before downloads start
-  await updateYtDlp()
+  await updateYtDlp(reportProgress)
+
+  reportProgress?.({ status: 'running', step: 'starting-services', progress: 100 })
 
   console.log('[init] App initialization completed')
+  return { status: 'ready' }
 }
