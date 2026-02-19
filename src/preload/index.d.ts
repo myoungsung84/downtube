@@ -37,15 +37,9 @@ interface AppAPI {
   onInitState: (callback: (state: InitState) => void) => () => void
 }
 
-interface InitAppAPI {
-  initApp: () => Promise<InitState>
-  onInitState: (callback: (state: InitState) => void) => () => void
-}
-
 declare global {
   interface Window {
     api: AppAPI
-    appApi: InitAppAPI
   }
 }
 

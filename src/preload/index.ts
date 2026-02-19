@@ -46,16 +46,7 @@ const api = {
 
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld('api', api)
-  contextBridge.exposeInMainWorld('appApi', {
-    initApp: api.initApp,
-    onInitState: api.onInitState
-  })
 } else {
   // @ts-ignore -- legacy preload fallback
   window.api = api
-  // @ts-ignore -- legacy preload fallback
-  window.appApi = {
-    initApp: api.initApp,
-    onInitState: api.onInitState
-  }
 }
