@@ -25,7 +25,7 @@ fi
 bash scripts/build-tools/build.sh
 
 # build-win.sh 출력이 로그에 섞여도 마지막 줄만 ZIP 경로로 취급
-ZIP_PATH="$(bash scripts/build-win.sh | tail -n 1)"
+ZIP_PATH="$(bash scripts/build-tools/build-win.sh | tail -n 1)"
 
 # CRLF/공백 방어
 ZIP_PATH="$(printf '%s' "$ZIP_PATH" | tr -d '\r')"
