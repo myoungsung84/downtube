@@ -63,13 +63,12 @@ pnpm lint               # ESLint 검사
 ./build-win.sh
 ```
 
-### macOS (ARM64 & x86)
+### macOS (ARM64)
 
 ```bash
 ./build-mac.sh
-# 또는 특정 아키텍처만 빌드
-pnpm build:mac:arm64    # Apple Silicon
-pnpm build:mac:x64      # Intel Mac
+# Apple Silicon 전용 빌드
+pnpm build:mac:arm64
 ```
 
 ### Linux
