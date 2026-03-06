@@ -19,7 +19,7 @@ command -v powershell.exe >/dev/null 2>&1 || { echo "Error: powershell.exe not f
 rm -rf "$DIST_DIR" "$OUT_DIR"
 mkdir -p "$BIN_DIR" "$RELEASE_DIR"
 
-npm ci
+pnpm install --frozen-lockfile
 
 FFMPEG_SRC="$(node -p "require('ffmpeg-static')")"
 FFMPEG_FILENAME="$(basename "$FFMPEG_SRC")"

@@ -21,7 +21,7 @@ YouTube 영상을 최고화질로 다운로드할 수 있는 Electron 기반 데
 
 ## 필수 요구사항
 
-- **Node.js** 18+ (npm 포함)
+- **Node.js** 18+ (pnpm 사용)
 - **Windows** (64-bit), **macOS**, 또는 **Linux**
 
 ## 시작하기
@@ -29,28 +29,28 @@ YouTube 영상을 최고화질로 다운로드할 수 있는 Electron 기반 데
 ### 1. 프로젝트 설치
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. 개발 모드 실행
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### 3. 타입 체크
 
 ```bash
-npm run typecheck          # 전체 타입 체크
-npm run typecheck:node     # Node 부분만 체크
-npm run typecheck:web      # React 부분만 체크
+pnpm typecheck          # 전체 타입 체크
+pnpm typecheck:node     # Node 부분만 체크
+pnpm typecheck:web      # React 부분만 체크
 ```
 
 ### 4. 코드 포매팅 및 린팅
 
 ```bash
-npm run format             # Prettier 포매팅
-npm run lint               # ESLint 검사
+pnpm format             # Prettier 포매팅
+pnpm lint               # ESLint 검사
 ```
 
 ## 빌드
@@ -68,8 +68,8 @@ npm run lint               # ESLint 검사
 ```bash
 ./build-mac.sh
 # 또는 특정 아키텍처만 빌드
-npm run build:mac:arm64    # Apple Silicon
-npm run build:mac:x64      # Intel Mac
+pnpm build:mac:arm64    # Apple Silicon
+pnpm build:mac:x64      # Intel Mac
 ```
 
 ### Linux
@@ -156,7 +156,6 @@ DownTube는 **MIT License**로 배포됩니다.
 본 애플리케이션은 다음과 같은 외부 오픈소스 도구를 사용하며, 각 도구의 라이선스 조건을 존중합니다:
 
 - **yt-dlp**
-
   - License: Public Domain (Unlicense)
   - Repository: https://github.com/yt-dlp/yt-dlp
 

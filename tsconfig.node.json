@@ -10,10 +10,10 @@
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
     "paths": {
-      "@src/*": ["src/*"],
-      "@libs/*": ["src/libs/*"]
+      "@src/*": ["./src/*"],
+      "@libs/*": ["./src/libs/*"]
     }
   }
-} 
+}

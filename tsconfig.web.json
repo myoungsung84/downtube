@@ -10,11 +10,11 @@
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
     "paths": {
-      "@renderer/*": ["src/renderer/app/*"],
-      "@src/*": ["src/*"],
-      "@libs/*": ["src/libs/*"]
+      "@renderer/*": ["./src/renderer/app/*"],
+      "@src/*": ["./src/*"],
+      "@libs/*": ["./src/libs/*"]
     }
   }
 }

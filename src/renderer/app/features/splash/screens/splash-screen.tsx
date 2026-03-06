@@ -19,8 +19,6 @@ function mapStepToText(step?: string): string {
 }
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600&display=swap');
-
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -64,7 +62,6 @@ export default function SplashScreen(): React.JSX.Element {
         <Stack alignItems="center" spacing={4} sx={{ animation: 'fadeUp 0.5s ease both' }}>
           <Typography
             sx={{
-              fontFamily: "'DM Sans', sans-serif",
               fontWeight: 600,
               fontSize: '1.75rem',
               letterSpacing: '-0.3px',
@@ -78,7 +75,6 @@ export default function SplashScreen(): React.JSX.Element {
             <Stack alignItems="center" spacing={1.5}>
               <Typography
                 sx={{
-                  fontFamily: "'DM Sans', sans-serif",
                   fontSize: '0.9rem',
                   fontWeight: 500,
                   color: '#ff7070'
@@ -88,7 +84,6 @@ export default function SplashScreen(): React.JSX.Element {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: "'DM Sans', sans-serif",
                   fontSize: '0.78rem',
                   fontWeight: 300,
                   color: 'rgba(255,255,255,0.35)',
@@ -103,7 +98,6 @@ export default function SplashScreen(): React.JSX.Element {
                 onClick={() => void runInit()}
                 sx={{
                   mt: 1,
-                  fontFamily: "'DM Sans', sans-serif",
                   fontSize: '0.8rem',
                   fontWeight: 400,
                   textTransform: 'none',
@@ -126,7 +120,6 @@ export default function SplashScreen(): React.JSX.Element {
               <CircularProgress size={28} thickness={3} sx={{ color: 'rgba(255,255,255,0.5)' }} />
               <Typography
                 sx={{
-                  fontFamily: "'DM Sans', sans-serif",
                   fontSize: '0.78rem',
                   fontWeight: 300,
                   color: 'rgba(255,255,255,0.35)',

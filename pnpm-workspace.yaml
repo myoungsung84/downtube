@@ -1,0 +1,6 @@
+ignoredBuiltDependencies: []
+
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - ffmpeg-static

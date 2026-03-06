@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # 1) TypeScript typecheck (node + web)
-npm run typecheck
+pnpm typecheck
 
 # 2) Electron + Vite build
 electron-vite build
