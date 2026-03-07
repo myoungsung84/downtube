@@ -42,7 +42,10 @@ export default function SplashScreen(): React.JSX.Element {
   const isRunning = state.status === 'running'
   const stepText = isRunning ? mapStepToText(state.step) : '잠시만 기다려 주세요'
   const stepDetail = isRunning ? mapStepToDetail(state.step) : ''
-  const progressValue = Math.min(100, Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(state.step)) : 0))
+  const progressValue = Math.min(
+    100,
+    Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(state.step)) : 0)
+  )
   const isDownloading = isRunning && state.step === 'downloading-binaries'
   const logText = isDownloading
     ? '필수 파일이 없으면 자동 다운로드를 진행해요'
