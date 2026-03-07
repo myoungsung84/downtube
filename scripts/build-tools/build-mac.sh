@@ -2,10 +2,9 @@
 set -euo pipefail
 
 DIST_DIR="./dist"
-OUT_DIR="./out"
 BIN_DIR="./bin"
 
-rm -rf "$DIST_DIR" "$OUT_DIR"
+bash "scripts/build-tools/build-clean.sh"
 
 pnpm install --frozen-lockfile
 

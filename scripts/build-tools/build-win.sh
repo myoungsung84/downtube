@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DIST_DIR="./dist"
-OUT_DIR="./out"
 BIN_DIR="./bin"
 RELEASE_DIR="./releases"
-WIN_UNPACKED_DIR="${DIST_DIR}/win-unpacked"
+WIN_UNPACKED_DIR="./dist/win-unpacked"
 
 APP_NAME="$(node -p "require('./package.json').name")"
 APP_VERSION="$(node -p "require('./package.json').version")"
@@ -16,7 +14,7 @@ ZIP_PATH="${RELEASE_DIR}/${ZIP_NAME}"
 
 command -v powershell.exe >/dev/null 2>&1 || { echo "Error: powershell.exe not found." >&2; exit 1; }
 
-rm -rf "$DIST_DIR" "$OUT_DIR"
+bash "scripts/build-tools/build-clean.sh"
 mkdir -p "$BIN_DIR" "$RELEASE_DIR"
 
 pnpm install --frozen-lockfile
