@@ -6,6 +6,15 @@ type SplashBrandProps = {
   isError: boolean
 }
 
+const softPulseStyle = {
+  '@keyframes softPulse': {
+    '0%': { transform: 'scale(1)', opacity: 0.55 },
+    '50%': { transform: 'scale(1.04)', opacity: 0.9 },
+    '100%': { transform: 'scale(1)', opacity: 0.55 }
+  },
+  animation: 'softPulse 2.4s ease-in-out infinite'
+} as const
+
 export function SplashBrand({ isError }: SplashBrandProps): React.JSX.Element {
   return (
     <Stack spacing={1.4} alignItems="center">
@@ -17,7 +26,7 @@ export function SplashBrand({ isError }: SplashBrandProps): React.JSX.Element {
           width: 74,
           height: 74,
           objectFit: 'contain',
-          animation: isError ? 'none' : 'softPulse 2.4s ease-in-out infinite'
+          ...(isError ? {} : softPulseStyle)
         }}
       />
 

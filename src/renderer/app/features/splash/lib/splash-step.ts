@@ -45,7 +45,7 @@ export function mapStepToText(step?: string): string {
 }
 
 export function mapStepToDetail(step?: string): string {
-  return getStepMeta(step)?.detail ?? DEFAULT_STEP_TEXT
+  return getStepMeta(step)?.detail ?? ''
 }
 
 export function mapStepToProgress(step?: string): number {

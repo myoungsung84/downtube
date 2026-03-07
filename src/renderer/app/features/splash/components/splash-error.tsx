@@ -2,7 +2,7 @@ import { Button, Stack, Typography } from '@mui/material'
 import React from 'react'
 
 type SplashErrorProps = {
-  message?: string
+  message: string
   onRetry: () => void
 }
 
