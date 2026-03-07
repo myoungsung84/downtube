@@ -13,6 +13,7 @@
     "moduleResolution": "bundler",
     "paths": {
       "@renderer/*": ["./src/renderer/app/*"],
+      "@assets/*": ["./src/renderer/assets/*"],
       "@src/*": ["./src/*"],
       "@libs/*": ["./src/libs/*"]
     }
