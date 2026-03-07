@@ -1,29 +1,27 @@
-import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import type { InitState } from '@src/types/init.types'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const defaultRunningState: InitState = { status: 'running' }
-
-function mapStepToText(step?: string): string {
-  const labels: Record<string, string> = {
-    'setting-up': '환경을 준비하고 있어요',
-    'checking-binaries': '필수 파일을 확인하고 있어요',
-    'downloading-binaries': '필수 파일을 내려받고 있어요',
-    finalizing: '마무리 작업 중이에요',
-    'starting-services': '서비스를 시작하고 있어요'
-  }
-
-  if (!step) return '잠시만 기다려 주세요'
-  return labels[step] ?? '잠시만 기다려 주세요'
-}
+import { SplashBrand } from '../components/splash-brand'
+import { SplashError } from '../components/splash-error'
+import { SplashRunning } from '../components/splash-running'
+import { mapStepToDetail, mapStepToProgress, mapStepToText } from '../lib/splash-step'
 
 const STYLES = `
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  @keyframes softPulse {
+    0% { transform: scale(1); opacity: 0.55; }
+    50% { transform: scale(1.04); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 0.55; }
+  }
 `
+
+const defaultRunningState: InitState = { status: 'running' }
 
 export default function SplashScreen(): React.JSX.Element {
   const navigate = useNavigate()
@@ -47,7 +45,16 @@ export default function SplashScreen(): React.JSX.Element {
   }, [navigate, runInit])
 
   const isError = state.status === 'error'
-  const stepText = state.status === 'running' ? mapStepToText(state.step) : '잠시만 기다려 주세요'
+  const isRunning = state.status === 'running'
+  const stepText = isRunning ? mapStepToText(state.step) : '잠시만 기다려 주세요'
+  const stepDetail = isRunning ? mapStepToDetail(state.step) : ''
+  const progressValue = isRunning ? mapStepToProgress(state.step) : 0
+  const isDownloading = isRunning && state.step === 'downloading-binaries'
+  const logText = isDownloading
+    ? '필수 파일이 없으면 자동 다운로드를 진행해요'
+    : isRunning
+      ? `${stepText} · 안정적으로 시작하는 중이에요`
+      : '문제가 해결되면 다시 시도해 주세요'
 
   return (
     <>
@@ -57,78 +64,32 @@ export default function SplashScreen(): React.JSX.Element {
         alignItems="center"
         justifyContent="center"
         height="100vh"
-        sx={{ background: '#0f1117' }}
+        sx={{
+          background:
+            'radial-gradient(circle at top, rgba(82, 109, 255, 0.16), transparent 32%), linear-gradient(180deg, #0d1018 0%, #0a0c12 100%)'
+        }}
       >
-        <Stack alignItems="center" spacing={4} sx={{ animation: 'fadeUp 0.5s ease both' }}>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: '1.75rem',
-              letterSpacing: '-0.3px',
-              color: '#fff'
-            }}
-          >
-            DownTube
-          </Typography>
+        <Stack
+          spacing={3}
+          alignItems="center"
+          sx={{
+            width: '100%',
+            maxWidth: 420,
+            px: 3,
+            animation: 'fadeUp 0.5s ease both'
+          }}
+        >
+          <SplashBrand isError={isError} />
 
           {isError ? (
-            <Stack alignItems="center" spacing={1.5}>
-              <Typography
-                sx={{
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: '#ff7070'
-                }}
-              >
-                시작하지 못했어요
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.78rem',
-                  fontWeight: 300,
-                  color: 'rgba(255,255,255,0.35)',
-                  textAlign: 'center',
-                  maxWidth: 300,
-                  lineHeight: 1.7
-                }}
-              >
-                {state.message}
-              </Typography>
-              <Button
-                onClick={() => void runInit()}
-                sx={{
-                  mt: 1,
-                  fontSize: '0.8rem',
-                  fontWeight: 400,
-                  textTransform: 'none',
-                  color: 'rgba(255,255,255,0.6)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '100px',
-                  px: 3,
-                  py: 0.8,
-                  '&:hover': {
-                    background: 'rgba(255,255,255,0.06)',
-                    borderColor: 'rgba(255,255,255,0.28)'
-                  }
-                }}
-              >
-                다시 시도하기
-              </Button>
-            </Stack>
+            <SplashError message={state.message} onRetry={() => void runInit()} />
           ) : (
-            <Stack alignItems="center" spacing={2.5}>
-              <CircularProgress size={28} thickness={3} sx={{ color: 'rgba(255,255,255,0.5)' }} />
-              <Typography
-                sx={{
-                  fontSize: '0.78rem',
-                  fontWeight: 300,
-                  color: 'rgba(255,255,255,0.35)',
-                  letterSpacing: '0.03em'
-                }}
-              >
-                {stepText}
-              </Typography>
-            </Stack>
+            <SplashRunning
+              stepText={stepText}
+              stepDetail={stepDetail}
+              progressValue={progressValue}
+              logText={logText}
+            />
           )}
         </Stack>
       </Box>
