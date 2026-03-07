@@ -13,12 +13,6 @@ const STYLES = `
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
-  @keyframes softPulse {
-    0% { transform: scale(1); opacity: 0.55; }
-    50% { transform: scale(1.04); opacity: 0.9; }
-    100% { transform: scale(1); opacity: 0.55; }
-  }
 `
 
 const defaultRunningState: InitState = { status: 'running' }
@@ -48,7 +42,7 @@ export default function SplashScreen(): React.JSX.Element {
   const isRunning = state.status === 'running'
   const stepText = isRunning ? mapStepToText(state.step) : '잠시만 기다려 주세요'
   const stepDetail = isRunning ? mapStepToDetail(state.step) : ''
-  const progressValue = isRunning ? mapStepToProgress(state.step) : 0
+  const progressValue = Math.min(100, Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(state.step)) : 0))
   const isDownloading = isRunning && state.step === 'downloading-binaries'
   const logText = isDownloading
     ? '필수 파일이 없으면 자동 다운로드를 진행해요'
