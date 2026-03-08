@@ -4,7 +4,7 @@ import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { InitState } from '@src/types/init.types'
 
 interface AppAPI {
-  playVideo: (url: string) => Promise<void>
+  openPlayer: (payload: { id: string }) => Promise<{ success: boolean; message?: string }>
   openDownloadDir: () => Promise<void>
 
   downloadsStart: () => Promise<{ success: boolean; message?: string }>

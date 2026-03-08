@@ -69,7 +69,20 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     return initInFlight
   })
 
-  safeSetHandler('download-player', async (_, videoUrl: string) => {
+  safeSetHandler('download-player', async (_, payload: { id: string }) => {
+    if (!payload?.id) return { success: false, message: 'Job not found' }
+
+    const job = downloadsQueue.getJob(payload.id)
+    if (!job) return { success: false, message: 'Job not found' }
+    if (job.status !== 'completed' || job.type !== 'video') {
+      return { success: false, message: 'Only completed video can be played' }
+    }
+
+    const filePath = job.finalFilePath ?? job.outputFile
+    if (!filePath) return { success: false, message: 'Output file path not found' }
+    if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
+    const mediaSrc = `downtube-media://media?path=${encodeURIComponent(filePath)}`
+
     if (playerWindow && !playerWindow.isDestroyed()) {
       playerWindow.close()
     }
@@ -87,16 +100,22 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
     const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
     const playerUrl = !app.isPackaged
-      ? `http://localhost:${devPort}/#/player?url=${encodeURIComponent(videoUrl)}`
+      ? `http://localhost:${devPort}/#/player?src=${encodeURIComponent(mediaSrc)}`
       : url.format({
           pathname: path.join(__dirname, '../renderer/index.html'),
           protocol: 'file:',
           slashes: true,
-          hash: `/player?url=${encodeURIComponent(videoUrl)}`
+          hash: `/player?src=${encodeURIComponent(mediaSrc)}`
         })
 
     await playerWindow.loadURL(playerUrl)
+
+    if (!app.isPackaged) {
+      playerWindow.webContents.openDevTools({ mode: 'detach' })
+    }
+
     playerWindow.show()
+    return { success: true }
   })
 
   safeSetHandler('download-dir-open', async () => {

@@ -29,6 +29,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     null
   )
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const jobsRef = useRef<DownloadJob[]>([])
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
   const hasQueued = queuedCount > 0
@@ -46,6 +47,10 @@ export default function DownloadsScreen(): React.JSX.Element {
 
   const canStart = hasQueued && (!queueRunning || queuePaused)
   const canPause = queueRunning && !queuePaused
+
+  useEffect(() => {
+    jobsRef.current = jobs
+  }, [jobs])
 
   const handleDownloadInfo = async (inputUrl: string): Promise<void> => {
     const url = inputUrl.trim()
@@ -126,6 +131,14 @@ export default function DownloadsScreen(): React.JSX.Element {
     showToast('목록에서 삭제했어요', 'info')
   }
 
+  const handlePlay = async (job: DownloadJob): Promise<void> => {
+    const res = await window.api.openPlayer({ id: job.id })
+    if (!res.success) {
+      console.error('Failed to open player:', res.message)
+      showToast(res.message ?? '재생할 수 없는 항목입니다', 'error')
+    }
+  }
+
   const handleStartQueue = async (): Promise<void> => {
     await window.api.downloadsStart()
     showToast('다운로드를 시작합니다! 🎬', 'success')
@@ -153,20 +166,18 @@ export default function DownloadsScreen(): React.JSX.Element {
       }
 
       if (ev.type === 'job-updated') {
-        setJobs((prev) => {
-          const updated = sortJobs(prev.map((j) => (j.id !== ev.job.id ? j : ev.job)))
+        const oldJob = jobsRef.current.find((j) => j.id === ev.job.id)
 
-          const oldJob = prev.find((j) => j.id === ev.job.id)
-          if (oldJob?.status !== 'completed' && ev.job.status === 'completed') {
-            showToast(`✨ "${inferTitle(ev.job)}" 다운로드 완료!`, 'success')
-          }
-          if (oldJob?.status !== 'failed' && ev.job.status === 'failed') {
-            const errorInfo = getErrorMessage(ev.job.error)
-            showToast(`❌ ${errorInfo.title}`, 'error')
-          }
+        setJobs((prev) => sortJobs(prev.map((j) => (j.id !== ev.job.id ? j : ev.job))))
 
-          return updated
-        })
+        if (oldJob?.status !== 'completed' && ev.job.status === 'completed') {
+          showToast(`✨ "${inferTitle(ev.job)}" 다운로드 완료!`, 'success')
+        }
+        if (oldJob?.status !== 'failed' && ev.job.status === 'failed') {
+          const errorInfo = getErrorMessage(ev.job.error)
+          showToast(`❌ ${errorInfo.title}`, 'error')
+        }
+
         return
       }
 
@@ -290,6 +301,7 @@ export default function DownloadsScreen(): React.JSX.Element {
                   onStop={handleStop}
                   onRetry={handleRetry}
                   onDelete={handleDelete}
+                  onPlay={handlePlay}
                 />
               ))}
 
