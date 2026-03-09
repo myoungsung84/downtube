@@ -88,8 +88,10 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
 
     playerWindow = new BrowserWindow({
-      width: 800,
-      height: 450,
+      width: 1280,
+      height: 820,
+      minWidth: 980,
+      minHeight: 640,
       show: false,
       autoHideMenuBar: true,
       webPreferences: {

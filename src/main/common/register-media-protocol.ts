@@ -1,7 +1,7 @@
-import { app, net, protocol } from 'electron'
+import { app, protocol } from 'electron'
 import fs from 'fs'
 import { extname } from 'path'
-import { pathToFileURL } from 'url'
+import { Readable } from 'stream'
 
 const MEDIA_SCHEME = 'downtube-media'
 
@@ -39,6 +39,58 @@ function resolveMediaPath(requestUrl: string): string | null {
   }
 }
 
+type ParsedRange = { start: number; end: number }
+type ParseRangeResult = ParsedRange | null | 'invalid'
+
+function parseRangeHeader(rangeHeader: string | null, fileSize: number): ParseRangeResult {
+  if (!rangeHeader) return null
+
+  const normalized = rangeHeader.trim()
+  if (!normalized.startsWith('bytes=')) return 'invalid'
+
+  const rangeValue = normalized.slice('bytes='.length).trim()
+  if (!rangeValue || rangeValue.includes(',')) return 'invalid'
+
+  const [rawStart, rawEnd] = rangeValue.split('-', 2)
+  if (rawStart === undefined || rawEnd === undefined) return 'invalid'
+
+  if (rawStart === '') {
+    const suffixLength = Number(rawEnd)
+    if (!Number.isInteger(suffixLength) || suffixLength <= 0) return 'invalid'
+
+    const start = Math.max(fileSize - suffixLength, 0)
+    const end = fileSize - 1
+    if (start > end || start >= fileSize) return 'invalid'
+    return { start, end }
+  }
+
+  const start = Number(rawStart)
+  if (!Number.isInteger(start) || start < 0) return 'invalid'
+  if (start >= fileSize) return 'invalid'
+
+  if (rawEnd === '') {
+    const end = fileSize - 1
+    if (start > end) return 'invalid'
+    return { start, end }
+  }
+
+  const requestedEnd = Number(rawEnd)
+  if (!Number.isInteger(requestedEnd) || requestedEnd < 0) return 'invalid'
+
+  const end = Math.min(requestedEnd, fileSize - 1)
+  if (start > end) return 'invalid'
+
+  return { start, end }
+}
+
+function createFileBodyStream(mediaPath: string, start?: number, end?: number): BodyInit {
+  const stream = fs.createReadStream(mediaPath, {
+    start,
+    end
+  })
+  return Readable.toWeb(stream) as unknown as BodyInit
+}
+
 export function registerMediaProtocol(): void {
   protocol.handle(MEDIA_SCHEME, async (request) => {
     const mediaPath = resolveMediaPath(request.url)
@@ -54,19 +106,81 @@ export function registerMediaProtocol(): void {
       return new Response('Media file not found', { status: 404 })
     }
 
-    const fileUrl = pathToFileURL(mediaPath).toString()
-    const upstream = await net.fetch(fileUrl, {
-      method: request.method,
-      headers: request.headers
+    const { size: fileSize } = await fs.promises.stat(mediaPath)
+    const mimeType = guessMimeType(mediaPath)
+    const incomingRange = request.headers.get('range')
+    const parsedRange = parseRangeHeader(incomingRange, fileSize)
+
+    if (parsedRange === 'invalid') {
+      if (!app.isPackaged) {
+        console.log('[media] response', {
+          requestUrl: request.url,
+          mediaPath,
+          range: incomingRange,
+          resolvedRange: null,
+          status: 416
+        })
+      }
+
+      return new Response('Range Not Satisfiable', {
+        status: 416,
+        headers: {
+          'Accept-Ranges': 'bytes',
+          'Content-Range': `bytes */${fileSize}`,
+          'Content-Type': 'text/plain; charset=utf-8'
+        }
+      })
+    }
+
+    if (!parsedRange) {
+      if (!app.isPackaged) {
+        console.log('[media] response', {
+          requestUrl: request.url,
+          mediaPath,
+          range: incomingRange,
+          resolvedRange: null,
+          status: 200
+        })
+      }
+
+      const headers = new Headers({
+        'Accept-Ranges': 'bytes',
+        'Content-Type': mimeType,
+        'Content-Length': String(fileSize)
+      })
+
+      return new Response(request.method === 'HEAD' ? null : createFileBodyStream(mediaPath), {
+        status: 200,
+        headers
+      })
+    }
+
+    const { start, end } = parsedRange
+    const contentLength = end - start + 1
+
+    if (!app.isPackaged) {
+      console.log('[media] response', {
+        requestUrl: request.url,
+        mediaPath,
+        range: incomingRange,
+        resolvedRange: { start, end },
+        status: 206
+      })
+    }
+
+    const headers = new Headers({
+      'Accept-Ranges': 'bytes',
+      'Content-Type': mimeType,
+      'Content-Length': String(contentLength),
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`
     })
 
-    const headers = new Headers(upstream.headers)
-    headers.set('content-type', guessMimeType(mediaPath))
-
-    return new Response(upstream.body, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers
-    })
+    return new Response(
+      request.method === 'HEAD' ? null : createFileBodyStream(mediaPath, start, end),
+      {
+        status: 206,
+        headers
+      }
+    )
   })
 }
