@@ -26,6 +26,24 @@ export default function PlayerAudioVisualizerOverlay({
   const hueOffsetRef = useRef<number>(0)
   const smoothedAmplitudeRef = useRef<number>(0)
   const melBinsRef = useRef<number[] | null>(null)
+  const idleHeightsRef = useRef<Float32Array | null>(null)
+  const idleTimeRef = useRef<number>(0)
+  const hueSpeedRef = useRef<number>(0.12)
+  const canvasOpacityRef = useRef<number>(0)
+  // 비네트 펄스
+  // 파티클 시스템
+  const particlesRef = useRef<
+    Array<{
+      x: number
+      y: number
+      vx: number
+      vy: number
+      life: number // 1 → 0
+      maxLife: number
+      size: number
+      hue: number
+    }>
+  >([])
 
   const stopDrawLoop = useCallback((): void => {
     if (animationFrameRef.current !== null) {
@@ -72,6 +90,7 @@ export default function PlayerAudioVisualizerOverlay({
     if (!visible) {
       stopDrawLoop()
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+      canvasOpacityRef.current = 0
       return
     }
 
@@ -93,6 +112,7 @@ export default function PlayerAudioVisualizerOverlay({
       dataArrayRef.current = new Uint8Array(new ArrayBuffer(binCount))
       peaksRef.current = new Float32Array(120)
       peakHoldRef.current = new Float32Array(120)
+      idleHeightsRef.current = new Float32Array(120)
 
       const BAR_COUNT_INIT = 120
       const sampleRateInit = audioContext.sampleRate
@@ -137,7 +157,6 @@ export default function PlayerAudioVisualizerOverlay({
       ctx.clearRect(0, 0, w, h)
 
       analyser.getByteFrequencyData(dataArray)
-      hueOffsetRef.current = (hueOffsetRef.current + 0.12) % 360
 
       const dpr = window.devicePixelRatio || 1
       const DRAW_W = w
@@ -151,10 +170,14 @@ export default function PlayerAudioVisualizerOverlay({
         centerY = Math.round(seekCenterY * dpr)
       }
 
-      const GAP = 0
+      if (!isFinite(centerY) || centerY <= 0) {
+        animationFrameRef.current = requestAnimationFrame(draw)
+        return
+      }
 
-      const MAX_H = Math.floor(h * 0.46)
-      const MAX_REFLECT = Math.floor(h * 0.18)
+      const GAP = 0
+      const MAX_H = Math.floor(h * 0.32)
+      const MAX_REFLECT = Math.floor(h * 0.13)
       const RADIUS = Math.max(1, Math.floor((DRAW_W - GAP * (BAR_COUNT - 1)) / BAR_COUNT / 2))
 
       let totalEnergy = 0
@@ -183,12 +206,31 @@ export default function PlayerAudioVisualizerOverlay({
         smoothedAmp / Math.max(MIN_AMPLITUDE_THRESHOLD, avgAmplitude * 0.5 + 0.01)
       )
 
-      const getShapedVisualizerValue = (raw: number, scale: number): number => {
+      const targetHueSpeed = 0.06 + smoothedAmp * 1.4
+      hueSpeedRef.current = hueSpeedRef.current * 0.93 + targetHueSpeed * 0.07
+      hueOffsetRef.current = (hueOffsetRef.current + hueSpeedRef.current) % 360
+
+      canvasOpacityRef.current = Math.min(0.6, canvasOpacityRef.current + 0.04)
+      ctx.globalAlpha = canvasOpacityRef.current
+
+      // 피라미드 스케일: 가운데=1.0, 양 끝=0.25
+      const getPyramidScale = (i: number): number => {
+        const t = i / (BAR_COUNT - 1)
+        const centered = 1 - Math.abs(t - 0.5) * 2
+        return 0.25 + centered * 0.75
+      }
+
+      const getShapedVisualizerValue = (
+        raw: number,
+        scale: number,
+        pyramidScale: number
+      ): number => {
         const normalizedRaw = Math.max(0, Math.min(1, raw))
         const curved = Math.pow(normalizedRaw, 0.9)
         const boosted = curved + Math.max(0, curved - 0.3) * 0.42
-        return Math.min(1, boosted) * scale
+        return Math.min(1, boosted) * scale * pyramidScale
       }
+
       const getBarGeometry = (i: number): { x: number; barW: number } => {
         const x = Math.round((i / BAR_COUNT) * DRAW_W)
         const nextX = Math.round(((i + 1) / BAR_COUNT) * DRAW_W)
@@ -198,61 +240,60 @@ export default function PlayerAudioVisualizerOverlay({
 
       if (!melBinsRef.current) return
       const melBins = melBinsRef.current
-      const baseReflectH = Math.max(20, Math.floor(MAX_REFLECT * 0.68))
+
+      const half = Math.floor(BAR_COUNT / 2)
+      const mirroredBins: number[] = new Array(BAR_COUNT)
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const t =
+          i < half ? (half - 1 - i) / Math.max(1, half - 1) : (i - half) / Math.max(1, half - 1)
+        const linear = Math.max(0, Math.min(1, t))
+        const curved = linear * 0.55 + Math.sqrt(linear) * 0.45
+        const melIdx = Math.round(curved * (melBins.length - 1))
+        mirroredBins[i] = melBins[Math.max(0, Math.min(melBins.length - 1, melIdx))]
+      }
+
+      const readBinAvg = (i: number): number => {
+        const binA = mirroredBins[Math.max(0, i - 1)]
+        const binB = mirroredBins[i]
+        const binC = mirroredBins[Math.min(BAR_COUNT - 1, i + 1)]
+        const lo = Math.min(binA, binB, binC)
+        const hi = Math.max(binA, binB, binC)
+        let sum = 0
+        let count = 0
+        for (let b = lo; b <= hi; b++) {
+          sum += dataArray[Math.min(b, dataArray.length - 1)]
+          count++
+        }
+        return count > 0 ? sum / count / 255 : 0
+      }
+
       const baseBarH = Math.max(5, Math.floor(MAX_H * 0.04))
 
+      // 반사 영역
       ctx.save()
       ctx.beginPath()
       ctx.rect(0, centerY, DRAW_W, Math.max(MAX_REFLECT, h - centerY))
       ctx.clip()
 
       for (let i = 0; i < BAR_COUNT; i++) {
+        const rawVal = readBinAvg(i)
+        const pyramidScale = getPyramidScale(i)
+        const val = getShapedVisualizerValue(rawVal, fadeScale, pyramidScale)
+        const visibleVal = hasAudibleEnergy ? Math.max(val, amplitudeFloor * pyramidScale) : val
+
         const { x, barW } = getBarGeometry(i)
         const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
-        const baseGradDown = ctx.createLinearGradient(x, centerY, x, centerY + baseReflectH)
-        baseGradDown.addColorStop(0, `hsla(${hue},46%,64%,0.22)`)
-        baseGradDown.addColorStop(0.24, `hsla(${hue},42%,58%,0.16)`)
-        baseGradDown.addColorStop(0.58, `hsla(${hue},36%,50%,0.08)`)
-        baseGradDown.addColorStop(1, 'rgba(0,0,0,0)')
-
-        ctx.fillStyle = baseGradDown
-        ctx.beginPath()
-        if (ctx.roundRect) {
-          ctx.roundRect(x, centerY, barW, baseReflectH, [0, 0, RADIUS, RADIUS])
-        } else {
-          ctx.rect(x, centerY, barW, baseReflectH)
-        }
-        ctx.fill()
-      }
-
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const binIdx = melBins[i]
-        const binPrev = i > 0 ? melBins[i - 1] : binIdx
-        const binNext = i < BAR_COUNT - 1 ? melBins[i + 1] : binIdx
-
-        let sum = 0
-        let count = 0
-        for (let b = binPrev; b <= binNext; b++) {
-          sum += dataArray[Math.min(b, dataArray.length - 1)]
-          count++
-        }
-        const rawVal = sum / count / 255
-        const val = getShapedVisualizerValue(rawVal, fadeScale)
-        const visibleVal = hasAudibleEnergy ? Math.max(val, amplitudeFloor) : val
-
-        if (visibleVal < 0.005) continue
-
-        const { x, barW } = getBarGeometry(i)
         const barH = Math.max(2, Math.floor(MAX_H * visibleVal))
-        const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
-        const reflectH = Math.min(barH * 1.08, MAX_REFLECT)
+        const reflectH = Math.min(Math.floor(barH * 0.6), MAX_REFLECT)
 
+        if (reflectH < 2) continue
+
+        const aTop = 0.22 + visibleVal * 0.14
         const gradDown = ctx.createLinearGradient(x, centerY, x, centerY + reflectH)
-        gradDown.addColorStop(0, `hsla(${hue},74%,66%,${0.28 + visibleVal * 0.18})`)
-        gradDown.addColorStop(0.22, `hsla(${hue},70%,60%,${0.18 + visibleVal * 0.12})`)
-        gradDown.addColorStop(0.56, `hsla(${hue},64%,54%,${0.08 + visibleVal * 0.06})`)
+        gradDown.addColorStop(0, `hsla(${hue},72%,68%,${aTop})`)
+        gradDown.addColorStop(0.35, `hsla(${hue},68%,62%,${aTop * 0.55})`)
+        gradDown.addColorStop(0.7, `hsla(${hue},62%,55%,${aTop * 0.2})`)
         gradDown.addColorStop(1, 'rgba(0,0,0,0)')
-
         ctx.fillStyle = gradDown
         ctx.beginPath()
         if (ctx.roundRect) {
@@ -261,10 +302,19 @@ export default function PlayerAudioVisualizerOverlay({
           ctx.rect(x, centerY, barW, reflectH)
         }
         ctx.fill()
+
+        if (visibleVal > 0.2 && barW >= 3) {
+          const edgeGrad = ctx.createLinearGradient(x, centerY, x, centerY + reflectH * 0.6)
+          edgeGrad.addColorStop(0, `hsla(${hue},85%,88%,${visibleVal * 0.28})`)
+          edgeGrad.addColorStop(1, 'rgba(255,255,255,0)')
+          ctx.fillStyle = edgeGrad
+          ctx.fillRect(x, centerY, 1, Math.floor(reflectH * 0.6))
+        }
       }
 
       ctx.restore()
 
+      // 베이스 바
       for (let i = 0; i < BAR_COUNT; i++) {
         const { x, barW } = getBarGeometry(i)
         const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
@@ -272,7 +322,6 @@ export default function PlayerAudioVisualizerOverlay({
         baseMainGrad.addColorStop(0, `hsla(${hue},44%,66%,0.11)`)
         baseMainGrad.addColorStop(0.6, `hsla(${(hue + 20) % 360},40%,54%,0.08)`)
         baseMainGrad.addColorStop(1, `hsla(${(hue + 35) % 360},36%,46%,0.06)`)
-
         ctx.fillStyle = baseMainGrad
         ctx.beginPath()
         if (ctx.roundRect) {
@@ -283,35 +332,44 @@ export default function PlayerAudioVisualizerOverlay({
         ctx.fill()
       }
 
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const binIdx = melBins[i]
-        const binPrev = i > 0 ? melBins[i - 1] : binIdx
-        const binNext = i < BAR_COUNT - 1 ? melBins[i + 1] : binIdx
+      // 메인 바 + idle
+      idleTimeRef.current += 0.025
+      const idleHeights = idleHeightsRef.current
 
-        let sum = 0
-        let count = 0
-        for (let b = binPrev; b <= binNext; b++) {
-          sum += dataArray[Math.min(b, dataArray.length - 1)]
-          count++
-        }
-        const val = getShapedVisualizerValue(sum / count / 255, fadeScale)
-        const visibleVal = hasAudibleEnergy ? Math.max(val, amplitudeFloor) : val
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const rawVal = readBinAvg(i)
+        const pyramidScale = getPyramidScale(i)
+        const val = getShapedVisualizerValue(rawVal, fadeScale, pyramidScale)
+        const visibleVal = hasAudibleEnergy ? Math.max(val, amplitudeFloor * pyramidScale) : val
 
         if (!hasAudibleEnergy && visibleVal < 0.005) {
           peaks[i] = 0
           peakHold[i] = 0
 
-          const { x, barW } = getBarGeometry(i)
-          const idleY = centerY - 2
-          ctx.fillStyle = 'rgba(255,255,255,0.12)'
-          ctx.beginPath()
-          if (ctx.roundRect) {
-            ctx.roundRect(x, idleY, barW, 1.5, 1)
-          } else {
-            ctx.rect(x, idleY, barW, 1.5)
+          if (idleHeights) {
+            const wave1 = Math.sin(idleTimeRef.current + i * 0.18) * 0.5 + 0.5
+            const wave2 = Math.sin(idleTimeRef.current * 0.7 + i * 0.31 + 1.2) * 0.5 + 0.5
+            const waveVal = wave1 * 0.65 + wave2 * 0.35
+            const targetH = Math.max(2, Math.floor(MAX_H * 0.025 * waveVal * pyramidScale + 2))
+            idleHeights[i] = idleHeights[i] * 0.88 + targetH * 0.12
+            const iH = Math.max(1, Math.round(idleHeights[i]))
+
+            const { x, barW } = getBarGeometry(i)
+            const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
+            ctx.fillStyle = `hsla(${hue},50%,70%,${0.1 + waveVal * 0.12})`
+            ctx.beginPath()
+            if (ctx.roundRect) {
+              ctx.roundRect(x, centerY - iH, barW, iH, [RADIUS, RADIUS, 0, 0])
+            } else {
+              ctx.rect(x, centerY - iH, barW, iH)
+            }
+            ctx.fill()
           }
-          ctx.fill()
           continue
+        }
+
+        if (idleHeights) {
+          idleHeights[i] *= 0.7
         }
 
         const { x, barW } = getBarGeometry(i)
@@ -321,23 +379,23 @@ export default function PlayerAudioVisualizerOverlay({
         const hueTop = hue
         const hueMid = (hue + 20) % 360
         const hueBot = (hue + 40) % 360
+        const hueQ = (hue + 30) % 360
 
         const sat = 65 + visibleVal * 20
         const litTop = 78 + visibleVal * 14
         const litMid = 58 + visibleVal * 10
         const litBot = 40 + visibleVal * 8
-
-        const aTop = 0.52 + visibleVal * 0.28
-        const aMid = 0.38 + visibleVal * 0.22
+        const aTop = 0.36 + visibleVal * 0.18
+        const aMid = 0.26 + visibleVal * 0.14
         const aBot = 0.15 + visibleVal * 0.14
 
         if (barH > peaks[i]) {
           peaks[i] = barH
-          peakHold[i] = 32
+          peakHold[i] = 48
         } else if (peakHold[i] > 0) {
           peakHold[i] -= 1
         } else {
-          peaks[i] = Math.max(0, peaks[i] * 0.92)
+          peaks[i] = Math.max(0, peaks[i] * 0.96)
         }
 
         if (visibleVal > 0.15) {
@@ -349,13 +407,11 @@ export default function PlayerAudioVisualizerOverlay({
           ctx.restore()
         }
 
-        const hueQ = (hue + 30) % 360
         const gradUp = ctx.createLinearGradient(x, centerY - barH, x, centerY)
         gradUp.addColorStop(0, `hsla(${hueTop},${sat}%,${litTop}%,${aTop})`)
         gradUp.addColorStop(0.25, `hsla(${hueQ},${sat - 5}%,${litTop - 6}%,${aTop * 0.88})`)
         gradUp.addColorStop(0.55, `hsla(${hueMid},${sat}%,${litMid}%,${aMid})`)
         gradUp.addColorStop(1, `hsla(${hueBot},${sat}%,${litBot}%,${aBot})`)
-
         ctx.fillStyle = gradUp
         ctx.beginPath()
         if (ctx.roundRect) {
@@ -393,7 +449,7 @@ export default function PlayerAudioVisualizerOverlay({
         const peakH = Math.floor(peaks[i])
         if (peakH > 4) {
           const isHolding = peakHold[i] > 0
-          const peakAlpha = isHolding ? 0.98 : 0.46
+          const peakAlpha = isHolding ? 0.98 : 0.46 * Math.min(1, peaks[i] / Math.max(1, peakH))
 
           if (isHolding) {
             ctx.save()
@@ -414,6 +470,61 @@ export default function PlayerAudioVisualizerOverlay({
         }
       }
 
+      // 파티클 업데이트 & 생성
+      const particles = particlesRef.current
+
+      // 각 바의 꼭대기에서 에너지가 높을 때 파티클 생성
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const rawVal = readBinAvg(i)
+        const pyramidScale = getPyramidScale(i)
+        const val = getShapedVisualizerValue(rawVal, fadeScale, pyramidScale)
+        const visibleVal = hasAudibleEnergy ? Math.max(val, amplitudeFloor * pyramidScale) : val
+
+        // 에너지가 충분하고 확률적으로 파티클 생성 (너무 많으면 지저분함)
+        if (visibleVal > 0.15 && Math.random() < visibleVal * 0.25) {
+          const { x, barW } = getBarGeometry(i)
+          const barH = Math.max(2, Math.floor(MAX_H * visibleVal))
+          const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
+          particles.push({
+            x: x + barW / 2 + (Math.random() - 0.5) * barW,
+            y: centerY - barH,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: -(Math.random() * 2.0 + 0.8), // 위로 튀어오름
+            life: 1,
+            maxLife: 0.6 + Math.random() * 0.6,
+            size: Math.random() * 2.0 + 0.8,
+            hue
+          })
+        }
+      }
+
+      // 파티클 이동 & 그리기 (최대 200개 유지)
+      if (particles.length > 200) particles.splice(0, particles.length - 200)
+
+      for (let p = particles.length - 1; p >= 0; p--) {
+        const pt = particles[p]
+        pt.x += pt.vx
+        pt.y += pt.vy
+        pt.vy += 0.06 // 중력
+        pt.vx *= 0.98 // 수평 감속
+        pt.life -= 1 / (60 * pt.maxLife) // 60fps 기준 서서히 소멸
+
+        if (pt.life <= 0) {
+          particles.splice(p, 1)
+          continue
+        }
+
+        const alpha = pt.life * pt.life * 0.85 // 이차 감쇠로 자연스럽게
+        ctx.save()
+        ctx.globalAlpha = canvasOpacityRef.current * alpha
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2)
+        ctx.fillStyle = `hsla(${pt.hue},80%,85%,1)`
+        ctx.fill()
+        ctx.restore()
+      }
+
+      ctx.globalAlpha = 1
       animationFrameRef.current = requestAnimationFrame(draw)
     }
 

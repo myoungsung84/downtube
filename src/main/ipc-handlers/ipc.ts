@@ -82,7 +82,9 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     const filePath = job.finalFilePath ?? job.outputFile
     if (!filePath) return { success: false, message: 'Output file path not found' }
     if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
-    const mediaSrc = `downtube-media://media?path=${encodeURIComponent(filePath)}`
+    const mediaUrl = new URL('downtube-media://media')
+    mediaUrl.searchParams.set('path', filePath)
+    const mediaSrc = mediaUrl.toString()
 
     if (playerWindow && !playerWindow.isDestroyed()) {
       playerWindow.close()
@@ -102,13 +104,14 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     })
 
     const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
+    const playerHash = `/player?${new URLSearchParams({ src: mediaSrc }).toString()}`
     const playerUrl = !app.isPackaged
-      ? `http://localhost:${devPort}/#/player?src=${encodeURIComponent(mediaSrc)}`
+      ? `http://localhost:${devPort}/#${playerHash}`
       : url.format({
           pathname: path.join(__dirname, '../renderer/index.html'),
           protocol: 'file:',
           slashes: true,
-          hash: `/player?src=${encodeURIComponent(mediaSrc)}`
+          hash: playerHash
         })
 
     await playerWindow.loadURL(playerUrl)

@@ -37,8 +37,7 @@ function resolveMediaPath(requestUrl: string): string | null {
     const allowedDir = resolve(app.getPath('downloads'))
     const normalizedResolved =
       process.platform === 'win32' ? resolvedPath.toLowerCase() : resolvedPath
-    const normalizedAllowed =
-      process.platform === 'win32' ? allowedDir.toLowerCase() : allowedDir
+    const normalizedAllowed = process.platform === 'win32' ? allowedDir.toLowerCase() : allowedDir
     if (!normalizedResolved.startsWith(normalizedAllowed + sep)) {
       return null
     }
