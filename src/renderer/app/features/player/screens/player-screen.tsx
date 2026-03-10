@@ -150,14 +150,6 @@ export default function PlayerScreen(): React.JSX.Element {
     }
   }, [videoSrc])
 
-  const folderPath = useMemo(() => {
-    if (!mediaPath) return ''
-    const normalized = mediaPath.replace(/\\/g, '/')
-    const lastSlashIndex = normalized.lastIndexOf('/')
-    if (lastSlashIndex <= 0) return normalized
-    return normalized.slice(0, lastSlashIndex)
-  }, [mediaPath])
-
   const fileExtension = useMemo(() => {
     if (!fileName.includes('.')) return ''
     return fileName.split('.').pop()?.toUpperCase() ?? ''
@@ -207,32 +199,7 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const handleOpenFolder = async (): Promise<void> => {
     if (!mediaPath) return
-    const bw = window as Window & {
-      downtube?: {
-        showItemInFolder?: (p: string) => Promise<void> | void
-        openFolder?: (p: string) => Promise<void> | void
-      }
-      electronAPI?: {
-        showItemInFolder?: (p: string) => Promise<void> | void
-        openFolder?: (p: string) => Promise<void> | void
-      }
-      api?: {
-        showItemInFolder?: (p: string) => Promise<void> | void
-        openFolder?: (p: string) => Promise<void> | void
-      }
-    }
-    const showItemInFolder =
-      bw.downtube?.showItemInFolder ?? bw.electronAPI?.showItemInFolder ?? bw.api?.showItemInFolder
-    const openFolder = bw.downtube?.openFolder ?? bw.electronAPI?.openFolder ?? bw.api?.openFolder
-    if (showItemInFolder) {
-      await showItemInFolder(mediaPath)
-      return
-    }
-    if (openFolder && folderPath) {
-      await openFolder(folderPath)
-      return
-    }
-    if (navigator.clipboard && folderPath) await navigator.clipboard.writeText(folderPath)
+    await window.api.openDownloadItem(mediaPath)
   }
 
   const logVideoState = (label: string): void => {

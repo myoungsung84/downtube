@@ -6,6 +6,7 @@ import type { InitState } from '@src/types/init.types'
 interface AppAPI {
   openPlayer: (payload: { id: string }) => Promise<{ success: boolean; message?: string }>
   openDownloadDir: () => Promise<void>
+  openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
 
   downloadsStart: () => Promise<{ success: boolean; message?: string }>
   downloadsPause: () => Promise<{ success: boolean; message?: string }>

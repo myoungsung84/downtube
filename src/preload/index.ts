@@ -6,6 +6,7 @@ import type { InitState } from '../types/init.types'
 const api = {
   openPlayer: (payload: { id: string }) => ipcRenderer.invoke('download-player', payload),
   openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
+  openDownloadItem: (path: string) => ipcRenderer.invoke('download-item-open', path),
 
   downloadsStart: () => ipcRenderer.invoke('downloads-start'),
   downloadsPause: () => ipcRenderer.invoke('downloads-pause'),

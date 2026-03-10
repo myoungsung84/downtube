@@ -121,11 +121,40 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   })
 
   safeSetHandler('download-dir-open', async () => {
-    const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
-    if (!fs.existsSync(downloadDir)) {
-      mkdirSync(downloadDir, { recursive: true })
+    try {
+      const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+      if (!fs.existsSync(downloadDir)) {
+        mkdirSync(downloadDir, { recursive: true })
+      }
+
+      const result = await shell.openPath(downloadDir)
+      if (result) {
+        return { success: false, message: result || 'Failed to open download directory' }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open download directory'
+      }
     }
-    await shell.openPath(downloadDir)
+  })
+
+  safeSetHandler('download-item-open', async (_, filePath: string) => {
+    try {
+      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+        return { success: false, message: 'Invalid path' }
+      }
+
+      shell.showItemInFolder(filePath)
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open download item'
+      }
+    }
   })
 
   safeSetHandler('download-video', async (_, url: string) => {
