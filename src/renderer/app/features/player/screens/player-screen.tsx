@@ -111,6 +111,7 @@ export default function PlayerScreen(): React.JSX.Element {
   const [seekValue, setSeekValue] = useState(0)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
+  const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
 
   // ── URL 파싱 ──────────────────────────────────────────────────────────────
   const hash = window.location.hash
@@ -159,6 +160,13 @@ export default function PlayerScreen(): React.JSX.Element {
     if (!fileName.includes('.')) return fileName
     return fileName.slice(0, fileName.lastIndexOf('.'))
   }, [fileName])
+
+  const displayFileName = useMemo(() => {
+    if (mediaMeta.title && mediaMeta.artist) return `${mediaMeta.title} - ${mediaMeta.artist}`
+    if (mediaMeta.title) return mediaMeta.title
+    if (mediaMeta.artist) return mediaMeta.artist
+    return fileNameWithoutExt
+  }, [fileNameWithoutExt, mediaMeta.artist, mediaMeta.title])
 
   const videoObjectFit = useMemo(() => {
     if (meta.width <= 0 || meta.height <= 0) return 'contain'
@@ -299,6 +307,32 @@ export default function PlayerScreen(): React.JSX.Element {
     setMeta({ fileName, duration: 0, width: 0, height: 0, currentTime: 0 })
     setSeekValue(0)
   }, [fileName, videoSrc])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadMediaMeta = async (): Promise<void> => {
+      if (!mediaPath) {
+        if (mounted) setMediaMeta({})
+        return
+      }
+
+      const result = await window.api.readMediaMeta(mediaPath)
+      if (!mounted) return
+      if (!result.success) {
+        setMediaMeta({})
+        return
+      }
+
+      setMediaMeta({ title: result.title, artist: result.artist })
+    }
+
+    void loadMediaMeta()
+
+    return () => {
+      mounted = false
+    }
+  }, [mediaPath])
 
   useEffect(() => {
     const onFsChange = (): void => setIsFullscreen(!!document.fullscreenElement)
@@ -521,7 +555,7 @@ export default function PlayerScreen(): React.JSX.Element {
 
               {/* 파일명 */}
               <Typography
-                title={fileNameWithoutExt}
+                title={displayFileName}
                 sx={{
                   color: 'rgba(255,255,255,0.92)',
                   fontWeight: 600,
@@ -533,7 +567,7 @@ export default function PlayerScreen(): React.JSX.Element {
                   textShadow: '0 1px 6px rgba(0,0,0,0.8)'
                 }}
               >
-                {fileNameWithoutExt || '알 수 없는 파일'}
+                {displayFileName || '알 수 없는 파일'}
               </Typography>
 
               {/* 폴더 버튼 */}

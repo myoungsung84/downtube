@@ -1,3 +1,4 @@
+import { spawn } from 'child_process'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
@@ -153,6 +154,73 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to open download item'
+      }
+    }
+  })
+
+  safeSetHandler('media-meta-read', async (_, filePath: string) => {
+    try {
+      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+        return { success: false, message: 'Invalid path' }
+      }
+      if (!fs.existsSync(filePath)) {
+        return { success: false, message: 'File not found' }
+      }
+
+      const ffprobeResult = await new Promise<{
+        success: boolean
+        stdout?: string
+        message?: string
+      }>((resolve) => {
+        const proc = spawn(
+          'ffprobe',
+          ['-v', 'error', '-show_entries', 'format_tags=title,artist', '-of', 'json', filePath],
+          { windowsHide: true }
+        )
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString()
+        })
+
+        proc.on('error', (error: Error) => {
+          resolve({ success: false, message: error.message })
+        })
+
+        proc.on('close', (code: number | null) => {
+          const exitCode = code ?? -1
+          if (exitCode !== 0) {
+            const message = stderr.trim() || `ffprobe exited with code ${exitCode}`
+            resolve({ success: false, message })
+            return
+          }
+          resolve({ success: true, stdout })
+        })
+      })
+
+      if (!ffprobeResult.success) {
+        return { success: false, message: ffprobeResult.message ?? 'Failed to read media metadata' }
+      }
+
+      const raw = JSON.parse(ffprobeResult.stdout ?? '{}') as {
+        format?: { tags?: { title?: unknown; artist?: unknown; ARTIST?: unknown } }
+      }
+
+      const title = typeof raw.format?.tags?.title === 'string' ? raw.format.tags.title : undefined
+      const artistTag = raw.format?.tags?.artist ?? raw.format?.tags?.ARTIST
+      const artist = typeof artistTag === 'string' ? artistTag : undefined
+
+      return { success: true, ...(title ? { title } : {}), ...(artist ? { artist } : {}) }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to read media metadata'
       }
     }
   })

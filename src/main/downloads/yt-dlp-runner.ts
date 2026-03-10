@@ -21,6 +21,15 @@ type RunningTask = {
   stopRequested?: boolean
 }
 
+type YtDlpMetadata = {
+  title?: string
+  uploader?: string
+  channel?: string
+  description?: string
+  upload_date?: string
+  webpage_url?: string
+}
+
 class DownloadStoppedError extends Error {
   code = 'ERR_DOWNLOAD_STOPPED'
   constructor(public phase: 'video' | 'audio' | 'merge') {
@@ -62,6 +71,81 @@ function ensureBinaries(): { ffmpegPath: string; ytDlpPath: string } {
 
 function ctx(job: DownloadJob): string {
   return `[dl] id=${job.id.slice(0, 8)} type=${job.type} name=${job.filename}`
+}
+
+function sanitizeMetadataValue(value?: string): string | undefined {
+  if (!value) return undefined
+
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+
+  const normalized = trimmed
+    .split('\0')
+    .join('')
+    .replace(/\r?\n+/g, ' ')
+    .replace(/["'`\\=]/g, '')
+    .replace(/[|<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || undefined
+}
+
+function buildFfmpegMetadataOptions(meta: YtDlpMetadata | null): string[] {
+  if (!meta) return []
+
+  const title = sanitizeMetadataValue(meta.title)
+  const artist = sanitizeMetadataValue(meta.uploader ?? meta.channel)
+
+  const options: string[] = []
+  if (title) options.push('-metadata', `title=${title}`)
+  if (artist) options.push('-metadata', `artist=${artist}`)
+
+  return options
+}
+
+async function fetchYtDlpMetadata(args: {
+  job: DownloadJob
+  ytDlpPath: string
+  url: string
+}): Promise<YtDlpMetadata | null> {
+  const { job, ytDlpPath, url } = args
+
+  return step('yt-dlp:metadata', job, async () => {
+    const proc = spawn(
+      ytDlpPath,
+      ['--no-playlist', '--dump-single-json', '--no-warnings', '--no-check-certificate', url],
+      { windowsHide: true }
+    )
+
+    let stdout = ''
+    let stderr = ''
+
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString()
+    })
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString()
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      proc.on('error', reject)
+      proc.on('close', (code) => {
+        code === 0 ? resolve() : reject(new Error(stderr || `metadata fetch failed: ${code}`))
+      })
+    })
+
+    try {
+      return JSON.parse(stdout) as YtDlpMetadata
+    } catch (error) {
+      log.warn(`${ctx(job)} metadata parse warn`, error)
+      return null
+    }
+  }).catch((error) => {
+    log.warn(`${ctx(job)} metadata fetch warn`, error)
+    return null
+  })
 }
 
 async function step<T>(label: string, job: DownloadJob, fn: () => Promise<T>): Promise<T> {
@@ -119,6 +203,7 @@ export function runDownloadJob(
   const audioOnlyFile = path.join(downloadDir, `${baseName}.%(ext)s`)
 
   const task: RunningTask = { filename: baseName, outputDir: downloadDir, stopRequested: false }
+  const sourceMetadataPromise = fetchYtDlpMetadata({ job, ytDlpPath, url: job.url })
   currentTask = { jobId: job.id, task }
 
   log.info(`${ctx(job)} start url=${job.url}`)
@@ -172,6 +257,8 @@ export function runDownloadJob(
         '0',
         '--ffmpeg-location',
         ffmpegPath,
+        '--embed-metadata',
+        '--embed-thumbnail',
 
         '--no-part',
         '--restrict-filenames',
@@ -241,13 +328,15 @@ export function runDownloadJob(
       fallbackPattern: `${baseName}_audio.*`
     })
 
+    const sourceMetadata = await sourceMetadataPromise
+
     await step('ffmpeg:merge', job, async () => {
       if (task.stopRequested) throw new DownloadStoppedError('merge')
 
       await new Promise<void>((resolve, reject) => {
         ffmpeg(mergedVideo)
           .input(mergedAudio)
-          .outputOptions('-c copy')
+          .outputOptions(['-c', 'copy', ...buildFfmpegMetadataOptions(sourceMetadata)])
           .save(outputFile)
           .on('end', () => {
             try {
