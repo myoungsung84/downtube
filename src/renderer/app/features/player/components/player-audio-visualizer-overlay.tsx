@@ -155,7 +155,7 @@ export default function PlayerAudioVisualizerOverlay({
       const GAP = 0
 
       const MAX_H = Math.floor(h * 0.46)
-      const MAX_REFLECT = Math.floor(h * 0.1)
+      const MAX_REFLECT = Math.floor(h * 0.18)
       const RADIUS = Math.max(1, Math.floor((DRAW_W - GAP * (BAR_COUNT - 1)) / BAR_COUNT / 2))
 
       let totalEnergy = 0
@@ -177,8 +177,6 @@ export default function PlayerAudioVisualizerOverlay({
       if (smoothedAmp < 0.001) {
         peaks.fill(0)
         peakHold.fill(0)
-        animationFrameRef.current = requestAnimationFrame(draw)
-        return
       }
 
       const fadeScale = Math.min(
@@ -192,14 +190,41 @@ export default function PlayerAudioVisualizerOverlay({
         const boosted = curved + Math.max(0, curved - 0.3) * 0.42
         return Math.min(1, boosted) * scale
       }
+      const getBarGeometry = (i: number): { x: number; barW: number } => {
+        const x = Math.round((i / BAR_COUNT) * DRAW_W)
+        const nextX = Math.round(((i + 1) / BAR_COUNT) * DRAW_W)
+        const barW = Math.max(1, nextX - x - GAP)
+        return { x, barW }
+      }
 
       const sampleRate = audioContext.sampleRate
       const melBins = buildMelBins(dataArray.length, sampleRate)
+      const baseReflectH = Math.max(20, Math.floor(MAX_REFLECT * 0.68))
+      const baseBarH = Math.max(5, Math.floor(MAX_H * 0.04))
 
       ctx.save()
       ctx.beginPath()
-      ctx.rect(0, centerY + 1, DRAW_W, MAX_REFLECT)
+      ctx.rect(0, centerY, DRAW_W, Math.max(MAX_REFLECT, h - centerY))
       ctx.clip()
+
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const { x, barW } = getBarGeometry(i)
+        const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
+        const baseGradDown = ctx.createLinearGradient(x, centerY, x, centerY + baseReflectH)
+        baseGradDown.addColorStop(0, `hsla(${hue},46%,64%,0.22)`)
+        baseGradDown.addColorStop(0.24, `hsla(${hue},42%,58%,0.16)`)
+        baseGradDown.addColorStop(0.58, `hsla(${hue},36%,50%,0.08)`)
+        baseGradDown.addColorStop(1, 'rgba(0,0,0,0)')
+
+        ctx.fillStyle = baseGradDown
+        ctx.beginPath()
+        if (ctx.roundRect) {
+          ctx.roundRect(x, centerY, barW, baseReflectH, [0, 0, RADIUS, RADIUS])
+        } else {
+          ctx.rect(x, centerY, barW, baseReflectH)
+        }
+        ctx.fill()
+      }
 
       for (let i = 0; i < BAR_COUNT; i++) {
         const binIdx = melBins[i]
@@ -218,30 +243,46 @@ export default function PlayerAudioVisualizerOverlay({
 
         if (visibleVal < 0.005) continue
 
-        const x = Math.round((i / BAR_COUNT) * DRAW_W)
-        const nextX = Math.round(((i + 1) / BAR_COUNT) * DRAW_W)
-        const barW = Math.max(1, nextX - x - GAP)
+        const { x, barW } = getBarGeometry(i)
         const barH = Math.max(2, Math.floor(MAX_H * visibleVal))
         const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
-        const reflectH = Math.min(barH * 0.72, MAX_REFLECT)
+        const reflectH = Math.min(barH * 1.08, MAX_REFLECT)
 
         const gradDown = ctx.createLinearGradient(x, centerY, x, centerY + reflectH)
-        gradDown.addColorStop(0, `hsla(${hue},70%,60%,${0.1 + visibleVal * 0.08})`)
-        gradDown.addColorStop(0.3, `hsla(${hue},65%,55%,${0.06 + visibleVal * 0.05})`)
-        gradDown.addColorStop(0.65, `hsla(${hue},60%,50%,${0.02 + visibleVal * 0.02})`)
+        gradDown.addColorStop(0, `hsla(${hue},74%,66%,${0.28 + visibleVal * 0.18})`)
+        gradDown.addColorStop(0.22, `hsla(${hue},70%,60%,${0.18 + visibleVal * 0.12})`)
+        gradDown.addColorStop(0.56, `hsla(${hue},64%,54%,${0.08 + visibleVal * 0.06})`)
         gradDown.addColorStop(1, 'rgba(0,0,0,0)')
 
         ctx.fillStyle = gradDown
         ctx.beginPath()
         if (ctx.roundRect) {
-          ctx.roundRect(x, centerY + 1, barW, reflectH, [0, 0, RADIUS, RADIUS])
+          ctx.roundRect(x, centerY, barW, reflectH, [0, 0, RADIUS, RADIUS])
         } else {
-          ctx.rect(x, centerY + 1, barW, reflectH)
+          ctx.rect(x, centerY, barW, reflectH)
         }
         ctx.fill()
       }
 
       ctx.restore()
+
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const { x, barW } = getBarGeometry(i)
+        const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
+        const baseMainGrad = ctx.createLinearGradient(x, centerY - baseBarH, x, centerY)
+        baseMainGrad.addColorStop(0, `hsla(${hue},44%,66%,0.11)`)
+        baseMainGrad.addColorStop(0.6, `hsla(${(hue + 20) % 360},40%,54%,0.08)`)
+        baseMainGrad.addColorStop(1, `hsla(${(hue + 35) % 360},36%,46%,0.06)`)
+
+        ctx.fillStyle = baseMainGrad
+        ctx.beginPath()
+        if (ctx.roundRect) {
+          ctx.roundRect(x, centerY - baseBarH, barW, baseBarH, [RADIUS, RADIUS, 0, 0])
+        } else {
+          ctx.rect(x, centerY - baseBarH, barW, baseBarH)
+        }
+        ctx.fill()
+      }
 
       for (let i = 0; i < BAR_COUNT; i++) {
         const binIdx = melBins[i]
@@ -261,9 +302,7 @@ export default function PlayerAudioVisualizerOverlay({
           peaks[i] = 0
           peakHold[i] = 0
 
-          const x = Math.round((i / BAR_COUNT) * DRAW_W)
-          const nextX = Math.round(((i + 1) / BAR_COUNT) * DRAW_W)
-          const barW = Math.max(1, nextX - x - GAP)
+          const { x, barW } = getBarGeometry(i)
           const idleY = centerY - 2
           ctx.fillStyle = 'rgba(255,255,255,0.12)'
           ctx.beginPath()
@@ -276,9 +315,7 @@ export default function PlayerAudioVisualizerOverlay({
           continue
         }
 
-        const x = Math.round((i / BAR_COUNT) * DRAW_W)
-        const nextX = Math.round(((i + 1) / BAR_COUNT) * DRAW_W)
-        const barW = Math.max(1, nextX - x - GAP)
+        const { x, barW } = getBarGeometry(i)
         const barH = Math.max(2, Math.floor(MAX_H * visibleVal))
 
         const hue = (hueOffsetRef.current + (i / BAR_COUNT) * 200) % 360
@@ -329,11 +366,11 @@ export default function PlayerAudioVisualizerOverlay({
         }
         ctx.fill()
 
-        if (visibleVal > 0.18) {
+        if (visibleVal > 0.1) {
           const hlH = Math.max(2, Math.floor(barH * 0.22))
           const gradHL = ctx.createLinearGradient(x, centerY - barH, x, centerY - barH + hlH)
-          gradHL.addColorStop(0, `rgba(255,255,255,${visibleVal * 0.38})`)
-          gradHL.addColorStop(0.5, `rgba(255,255,255,${visibleVal * 0.12})`)
+          gradHL.addColorStop(0, `rgba(255,255,255,${0.1 + visibleVal * 0.42})`)
+          gradHL.addColorStop(0.45, `rgba(255,255,255,${0.03 + visibleVal * 0.16})`)
           gradHL.addColorStop(1, 'rgba(255,255,255,0)')
           ctx.fillStyle = gradHL
           ctx.beginPath()
@@ -357,7 +394,7 @@ export default function PlayerAudioVisualizerOverlay({
         const peakH = Math.floor(peaks[i])
         if (peakH > 4) {
           const isHolding = peakHold[i] > 0
-          const peakAlpha = isHolding ? 0.95 : 0.34
+          const peakAlpha = isHolding ? 0.98 : 0.46
 
           if (isHolding) {
             ctx.save()

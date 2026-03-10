@@ -104,6 +104,24 @@ function buildFfmpegMetadataOptions(meta: YtDlpMetadata | null): string[] {
   return options
 }
 
+async function mergeMediaFiles(args: {
+  videoPath: string
+  audioPath: string
+  outputFile: string
+  metadataOptions?: string[]
+}): Promise<void> {
+  const { videoPath, audioPath, outputFile, metadataOptions = [] } = args
+
+  await new Promise<void>((resolve, reject) => {
+    ffmpeg(videoPath)
+      .input(audioPath)
+      .outputOptions(['-c', 'copy', ...metadataOptions])
+      .save(outputFile)
+      .on('end', resolve)
+      .on('error', reject)
+  })
+}
+
 async function fetchYtDlpMetadata(args: {
   job: DownloadJob
   ytDlpPath: string
@@ -333,25 +351,45 @@ export function runDownloadJob(
     await step('ffmpeg:merge', job, async () => {
       if (task.stopRequested) throw new DownloadStoppedError('merge')
 
-      await new Promise<void>((resolve, reject) => {
-        ffmpeg(mergedVideo)
-          .input(mergedAudio)
-          .outputOptions(['-c', 'copy', ...buildFfmpegMetadataOptions(sourceMetadata)])
-          .save(outputFile)
-          .on('end', () => {
-            try {
-              fs.unlinkSync(mergedVideo)
-              fs.unlinkSync(mergedAudio)
-            } catch (e) {
-              log.warn(`${ctx(job)} cleanup warn`, e)
-            }
-            resolve()
-          })
-          .on('error', (err) => {
-            if (task.stopRequested) return reject(new DownloadStoppedError('merge'))
-            reject(err)
-          })
-      })
+      const metadataOptions = buildFfmpegMetadataOptions(sourceMetadata)
+
+      try {
+        await mergeMediaFiles({
+          videoPath: mergedVideo,
+          audioPath: mergedAudio,
+          outputFile,
+          metadataOptions
+        })
+      } catch (error) {
+        if (task.stopRequested) throw new DownloadStoppedError('merge')
+
+        if (metadataOptions.length === 0) {
+          throw error
+        }
+
+        log.warn(`${ctx(job)} merge metadata fallback`, error)
+
+        try {
+          if (fs.existsSync(outputFile)) {
+            fs.unlinkSync(outputFile)
+          }
+        } catch (unlinkError) {
+          log.warn(`${ctx(job)} merge fallback cleanup warn`, unlinkError)
+        }
+
+        await mergeMediaFiles({
+          videoPath: mergedVideo,
+          audioPath: mergedAudio,
+          outputFile
+        })
+      }
+
+      try {
+        fs.unlinkSync(mergedVideo)
+        fs.unlinkSync(mergedAudio)
+      } catch (e) {
+        log.warn(`${ctx(job)} cleanup warn`, e)
+      }
     })
 
     onProgress({ current: 'complete', percent: 100 })
