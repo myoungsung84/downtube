@@ -281,8 +281,15 @@ export default function PlayerScreen(): React.JSX.Element {
     (_: React.SyntheticEvent | Event, val: number | number[]) => {
       const v = Array.isArray(val) ? val[0] : val
       const video = videoRef.current
-      if (video) video.currentTime = v
-      setSeeking(false)
+
+      setSeekValue(v)
+
+      if (!video) {
+        setSeeking(false)
+        return
+      }
+
+      video.currentTime = v
     },
     []
   )
@@ -438,7 +445,11 @@ export default function PlayerScreen(): React.JSX.Element {
             onPlay={() => setPaused(false)}
             onPause={() => setPaused(true)}
             onSeeking={() => logVideoState('seeking')}
-            onSeeked={() => logVideoState('seeked')}
+            onSeeked={() => {
+              syncVideoMeta()
+              logVideoState('seeked')
+              setSeeking(false)
+            }}
             onTimeUpdate={syncVideoMeta}
             onClick={togglePlay}
             onDoubleClick={toggleFullscreen}
