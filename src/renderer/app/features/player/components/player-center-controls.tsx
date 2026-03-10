@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import React from 'react'
 
+import { PlayerButton } from './player-button'
 import { IcForward10, IcPause, IcPlay, IcReplay10 } from './player-icons'
 
 type PlayerCenterControlsProps = {
@@ -34,48 +35,34 @@ export function PlayerCenterControls({
         zIndex: 4
       }}
     >
-      <Box
-        component="button"
+      <PlayerButton
         onClick={onReplay10}
         title="10초 뒤로 (←)"
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          p: 0,
+          width: 52,
+          height: 52,
           background: 'rgba(0,0,0,0.28)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(8px)',
-          color: '#fff',
-          cursor: 'pointer',
-          width: 52,
-          height: 52,
-          borderRadius: '50%',
-          transition: 'background 0.15s, transform 0.1s',
           '&:hover': { backgroundColor: 'rgba(0,0,0,0.5)', transform: 'scale(1.08)' },
           '&:active': { transform: 'scale(0.94)' }
         }}
       >
         <IcReplay10 />
-      </Box>
+      </PlayerButton>
 
-      <Box
-        component="button"
+      <PlayerButton
         onClick={onTogglePlay}
         title="재생/일시정지 (Space)"
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          p: 0,
+          width: 66,
+          height: 66,
           background: 'rgba(229,57,53,0.38)',
           border: '1px solid rgba(229,57,53,0.45)',
           backdropFilter: 'blur(12px)',
-          color: '#fff',
-          cursor: 'pointer',
-          width: 66,
-          height: 66,
-          borderRadius: '50%',
           boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-          transition: 'background 0.15s, transform 0.1s, box-shadow 0.15s',
           '&:hover': {
             backgroundColor: 'rgba(229,57,53,0.6)',
             transform: 'scale(1.08)',
@@ -85,31 +72,24 @@ export function PlayerCenterControls({
         }}
       >
         {paused ? <IcPlay /> : <IcPause />}
-      </Box>
+      </PlayerButton>
 
-      <Box
-        component="button"
+      <PlayerButton
         onClick={onForward10}
         title="10초 앞으로 (→)"
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          p: 0,
+          width: 52,
+          height: 52,
           background: 'rgba(0,0,0,0.28)',
           border: '1px solid rgba(255,255,255,0.12)',
           backdropFilter: 'blur(8px)',
-          color: '#fff',
-          cursor: 'pointer',
-          width: 52,
-          height: 52,
-          borderRadius: '50%',
-          transition: 'background 0.15s, transform 0.1s',
           '&:hover': { backgroundColor: 'rgba(0,0,0,0.5)', transform: 'scale(1.08)' },
           '&:active': { transform: 'scale(0.94)' }
         }}
       >
         <IcForward10 />
-      </Box>
+      </PlayerButton>
     </Box>
   )
 }

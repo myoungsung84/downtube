@@ -9,7 +9,7 @@ import type { DownloadJob } from '../../types/download.types'
 import type { InitState } from '../../types/init.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
-import { downloadInfo } from '../downloads/yt-dlp-utils'
+import { downloadInfo, locateFfmpeg } from '../downloads/yt-dlp-utils'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -167,13 +167,17 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         return { success: false, message: 'File not found' }
       }
 
+      const ffprobePath = locateFfmpeg().replace(
+        /ffmpeg(\.exe)?$/i,
+        process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
+      )
       const ffprobeResult = await new Promise<{
         success: boolean
         stdout?: string
         message?: string
       }>((resolve) => {
         const proc = spawn(
-          'ffprobe',
+          ffprobePath,
           ['-v', 'error', '-show_entries', 'format_tags=title,artist', '-of', 'json', filePath],
           { windowsHide: true }
         )
