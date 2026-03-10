@@ -302,7 +302,7 @@ export function runDownloadJob(
       [
         '--no-playlist',
         '--format',
-        'ba',
+        'ba/bestaudio/best',
         '--no-part',
         '--restrict-filenames',
         '--no-warnings',
