@@ -204,6 +204,7 @@ export class DownloadQueue {
         this.update(next.id, {
           status: 'completed',
           finishedAt: Date.now(),
+          finalFilePath: result.outputFile,
           outputFile: result.outputFile,
           progress: { percent: 100, current: 'complete' }
         })

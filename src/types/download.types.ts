@@ -30,6 +30,7 @@ export type DownloadJob = {
   playlistIndex?: number
 
   outputDir: string
+  finalFilePath?: string
   outputFile?: string
 
   progress: {

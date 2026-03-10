@@ -4,8 +4,10 @@ import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
 
 const api = {
-  playVideo: (url: string) => ipcRenderer.invoke('download-player', url),
+  openPlayer: (payload: { id: string }) => ipcRenderer.invoke('download-player', payload),
   openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
+  openDownloadItem: (path: string) => ipcRenderer.invoke('download-item-open', path),
+  readMediaMeta: (path: string) => ipcRenderer.invoke('media-meta-read', path),
 
   downloadsStart: () => ipcRenderer.invoke('downloads-start'),
   downloadsPause: () => ipcRenderer.invoke('downloads-pause'),

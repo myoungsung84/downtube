@@ -3,6 +3,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AudiotrackIcon from '@mui/icons-material/Audiotrack'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ErrorIcon from '@mui/icons-material/Error'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import ReplayIcon from '@mui/icons-material/Replay'
 import StopIcon from '@mui/icons-material/Stop'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
@@ -42,6 +43,7 @@ export default function DownloadsJobRow(props: {
   onStop: (job: DownloadJob) => void
   onRetry: (job: DownloadJob) => void
   onDelete: (job: DownloadJob) => void
+  onPlay: (job: DownloadJob) => void
 }): React.JSX.Element {
   const { job } = props
   const theme = useTheme()
@@ -58,6 +60,7 @@ export default function DownloadsJobRow(props: {
   const canStop = job.status === 'queued' || job.status === 'running'
   const canRetry = job.status === 'failed' || job.status === 'cancelled'
   const canDelete = job.status !== 'running'
+  const canPlay = job.status === 'completed' && job.type === 'video' && Boolean(job.finalFilePath)
 
   const percent = Math.max(0, Math.min(100, job.progress?.percent ?? 0))
   const showProgressBar = job.status === 'running'
@@ -294,6 +297,14 @@ export default function DownloadsJobRow(props: {
                   <Box sx={{ width: 1, height: 16, bgcolor: 'divider', mx: 0.5 }} />
 
                   <Stack direction="row" spacing={0.5}>
+                    {canPlay ? (
+                      <AppTooltip title="재생">
+                        <IconButton size="small" onClick={() => props.onPlay(job)} sx={actionBtnSx}>
+                          <PlayArrowIcon fontSize="small" />
+                        </IconButton>
+                      </AppTooltip>
+                    ) : null}
+
                     <AppTooltip title="다시 시도">
                       <IconButton
                         size="small"

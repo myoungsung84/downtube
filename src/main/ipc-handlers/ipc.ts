@@ -1,3 +1,4 @@
+import { spawn } from 'child_process'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
@@ -8,7 +9,7 @@ import type { DownloadJob } from '../../types/download.types'
 import type { InitState } from '../../types/init.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
-import { downloadInfo } from '../downloads/yt-dlp-utils'
+import { downloadInfo, locateFfmpeg } from '../downloads/yt-dlp-utils'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -69,14 +70,29 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     return initInFlight
   })
 
-  safeSetHandler('download-player', async (_, videoUrl: string) => {
+  safeSetHandler('download-player', async (_, payload: { id: string }) => {
+    if (!payload?.id) return { success: false, message: 'Job not found' }
+
+    const job = downloadsQueue.getJob(payload.id)
+    if (!job) return { success: false, message: 'Job not found' }
+    if (job.status !== 'completed' || job.type !== 'video') {
+      return { success: false, message: 'Only completed video can be played' }
+    }
+
+    const filePath = job.finalFilePath ?? job.outputFile
+    if (!filePath) return { success: false, message: 'Output file path not found' }
+    if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
+    const mediaSrc = `downtube-media://media?path=${encodeURIComponent(filePath)}`
+
     if (playerWindow && !playerWindow.isDestroyed()) {
       playerWindow.close()
     }
 
     playerWindow = new BrowserWindow({
-      width: 800,
-      height: 450,
+      width: 1280,
+      height: 820,
+      minWidth: 980,
+      minHeight: 640,
       show: false,
       autoHideMenuBar: true,
       webPreferences: {
@@ -87,24 +103,130 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
     const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
     const playerUrl = !app.isPackaged
-      ? `http://localhost:${devPort}/#/player?url=${encodeURIComponent(videoUrl)}`
+      ? `http://localhost:${devPort}/#/player?src=${encodeURIComponent(mediaSrc)}`
       : url.format({
           pathname: path.join(__dirname, '../renderer/index.html'),
           protocol: 'file:',
           slashes: true,
-          hash: `/player?url=${encodeURIComponent(videoUrl)}`
+          hash: `/player?src=${encodeURIComponent(mediaSrc)}`
         })
 
     await playerWindow.loadURL(playerUrl)
+
+    if (!app.isPackaged) {
+      playerWindow.webContents.openDevTools({ mode: 'detach' })
+    }
+
     playerWindow.show()
+    return { success: true }
   })
 
   safeSetHandler('download-dir-open', async () => {
-    const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
-    if (!fs.existsSync(downloadDir)) {
-      mkdirSync(downloadDir, { recursive: true })
+    try {
+      const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+      if (!fs.existsSync(downloadDir)) {
+        mkdirSync(downloadDir, { recursive: true })
+      }
+
+      const result = await shell.openPath(downloadDir)
+      if (result) {
+        return { success: false, message: result || 'Failed to open download directory' }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open download directory'
+      }
     }
-    await shell.openPath(downloadDir)
+  })
+
+  safeSetHandler('download-item-open', async (_, filePath: string) => {
+    try {
+      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+        return { success: false, message: 'Invalid path' }
+      }
+
+      shell.showItemInFolder(filePath)
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open download item'
+      }
+    }
+  })
+
+  safeSetHandler('media-meta-read', async (_, filePath: string) => {
+    try {
+      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+        return { success: false, message: 'Invalid path' }
+      }
+      if (!fs.existsSync(filePath)) {
+        return { success: false, message: 'File not found' }
+      }
+
+      const ffprobePath = locateFfmpeg().replace(
+        /ffmpeg(\.exe)?$/i,
+        process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
+      )
+      const ffprobeResult = await new Promise<{
+        success: boolean
+        stdout?: string
+        message?: string
+      }>((resolve) => {
+        const proc = spawn(
+          ffprobePath,
+          ['-v', 'error', '-show_entries', 'format_tags=title,artist', '-of', 'json', filePath],
+          { windowsHide: true }
+        )
+
+        let stdout = ''
+        let stderr = ''
+
+        proc.stdout.on('data', (data: Buffer) => {
+          stdout += data.toString()
+        })
+
+        proc.stderr.on('data', (data: Buffer) => {
+          stderr += data.toString()
+        })
+
+        proc.on('error', (error: Error) => {
+          resolve({ success: false, message: error.message })
+        })
+
+        proc.on('close', (code: number | null) => {
+          const exitCode = code ?? -1
+          if (exitCode !== 0) {
+            const message = stderr.trim() || `ffprobe exited with code ${exitCode}`
+            resolve({ success: false, message })
+            return
+          }
+          resolve({ success: true, stdout })
+        })
+      })
+
+      if (!ffprobeResult.success) {
+        return { success: false, message: ffprobeResult.message ?? 'Failed to read media metadata' }
+      }
+
+      const raw = JSON.parse(ffprobeResult.stdout ?? '{}') as {
+        format?: { tags?: { title?: unknown; artist?: unknown; ARTIST?: unknown } }
+      }
+
+      const title = typeof raw.format?.tags?.title === 'string' ? raw.format.tags.title : undefined
+      const artistTag = raw.format?.tags?.artist ?? raw.format?.tags?.ARTIST
+      const artist = typeof artistTag === 'string' ? artistTag : undefined
+
+      return { success: true, ...(title ? { title } : {}), ...(artist ? { artist } : {}) }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to read media metadata'
+      }
+    }
   })
 
   safeSetHandler('download-video', async (_, url: string) => {
