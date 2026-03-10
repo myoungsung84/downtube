@@ -304,7 +304,7 @@ export function runDownloadJob(
       [
         '--no-playlist',
         '--format',
-        'bv*',
+        'bestvideo*/bv*',
         '--no-part',
         '--restrict-filenames',
         '--no-warnings',
@@ -320,7 +320,7 @@ export function runDownloadJob(
       [
         '--no-playlist',
         '--format',
-        'ba/bestaudio/best',
+        'bestaudio*/ba/bestaudio/best',
         '--no-part',
         '--restrict-filenames',
         '--no-warnings',
