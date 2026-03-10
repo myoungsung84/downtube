@@ -47,6 +47,179 @@ const IcFolder = (): React.JSX.Element => (
     <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
   </svg>
 )
+const IcVisualizer = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M3 15h2v4H3zm4-6h2v10H7zm4 3h2v7h-2zm4-8h2v15h-2zm4 5h2v10h-2z" />
+  </svg>
+)
+
+function AudioVisualizerOverlay({
+  videoRef,
+  visible
+}: {
+  videoRef: React.RefObject<HTMLVideoElement | null>
+  visible: boolean
+}): React.JSX.Element {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
+  const sourceElementRef = useRef<HTMLVideoElement | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
+
+  const stopDrawLoop = useCallback((): void => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const syncCanvasSize = (): void => {
+      const rect = canvas.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      const width = Math.max(1, Math.floor(rect.width * dpr))
+      const height = Math.max(1, Math.floor(rect.height * dpr))
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
+    }
+
+    syncCanvasSize()
+    window.addEventListener('resize', syncCanvasSize)
+
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => syncCanvasSize()) : null
+    observer?.observe(canvas)
+
+    return () => {
+      window.removeEventListener('resize', syncCanvasSize)
+      observer?.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    if (!visible) {
+      stopDrawLoop()
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      return
+    }
+
+    if (!video) return
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext()
+    }
+    const audioContext = audioContextRef.current
+    void audioContext.resume().catch(() => undefined)
+
+    if (!analyserRef.current) {
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.82
+      analyser.connect(audioContext.destination)
+      analyserRef.current = analyser
+      dataArrayRef.current = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount))
+    }
+
+    if (!sourceRef.current || sourceElementRef.current !== video) {
+      try {
+        sourceRef.current?.disconnect()
+        sourceRef.current = audioContext.createMediaElementSource(video)
+        sourceRef.current.connect(analyserRef.current)
+        sourceElementRef.current = video
+      } catch {
+        return
+      }
+    }
+
+    const analyser = analyserRef.current
+    const dataArray = dataArrayRef.current
+    if (!analyser || !dataArray) return
+
+    const draw = (): void => {
+      const w = canvas.width
+      const h = canvas.height
+      ctx.clearRect(0, 0, w, h)
+
+      analyser.getByteFrequencyData(dataArray)
+
+      const barCount = Math.min(44, dataArray.length)
+      const barGap = Math.max(2, Math.floor(w * 0.0025))
+      const totalGap = barGap * (barCount - 1)
+      const maxTotalBarWidth = Math.floor(w * 0.42)
+      const barWidth = Math.max(2, Math.floor((maxTotalBarWidth - totalGap) / barCount))
+      const visualWidth = barWidth * barCount + totalGap
+      const startX = Math.floor((w - visualWidth) / 2)
+      const baseY = Math.floor(h * 0.9)
+      const maxBarHeight = Math.max(12, Math.floor(h * 0.18))
+
+      for (let i = 0; i < barCount; i += 1) {
+        const value = dataArray[i] / 255
+        const x = startX + i * (barWidth + barGap)
+        const barHeight = Math.max(2, Math.floor(maxBarHeight * value))
+        const y = baseY - barHeight
+        const alpha = 0.2 + value * 0.5
+        ctx.fillStyle =
+          i % 6 === 0
+            ? `rgba(229,57,53,${Math.min(0.72, alpha)})`
+            : `rgba(255,255,255,${Math.min(0.65, alpha)})`
+        ctx.fillRect(x, y, barWidth, barHeight)
+      }
+
+      animationFrameRef.current = requestAnimationFrame(draw)
+    }
+
+    if (animationFrameRef.current === null) {
+      draw()
+    }
+
+    return () => {
+      stopDrawLoop()
+    }
+  }, [stopDrawLoop, videoRef, visible])
+
+  useEffect(
+    () => () => {
+      stopDrawLoop()
+      sourceRef.current?.disconnect()
+      analyserRef.current?.disconnect()
+      void audioContextRef.current?.close()
+    },
+    [stopDrawLoop]
+  )
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.2s ease',
+        zIndex: 1
+      }}
+    >
+      <Box
+        component="canvas"
+        ref={canvasRef}
+        sx={{ width: '100%', height: '100%', display: 'block', opacity: 0.75 }}
+      />
+    </Box>
+  )
+}
 
 // ── 아이콘 버튼 ─────────────────────────────────────────────────────────────
 const Btn = ({
@@ -111,6 +284,7 @@ export default function PlayerScreen(): React.JSX.Element {
   const [seekValue, setSeekValue] = useState(0)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
+  const [visualizerVisible, setVisualizerVisible] = useState(false)
   const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
 
   // ── URL 파싱 ──────────────────────────────────────────────────────────────
@@ -470,6 +644,7 @@ export default function PlayerScreen(): React.JSX.Element {
               '&::-webkit-media-controls': { display: 'none !important' }
             }}
           />
+          <AudioVisualizerOverlay videoRef={videoRef} visible={visualizerVisible} />
 
           {/* ══════════════════════════════════════════
               오버레이 전체 — pointer-events 없음
@@ -890,10 +1065,28 @@ export default function PlayerScreen(): React.JSX.Element {
                   </Typography>
                 </Stack>
 
-                {/* 오른쪽: 전체화면 */}
-                <Btn onClick={toggleFullscreen} title="전체화면 (F)" size="sm">
-                  {isFullscreen ? <IcExitFullscreen /> : <IcFullscreen />}
-                </Btn>
+                {/* 오른쪽: 시각화 + 전체화면 */}
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Btn
+                    onClick={() => setVisualizerVisible((prev) => !prev)}
+                    title="음성 시각화"
+                    size="sm"
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        color: visualizerVisible
+                          ? 'rgba(255,255,255,0.96)'
+                          : 'rgba(255,255,255,0.65)'
+                      }}
+                    >
+                      <IcVisualizer />
+                    </Box>
+                  </Btn>
+                  <Btn onClick={toggleFullscreen} title="전체화면 (F)" size="sm">
+                    {isFullscreen ? <IcExitFullscreen /> : <IcFullscreen />}
+                  </Btn>
+                </Stack>
               </Stack>
             </Box>
           </Box>
