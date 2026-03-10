@@ -2,6 +2,7 @@ import { Box, Slider, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import React from 'react'
 
+import { formatSeconds } from '../lib/player-format'
 import { PlayerButton } from './player-button'
 import {
   IcExitFullscreen,
@@ -23,7 +24,6 @@ type PlayerBottomControlsProps = {
   onVolumeChange: (_: Event, val: number | number[]) => void
   onToggleVisualizer: () => void
   onToggleFullscreen: () => void
-  formatSeconds: (seconds: number) => string
   volSliderSx: SxProps<Theme>
 }
 
@@ -39,7 +39,6 @@ export function PlayerBottomControls({
   onVolumeChange,
   onToggleVisualizer,
   onToggleFullscreen,
-  formatSeconds,
   volSliderSx
 }: PlayerBottomControlsProps): React.JSX.Element {
   return (

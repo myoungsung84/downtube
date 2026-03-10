@@ -2,6 +2,8 @@ import { Box, Slider } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import React from 'react'
 
+import { formatSeconds } from '../lib/player-format'
+
 type PlayerSeekbarProps = {
   uiVisible: boolean
   visualizerVisible: boolean
@@ -14,7 +16,6 @@ type PlayerSeekbarProps = {
   onSeekbarMouseLeave: () => void
   onSeekChange: (_: Event, val: number | number[]) => void
   onSeekCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
-  formatSeconds: (seconds: number) => string
   seekSliderSx: SxProps<Theme>
 }
 
@@ -30,7 +31,6 @@ export function PlayerSeekbar({
   onSeekbarMouseLeave,
   onSeekChange,
   onSeekCommit,
-  formatSeconds,
   seekSliderSx
 }: PlayerSeekbarProps): React.JSX.Element {
   return (

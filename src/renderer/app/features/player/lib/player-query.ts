@@ -15,10 +15,10 @@ export function getFileNameFromVideoSrc(videoSrc: string): string {
   if (!videoSrc) return ''
   try {
     const url = new URL(videoSrc)
-    const path = url.searchParams.get('path') ?? ''
-    if (!path) return ''
-    const decodedPath = decodeURIComponent(path)
-    const segments = decodedPath.split('/').filter(Boolean)
+    const filePath = url.searchParams.get('path') ?? ''
+    if (!filePath) return ''
+    const decodedPath = decodeURIComponent(filePath)
+    const segments = decodedPath.split(/[\\/]/).filter(Boolean)
     return segments[segments.length - 1] ?? ''
   } catch {
     return ''

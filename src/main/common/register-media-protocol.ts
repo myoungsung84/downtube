@@ -1,6 +1,6 @@
 import { app, protocol } from 'electron'
 import fs from 'fs'
-import { extname } from 'path'
+import { extname, resolve, sep } from 'path'
 import { Readable } from 'stream'
 
 const MEDIA_SCHEME = 'downtube-media'
@@ -33,7 +33,20 @@ function resolveMediaPath(requestUrl: string): string | null {
     const parsed = new URL(requestUrl)
     const mediaPath = parsed.searchParams.get('path')
     if (!mediaPath) return null
-    return mediaPath
+    const resolvedPath = resolve(mediaPath)
+    const allowedDir = resolve(app.getPath('downloads'))
+    const normalizedResolved =
+      process.platform === 'win32' ? resolvedPath.toLowerCase() : resolvedPath
+    const normalizedAllowed =
+      process.platform === 'win32' ? allowedDir.toLowerCase() : allowedDir
+    if (!normalizedResolved.startsWith(normalizedAllowed + sep)) {
+      return null
+    }
+    try {
+      return fs.realpathSync(resolvedPath)
+    } catch {
+      return null
+    }
   } catch {
     return null
   }

@@ -24,7 +24,6 @@ type PlayerControlsProps = {
   seekbarRef: React.RefObject<HTMLDivElement | null>
   seekSliderSx: SxProps<Theme>
   volSliderSx: SxProps<Theme>
-  formatSeconds: (seconds: number) => string
   onOpenFolder: () => void
   onChangePlaybackRate: (rate: number) => void
   onReplay10: () => void
@@ -57,7 +56,6 @@ export function PlayerControls({
   seekbarRef,
   seekSliderSx,
   volSliderSx,
-  formatSeconds,
   onOpenFolder,
   onChangePlaybackRate,
   onReplay10,
@@ -132,7 +130,6 @@ export function PlayerControls({
         onSeekbarMouseLeave={onSeekbarMouseLeave}
         onSeekChange={onSeekChange}
         onSeekCommit={onSeekCommit}
-        formatSeconds={formatSeconds}
         seekSliderSx={seekSliderSx}
       />
 
@@ -148,7 +145,6 @@ export function PlayerControls({
         onVolumeChange={onVolumeChange}
         onToggleVisualizer={onToggleVisualizer}
         onToggleFullscreen={onToggleFullscreen}
-        formatSeconds={formatSeconds}
         volSliderSx={volSliderSx}
       />
     </>

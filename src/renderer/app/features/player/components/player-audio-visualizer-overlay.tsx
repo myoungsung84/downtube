@@ -25,6 +25,7 @@ export default function PlayerAudioVisualizerOverlay({
   const peakHoldRef = useRef<Float32Array | null>(null)
   const hueOffsetRef = useRef<number>(0)
   const smoothedAmplitudeRef = useRef<number>(0)
+  const melBinsRef = useRef<number[] | null>(null)
 
   const stopDrawLoop = useCallback((): void => {
     if (animationFrameRef.current !== null) {
@@ -92,6 +93,23 @@ export default function PlayerAudioVisualizerOverlay({
       dataArrayRef.current = new Uint8Array(new ArrayBuffer(binCount))
       peaksRef.current = new Float32Array(120)
       peakHoldRef.current = new Float32Array(120)
+
+      const BAR_COUNT_INIT = 120
+      const sampleRateInit = audioContext.sampleRate
+      const fMin = 20
+      const fMax = Math.min(16000, (sampleRateInit / 2) * 0.95)
+      const nyquist = sampleRateInit / 2
+      const hzPerBin = nyquist / binCount
+      const melMin = 2595 * Math.log10(1 + fMin / 700)
+      const melMax = 2595 * Math.log10(1 + fMax / 700)
+      const bins: number[] = []
+      for (let i = 0; i < BAR_COUNT_INIT; i++) {
+        const mel = melMin + (melMax - melMin) * (i / (BAR_COUNT_INIT - 1))
+        const hz = 700 * (Math.pow(10, mel / 2595) - 1)
+        const bin = Math.round(hz / hzPerBin)
+        bins.push(Math.min(bin, binCount - 1))
+      }
+      melBinsRef.current = bins
     }
 
     if (!sourceRef.current || sourceElementRef.current !== video) {
@@ -112,25 +130,6 @@ export default function PlayerAudioVisualizerOverlay({
     if (!analyser || !dataArray || !peaks || !peakHold) return
 
     const BAR_COUNT = 120
-
-    const buildMelBins = (binCount: number, sampleRate: number): number[] => {
-      const fMin = 20
-      const fMax = Math.min(16000, (sampleRate / 2) * 0.95)
-      const nyquist = sampleRate / 2
-      const hzPerBin = nyquist / binCount
-
-      const melMin = 2595 * Math.log10(1 + fMin / 700)
-      const melMax = 2595 * Math.log10(1 + fMax / 700)
-
-      const bins: number[] = []
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const mel = melMin + (melMax - melMin) * (i / (BAR_COUNT - 1))
-        const hz = 700 * (Math.pow(10, mel / 2595) - 1)
-        const bin = Math.round(hz / hzPerBin)
-        bins.push(Math.min(bin, binCount - 1))
-      }
-      return bins
-    }
 
     const draw = (): void => {
       const w = canvas.width
@@ -197,8 +196,8 @@ export default function PlayerAudioVisualizerOverlay({
         return { x, barW }
       }
 
-      const sampleRate = audioContext.sampleRate
-      const melBins = buildMelBins(dataArray.length, sampleRate)
+      if (!melBinsRef.current) return
+      const melBins = melBinsRef.current
       const baseReflectH = Math.max(20, Math.floor(MAX_REFLECT * 0.68))
       const baseBarH = Math.max(5, Math.floor(MAX_H * 0.04))
 

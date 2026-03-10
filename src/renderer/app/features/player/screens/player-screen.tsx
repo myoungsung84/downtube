@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import PlayerAudioVisualizerOverlay from '../components/player-audio-visualizer-overlay'
 import { PlayerControls } from '../components/player-controls'
-import { formatSeconds } from '../lib/player-format'
 import {
   getDecodedVideoSrc,
   getFileExtension,
@@ -13,6 +12,49 @@ import {
   getMediaPathFromVideoSrc,
   getPlayerSearchParamsFromHash
 } from '../lib/player-query'
+
+const seekSliderSx: SxProps<Theme> = {
+  color: '#e53935',
+  height: 2,
+  padding: '10px 0',
+  mx: 0,
+  '& .MuiSlider-root': { padding: 0 },
+  '& .MuiSlider-thumb': {
+    width: 14,
+    height: 14,
+    backgroundColor: '#fff',
+    boxShadow: '0 0 0 2px rgba(229,57,53,0.5)',
+    transition: 'box-shadow 0.15s',
+    '&:before': { display: 'none' },
+    '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(229,57,53,0.25)' }
+  },
+  '& .MuiSlider-rail': {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    opacity: 1
+  },
+  '& .MuiSlider-track': {
+    border: 'none',
+    backgroundColor: '#e53935',
+    opacity: 1
+  }
+}
+
+const volSliderSx: SxProps<Theme> = {
+  color: '#fff',
+  height: 3,
+  width: 80,
+  padding: '10px 0',
+  '& .MuiSlider-thumb': {
+    width: 13,
+    height: 13,
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+    '&:before': { display: 'none' },
+    '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(255,255,255,0.2)' }
+  },
+  '& .MuiSlider-rail': { backgroundColor: 'rgba(255,255,255,0.25)', opacity: 1 },
+  '& .MuiSlider-track': { border: 'none' }
+}
 
 export default function PlayerScreen(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -88,6 +130,7 @@ export default function PlayerScreen(): React.JSX.Element {
   }
 
   const logVideoState = (label: string): void => {
+    if (!import.meta.env.DEV) return
     const video = videoRef.current
     if (!video) return
     console.log(`[player] ${label}`, { currentTime: video.currentTime, paused: video.paused })
@@ -138,6 +181,7 @@ export default function PlayerScreen(): React.JSX.Element {
         return
       }
       video.currentTime = v
+      setSeeking(false)
     },
     []
   )
@@ -245,49 +289,6 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const currentSeekVal = seeking ? seekValue : meta.currentTime
 
-  const seekSliderSx: SxProps<Theme> = {
-    color: '#e53935',
-    height: 2,
-    padding: '10px 0',
-    mx: 0,
-    '& .MuiSlider-root': { padding: 0 },
-    '& .MuiSlider-thumb': {
-      width: 14,
-      height: 14,
-      backgroundColor: '#fff',
-      boxShadow: '0 0 0 2px rgba(229,57,53,0.5)',
-      transition: 'box-shadow 0.15s',
-      '&:before': { display: 'none' },
-      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(229,57,53,0.25)' }
-    },
-    '& .MuiSlider-rail': {
-      backgroundColor: 'rgba(255,255,255,0.25)',
-      opacity: 1
-    },
-    '& .MuiSlider-track': {
-      border: 'none',
-      backgroundColor: '#e53935',
-      opacity: 1
-    }
-  }
-
-  const volSliderSx: SxProps<Theme> = {
-    color: '#fff',
-    height: 3,
-    width: 80,
-    padding: '10px 0',
-    '& .MuiSlider-thumb': {
-      width: 13,
-      height: 13,
-      backgroundColor: '#fff',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
-      '&:before': { display: 'none' },
-      '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(255,255,255,0.2)' }
-    },
-    '& .MuiSlider-rail': { backgroundColor: 'rgba(255,255,255,0.25)', opacity: 1 },
-    '& .MuiSlider-track': { border: 'none' }
-  }
-
   return (
     <Box
       ref={containerRef}
@@ -372,7 +373,6 @@ export default function PlayerScreen(): React.JSX.Element {
             seekbarRef={seekbarRef}
             seekSliderSx={seekSliderSx}
             volSliderSx={volSliderSx}
-            formatSeconds={formatSeconds}
             onOpenFolder={handleOpenFolder}
             onChangePlaybackRate={(rate) => {
               const video = videoRef.current
