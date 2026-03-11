@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useSettingsStore } from '../../settings/store/use-settings-store'
 import PlayerAudioVisualizerOverlay from '../components/player-audio-visualizer-overlay'
 import { PlayerControls } from '../components/player-controls'
 import {
@@ -56,11 +57,18 @@ const volSliderSx: SxProps<Theme> = {
   '& .MuiSlider-track': { border: 'none' }
 }
 
+const PLAYER_VOLUME_KEY = 'player.volume' as const
+const PLAYER_MUTED_KEY = 'player.muted' as const
+const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
+
 export default function PlayerScreen(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seekbarRef = useRef<HTMLDivElement | null>(null)
+  const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
+  const getSettingValue = useSettingsStore((state) => state.getValue)
+  const setSettingValue = useSettingsStore((state) => state.setValue)
 
   const [meta, setMeta] = useState<{
     fileName: string
@@ -82,6 +90,9 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
   const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
+  const storedVolume = getSettingValue(PLAYER_VOLUME_KEY)
+  const storedMuted = getSettingValue(PLAYER_MUTED_KEY)
+  const storedVisualizerVisible = getSettingValue(PLAYER_VISUALIZER_KEY)
 
   const hash = window.location.hash
 
@@ -148,22 +159,38 @@ export default function PlayerScreen(): React.JSX.Element {
     video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + sec))
   }, [])
 
-  const handleVolumeChange = useCallback((_: Event, val: number | number[]) => {
-    const v = Array.isArray(val) ? val[0] : val
-    const video = videoRef.current
-    if (!video) return
-    video.volume = v
-    video.muted = v === 0
-    setVolume(v)
-    setMuted(v === 0)
-  }, [])
+  const handleVolumeChange = useCallback(
+    (_: Event, val: number | number[]) => {
+      const nextVolume = Array.isArray(val) ? val[0] : val
+      const video = videoRef.current
+      if (!video) return
+      const nextMuted = nextVolume === 0
+      video.volume = nextVolume
+      video.muted = nextMuted
+      setVolume(nextVolume)
+      setMuted(nextMuted)
+    },
+    []
+  )
+
+  const handleVolumeCommit = useCallback(
+    (_: React.SyntheticEvent | Event, val: number | number[]) => {
+      const nextVolume = Array.isArray(val) ? val[0] : val
+      const nextMuted = nextVolume === 0
+      void setSettingValue(PLAYER_VOLUME_KEY, nextVolume)
+      void setSettingValue(PLAYER_MUTED_KEY, nextMuted)
+    },
+    [setSettingValue]
+  )
 
   const toggleMute = useCallback(() => {
     const video = videoRef.current
     if (!video) return
-    video.muted = !video.muted
-    setMuted(video.muted)
-  }, [])
+    const nextMuted = !video.muted
+    video.muted = nextMuted
+    setMuted(nextMuted)
+    void setSettingValue(PLAYER_MUTED_KEY, nextMuted)
+  }, [setSettingValue])
 
   const handleSeekChange = useCallback((_: Event, val: number | number[]) => {
     const v = Array.isArray(val) ? val[0] : val
@@ -221,6 +248,32 @@ export default function PlayerScreen(): React.JSX.Element {
     setMeta({ fileName, duration: 0, width: 0, height: 0, currentTime: 0 })
     setSeekValue(0)
   }, [fileName, videoSrc])
+
+  useEffect(() => {
+    void hydrateSettings([PLAYER_VOLUME_KEY, PLAYER_MUTED_KEY, PLAYER_VISUALIZER_KEY])
+  }, [hydrateSettings])
+
+  useEffect(() => {
+    const video = videoRef.current
+
+    if (typeof storedVolume === 'number') {
+      setVolume(storedVolume)
+      if (video) {
+        video.volume = storedVolume
+      }
+    }
+
+    if (typeof storedMuted === 'boolean') {
+      setMuted(storedMuted)
+      if (video) {
+        video.muted = storedMuted
+      }
+    }
+
+    if (typeof storedVisualizerVisible === 'boolean') {
+      setVisualizerVisible(storedVisualizerVisible)
+    }
+  }, [storedMuted, storedVisualizerVisible, storedVolume])
 
   useEffect(() => {
     let mounted = true
@@ -388,7 +441,12 @@ export default function PlayerScreen(): React.JSX.Element {
             onSeekCommit={handleSeekCommit}
             onToggleMute={toggleMute}
             onVolumeChange={handleVolumeChange}
-            onToggleVisualizer={() => setVisualizerVisible((prev) => !prev)}
+            onVolumeCommit={handleVolumeCommit}
+            onToggleVisualizer={() => {
+              const nextVisible = !visualizerVisible
+              setVisualizerVisible(nextVisible)
+              void setSettingValue(PLAYER_VISUALIZER_KEY, nextVisible)
+            }}
             onToggleFullscreen={toggleFullscreen}
           />
         </>

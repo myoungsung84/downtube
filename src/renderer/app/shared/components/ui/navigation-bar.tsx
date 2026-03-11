@@ -1,14 +1,38 @@
+import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutlined'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
-import { Box, IconButton, Stack, Typography } from '@mui/material'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { JSX } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 type NavigationBarProps = {
   onDirectory?: () => void
 }
 
+const NAV_ICON_BTN_SX = {
+  p: 0.875,
+  borderRadius: 2,
+  border: '1px solid',
+  borderColor: 'divider',
+  backgroundColor: 'background.paper',
+  transition: 'background-color 140ms ease, border-color 140ms ease',
+  '&:hover': {
+    backgroundColor: 'action.hover',
+    borderColor: 'primary.main'
+  },
+  '&:active': {
+    backgroundColor: 'action.selected'
+  }
+}
+
 export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.Element {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isSettingsPage = location.pathname === '/settings'
+
   return (
     <Box
+      component="header"
       sx={{
         borderBottom: '1px solid',
         borderColor: 'divider',
@@ -17,69 +41,98 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
       }}
     >
       <Stack
-        spacing={2.5}
+        direction="row"
+        alignItems="center"
         sx={{
-          px: 3,
-          py: 2,
+          px: 2.5,
+          py: 1.5,
           maxWidth: 1280,
           width: '100%'
         }}
       >
-        <Stack direction="row" alignItems="center">
-          <Stack sx={{ flex: 1 }} alignItems="flex-start">
-            <IconButton
-              color="primary"
-              onClick={onDirectory}
-              sx={{
-                p: 1,
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                backgroundColor: 'background.paper',
-                boxShadow: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? '0 6px 18px rgba(0,0,0,0.25)'
-                    : '0 6px 18px rgba(0,0,0,0.08)',
-                transition:
-                  'transform 120ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
+        {/* Left actions */}
+        <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
+          {isSettingsPage && (
+            <Tooltip title="뒤로 가기" placement="bottom" arrow>
+              <IconButton onClick={() => navigate('/')} sx={NAV_ICON_BTN_SX}>
+                <ArrowBackIosNewOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              </IconButton>
+            </Tooltip>
+          )}
 
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                  transform: 'translateY(-1px)',
-                  boxShadow: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? '0 10px 26px rgba(0,0,0,0.32)'
-                      : '0 10px 26px rgba(0,0,0,0.12)'
-                },
-                '&:active': {
-                  transform: 'translateY(0)'
-                }
+          <Tooltip title="저장 폴더 열기" placement="bottom" arrow>
+            <IconButton onClick={onDirectory} sx={NAV_ICON_BTN_SX}>
+              <FolderOpenOutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+
+        {/* Center logo */}
+        <Stack alignItems="center" sx={{ flex: 2, userSelect: 'none' }}>
+          <Stack direction="row" alignItems="baseline" spacing={0.5}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                letterSpacing: '-0.8px',
+                lineHeight: 1,
+                color: 'text.primary'
               }}
             >
-              <FolderOpenOutlinedIcon
+              Down
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                letterSpacing: '-0.8px',
+                lineHeight: 1,
+                color: 'error.main'
+              }}
+            >
+              Tube
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              mt: 0.25,
+              height: 2,
+              width: 24,
+              borderRadius: 1,
+              background: (theme) =>
+                `linear-gradient(90deg, ${theme.palette.error.main}, ${theme.palette.warning.main})`
+            }}
+          />
+        </Stack>
+
+        {/* Right actions */}
+        <Stack direction="row" sx={{ flex: 1 }} justifyContent="flex-end">
+          <Tooltip title="설정" placement="bottom" arrow>
+            <IconButton
+              onClick={() => navigate('/settings')}
+              sx={{
+                ...NAV_ICON_BTN_SX,
+                ...(isSettingsPage && {
+                  backgroundColor: 'primary.main',
+                  borderColor: 'primary.main',
+                  '& svg': { color: 'primary.contrastText' },
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                    borderColor: 'primary.dark'
+                  }
+                })
+              }}
+            >
+              <SettingsOutlinedIcon
                 sx={{
-                  fontSize: 28,
-                  color: 'warning.main'
+                  fontSize: 22,
+                  color: 'text.secondary',
+                  transition: 'transform 300ms ease',
+                  ...(isSettingsPage && { transform: 'rotate(45deg)' })
                 }}
               />
             </IconButton>
-          </Stack>
-
-          <Stack sx={{ flex: 2 }} alignItems="center" spacing={0.5}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 800,
-                color: 'text.primary',
-                letterSpacing: '-0.6px',
-                lineHeight: 1.1
-              }}
-            >
-              DownTube
-            </Typography>
-          </Stack>
-
-          <Stack sx={{ flex: 1 }} />
+          </Tooltip>
         </Stack>
       </Stack>
     </Box>

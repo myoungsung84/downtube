@@ -5,7 +5,6 @@ import { IcFolder } from './player-icons'
 
 type PlayerTopOverlayProps = {
   uiVisible: boolean
-  visualizerVisible: boolean
   fileExtension: string
   displayFileName: string
   meta: { width: number; height: number }
@@ -16,7 +15,6 @@ type PlayerTopOverlayProps = {
 
 export function PlayerTopOverlay({
   uiVisible,
-  visualizerVisible,
   fileExtension,
   displayFileName,
   meta,
@@ -33,7 +31,7 @@ export function PlayerTopOverlay({
           left: 0,
           right: 0,
           pointerEvents: uiVisible ? 'auto' : 'none',
-          opacity: uiVisible ? 1 : 0.28,
+          opacity: uiVisible ? 1 : 0,
           transition: 'opacity 0.5s ease',
           zIndex: 4
         }}
@@ -127,7 +125,7 @@ export function PlayerTopOverlay({
           left: 0,
           right: 0,
           pointerEvents: uiVisible ? 'auto' : 'none',
-          opacity: uiVisible ? 1 : visualizerVisible ? 0.28 : 0,
+          opacity: uiVisible ? 1 : 0,
           transition: 'opacity 0.5s ease',
           zIndex: 4
         }}

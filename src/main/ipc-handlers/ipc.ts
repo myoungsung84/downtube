@@ -6,11 +6,13 @@ import path from 'path'
 import url from 'url'
 
 import type { InitState } from '../../types/init.types'
+import type { SettingKey } from '../../types/settings.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
 import { locateFfprobe } from '../downloads/adapters/ffmpeg/ffmpeg'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
 import type { DownloadJob } from '../downloads/types'
+import { getSetting, getSettings, setSetting } from '../settings/settings-store'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -69,6 +71,18 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       })
 
     return initInFlight
+  })
+
+  safeSetHandler('settings:get', async (_, key: SettingKey) => {
+    return getSetting(key)
+  })
+
+  safeSetHandler('settings:get-many', async (_, keys: SettingKey[]) => {
+    return getSettings(keys)
+  })
+
+  safeSetHandler('settings:set', async (_, payload: { key: SettingKey; value: unknown }) => {
+    return setSetting(payload.key, payload.value)
   })
 
   safeSetHandler('download-player', async (_, payload: { id: string }) => {

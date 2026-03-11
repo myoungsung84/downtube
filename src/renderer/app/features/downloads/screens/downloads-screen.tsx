@@ -1,5 +1,6 @@
 import DownloadIcon from '@mui/icons-material/Download'
 import { alpha, Box, Fade, Paper, Stack, Typography } from '@mui/material'
+import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -10,10 +11,14 @@ import DownloadsQueuePanel from '../components/downloads-queue-panel'
 import DownloadsUrlPanel from '../components/downloads-url-panel'
 import { getErrorMessage, inferTitle, isPlaylistUrl, sortJobs } from '../lib/downloads-utils'
 
+const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
+const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
+
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
 
   const { showToast } = useToast()
+  const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
 
   const [jobs, setJobs] = useState<DownloadJob[]>([])
   const [hydrating, setHydrating] = useState(true)
@@ -22,14 +27,22 @@ export default function DownloadsScreen(): React.JSX.Element {
   const [queuePaused, setQueuePaused] = useState(true)
   const [currentJobId, setCurrentJobId] = useState<string | undefined>(undefined)
 
-  const [defaultType, setDefaultType] = useState<'video' | 'audio'>('video')
-  const [playlistLimit, setPlaylistLimit] = useState(10)
-
   const [submitting, setSubmitting] = useState<null | { url: string; kind: 'playlist' | 'single' }>(
     null
   )
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const jobsRef = useRef<DownloadJob[]>([])
+  const storedDefaultType = useSettingsStore((state) => state.values[DOWNLOADS_DEFAULT_TYPE_KEY])
+  const storedPlaylistLimit = useSettingsStore(
+    (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
+  )
+  const defaultType: 'video' | 'audio' = storedDefaultType === 'audio' ? 'audio' : 'video'
+  const playlistLimit =
+    typeof storedPlaylistLimit === 'number' &&
+    Number.isFinite(storedPlaylistLimit) &&
+    Number.isInteger(storedPlaylistLimit) &&
+    storedPlaylistLimit >= 1
+      ? storedPlaylistLimit
+      : 10
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
   const hasQueued = queuedCount > 0
@@ -51,6 +64,10 @@ export default function DownloadsScreen(): React.JSX.Element {
   useEffect(() => {
     jobsRef.current = jobs
   }, [jobs])
+
+  useEffect(() => {
+    void hydrateSettings([DOWNLOADS_DEFAULT_TYPE_KEY, DOWNLOADS_PLAYLIST_LIMIT_KEY])
+  }, [hydrateSettings])
 
   const handleDownloadInfo = async (inputUrl: string): Promise<void> => {
     const url = inputUrl.trim()
@@ -220,12 +237,6 @@ export default function DownloadsScreen(): React.JSX.Element {
           canStart={canStart}
           canPause={canPause}
           hydrating={hydrating}
-          showAdvanced={showAdvanced}
-          onToggleAdvanced={() => setShowAdvanced((v) => !v)}
-          defaultType={defaultType}
-          onChangeDefaultType={(next) => setDefaultType(next)}
-          playlistLimit={playlistLimit}
-          onChangePlaylistLimit={(next) => setPlaylistLimit(next)}
           onOpenDir={() => window.api.openDownloadDir()}
           onStartQueue={() => void handleStartQueue()}
           onPauseQueue={() => void handlePauseQueue()}
