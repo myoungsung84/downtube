@@ -6,7 +6,6 @@ import { formatSeconds } from '../lib/player-format'
 
 type PlayerSeekbarProps = {
   uiVisible: boolean
-  visualizerVisible: boolean
   seekbarRef: React.RefObject<HTMLDivElement | null>
   hoverTime: number | null
   hoverX: number
@@ -21,7 +20,6 @@ type PlayerSeekbarProps = {
 
 export function PlayerSeekbar({
   uiVisible,
-  visualizerVisible,
   seekbarRef,
   hoverTime,
   hoverX,
@@ -42,7 +40,7 @@ export function PlayerSeekbar({
         right: 0,
         px: 0,
         pointerEvents: uiVisible ? 'auto' : 'none',
-        opacity: uiVisible ? 1 : visualizerVisible ? 0.42 : 0,
+        opacity: uiVisible ? 1 : 0,
         transition: 'opacity 0.5s ease',
         zIndex: 4
       }}

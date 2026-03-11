@@ -81,6 +81,8 @@ export function PlayerControls({
           height: 120,
           background: 'linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, transparent 100%)',
           pointerEvents: 'none',
+          opacity: uiVisible ? 1 : 0,
+          transition: 'opacity 0.5s ease',
           zIndex: 3
         }}
       />
@@ -95,13 +97,14 @@ export function PlayerControls({
           background:
             'linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.55) 60%, transparent 100%)',
           pointerEvents: 'none',
+          opacity: uiVisible ? 1 : 0,
+          transition: 'opacity 0.5s ease',
           zIndex: 3
         }}
       />
 
       <PlayerTopOverlay
         uiVisible={uiVisible}
-        visualizerVisible={visualizerVisible}
         fileExtension={fileExtension}
         displayFileName={displayFileName}
         meta={{ width: meta.width, height: meta.height }}
@@ -119,8 +122,7 @@ export function PlayerControls({
       />
 
       <PlayerSeekbar
-        uiVisible={uiVisible}
-        visualizerVisible={visualizerVisible}
+        uiVisible={uiVisible || visualizerVisible}
         seekbarRef={seekbarRef}
         hoverTime={hoverTime}
         hoverX={hoverX}

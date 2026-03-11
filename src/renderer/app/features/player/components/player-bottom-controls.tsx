@@ -50,7 +50,7 @@ export function PlayerBottomControls({
         right: 0,
         pb: 1.5,
         pointerEvents: uiVisible ? 'auto' : 'none',
-        opacity: uiVisible ? 1 : visualizerVisible ? 0.28 : 0,
+        opacity: uiVisible ? 1 : 0,
         transition: 'opacity 0.5s ease',
         zIndex: 4
       }}
