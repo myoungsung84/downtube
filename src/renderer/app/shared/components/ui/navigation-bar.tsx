@@ -1,12 +1,19 @@
+import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutlined'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Typography } from '@mui/material'
 import { JSX } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 type NavigationBarProps = {
   onDirectory?: () => void
 }
 
 export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.Element {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isSettingsPage = location.pathname === '/settings'
+
   return (
     <Box
       sx={{
@@ -26,7 +33,46 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
         }}
       >
         <Stack direction="row" alignItems="center">
-          <Stack sx={{ flex: 1 }} alignItems="flex-start">
+          <Stack sx={{ flex: 1 }} alignItems="flex-start" direction="row" spacing={1}>
+            {isSettingsPage ? (
+              <IconButton
+                color="primary"
+                onClick={() => navigate('/')}
+                sx={{
+                  p: 1,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 6px 18px rgba(0,0,0,0.25)'
+                      : '0 6px 18px rgba(0,0,0,0.08)',
+                  transition:
+                    'transform 120ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
+
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    transform: 'translateY(-1px)',
+                    boxShadow: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? '0 10px 26px rgba(0,0,0,0.32)'
+                        : '0 10px 26px rgba(0,0,0,0.12)'
+                  },
+                  '&:active': {
+                    transform: 'translateY(0)'
+                  }
+                }}
+              >
+                <ArrowBackIosNewOutlinedIcon
+                  sx={{
+                    fontSize: 24,
+                    color: 'text.secondary'
+                  }}
+                />
+              </IconButton>
+            ) : null}
+
             <IconButton
               color="primary"
               onClick={onDirectory}
@@ -79,7 +125,43 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
             </Typography>
           </Stack>
 
-          <Stack sx={{ flex: 1 }} />
+          <Stack sx={{ flex: 1 }} alignItems="flex-end">
+            <IconButton
+              color="primary"
+              onClick={() => navigate('/settings')}
+              sx={{
+                p: 1,
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                backgroundColor: 'background.paper',
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 6px 18px rgba(0,0,0,0.25)'
+                    : '0 6px 18px rgba(0,0,0,0.08)',
+                transition:
+                  'transform 120ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  transform: 'translateY(-1px)',
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? '0 10px 26px rgba(0,0,0,0.32)'
+                      : '0 10px 26px rgba(0,0,0,0.12)'
+                },
+                '&:active': {
+                  transform: 'translateY(0)'
+                }
+              }}
+            >
+              <SettingsOutlinedIcon
+                sx={{
+                  fontSize: 28,
+                  color: 'text.secondary'
+                }}
+              />
+            </IconButton>
+          </Stack>
         </Stack>
       </Stack>
     </Box>

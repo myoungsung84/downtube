@@ -30,6 +30,26 @@ export function validateSettingValue<K extends SettingKey>(
       return
     }
 
+    case 'downloads.defaultType': {
+      if (value !== 'video' && value !== 'audio') {
+        throw new Error(`[settings] ${key} must be "video" or "audio"`)
+      }
+      return
+    }
+
+    case 'downloads.playlistLimit': {
+      if (typeof value !== 'number') {
+        throw new Error(`[settings] ${key} must be a number`)
+      }
+      if (!Number.isFinite(value)) {
+        throw new Error(`[settings] ${key} must be a finite number`)
+      }
+      if (!Number.isInteger(value) || value < 1) {
+        throw new Error(`[settings] ${key} must be an integer greater than or equal to 1`)
+      }
+      return
+    }
+
     default:
       return assertNever(key)
   }

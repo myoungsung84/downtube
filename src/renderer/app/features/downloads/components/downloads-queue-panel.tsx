@@ -1,28 +1,11 @@
-import AudiotrackIcon from '@mui/icons-material/Audiotrack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DownloadIcon from '@mui/icons-material/Download'
 import DownloadingIcon from '@mui/icons-material/Downloading'
 import ErrorIcon from '@mui/icons-material/Error'
 import FolderOpenIcon from '@mui/icons-material/FolderOpen'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import SettingsSuggestOutlinedIcon from '@mui/icons-material/SettingsSuggestOutlined'
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Collapse,
-  Divider,
-  IconButton,
-  Paper,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography
-} from '@mui/material'
+import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import React from 'react'
 
@@ -40,15 +23,6 @@ export default function DownloadsQueuePanel(props: {
   canStart: boolean
   canPause: boolean
   hydrating: boolean
-
-  showAdvanced: boolean
-  onToggleAdvanced: () => void
-
-  defaultType: 'video' | 'audio'
-  onChangeDefaultType: (next: 'video' | 'audio') => void
-
-  playlistLimit: number
-  onChangePlaylistLimit: (next: number) => void
 
   onOpenDir: () => void
   onStartQueue: () => void
@@ -108,19 +82,6 @@ export default function DownloadsQueuePanel(props: {
               >
                 폴더 열기
               </Button>
-            </AppTooltip>
-
-            <AppTooltip title="설정 보기/숨기기">
-              <IconButton
-                size="medium"
-                onClick={props.onToggleAdvanced}
-                sx={{
-                  bgcolor: props.showAdvanced ? 'action.selected' : 'action.hover',
-                  '&:hover': { bgcolor: 'action.selected' }
-                }}
-              >
-                <SettingsSuggestOutlinedIcon />
-              </IconButton>
             </AppTooltip>
           </Stack>
         </Stack>
@@ -247,97 +208,6 @@ export default function DownloadsQueuePanel(props: {
             </Box>
           </Stack>
         </Stack>
-
-        <Collapse
-          in={props.showAdvanced}
-          unmountOnExit
-          timeout={100}
-          easing="ease-out"
-          collapsedSize={0}
-        >
-          <Stack spacing={2}>
-            <Divider />
-
-            <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 2 }}>
-              <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
-                💡 이 설정은 새로 추가되는 영상에만 적용됩니다.
-              </Typography>
-            </Alert>
-
-            <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
-              <Stack spacing={1.25}>
-                <Typography variant="body2" fontWeight={700} color="text.secondary">
-                  기본 다운로드 형식
-                </Typography>
-
-                <ToggleButtonGroup
-                  size="medium"
-                  exclusive
-                  value={props.defaultType}
-                  onChange={(_, v): void => {
-                    if (!v) return
-                    props.onChangeDefaultType(v)
-                  }}
-                  sx={{
-                    '& .MuiToggleButton-root': {
-                      px: 3,
-                      py: 1.25,
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      borderRadius: 2
-                    }
-                  }}
-                >
-                  <ToggleButton value="video">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <VideoLibraryIcon sx={{ fontSize: 20 }} />
-                      <span>비디오 (영상+음성)</span>
-                    </Stack>
-                  </ToggleButton>
-                  <ToggleButton value="audio">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <AudiotrackIcon sx={{ fontSize: 20 }} />
-                      <span>오디오만</span>
-                    </Stack>
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-
-              <Divider orientation="vertical" flexItem />
-
-              <Stack spacing={1.25}>
-                <Typography variant="body2" fontWeight={700} color="text.secondary">
-                  플레이리스트 다운로드 개수
-                </Typography>
-
-                <ToggleButtonGroup
-                  size="medium"
-                  exclusive
-                  value={String(props.playlistLimit)}
-                  onChange={(_, v): void => {
-                    if (!v) return
-                    const n = Number(v)
-                    if (!Number.isFinite(n)) return
-                    props.onChangePlaylistLimit(n)
-                  }}
-                  sx={{
-                    '& .MuiToggleButton-root': {
-                      px: 3,
-                      py: 1.25,
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      borderRadius: 2
-                    }
-                  }}
-                >
-                  <ToggleButton value="10">10개</ToggleButton>
-                  <ToggleButton value="20">20개</ToggleButton>
-                  <ToggleButton value="40">40개</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-            </Stack>
-          </Stack>
-        </Collapse>
       </Stack>
     </Paper>
   )
