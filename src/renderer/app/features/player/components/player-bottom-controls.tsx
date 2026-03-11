@@ -22,6 +22,7 @@ type PlayerBottomControlsProps = {
   isFullscreen: boolean
   onToggleMute: () => void
   onVolumeChange: (_: Event, val: number | number[]) => void
+  onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
   onToggleVisualizer: () => void
   onToggleFullscreen: () => void
   volSliderSx: SxProps<Theme>
@@ -37,6 +38,7 @@ export function PlayerBottomControls({
   isFullscreen,
   onToggleMute,
   onVolumeChange,
+  onVolumeCommit,
   onToggleVisualizer,
   onToggleFullscreen,
   volSliderSx
@@ -67,6 +69,7 @@ export function PlayerBottomControls({
               step={0.01}
               value={muted ? 0 : volume}
               onChange={onVolumeChange}
+              onChangeCommitted={onVolumeCommit}
               sx={volSliderSx}
             />
           </Stack>

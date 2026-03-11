@@ -35,6 +35,7 @@ type PlayerControlsProps = {
   onSeekCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
   onToggleMute: () => void
   onVolumeChange: (_: Event, val: number | number[]) => void
+  onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
   onToggleVisualizer: () => void
   onToggleFullscreen: () => void
 }
@@ -67,6 +68,7 @@ export function PlayerControls({
   onSeekCommit,
   onToggleMute,
   onVolumeChange,
+  onVolumeCommit,
   onToggleVisualizer,
   onToggleFullscreen
 }: PlayerControlsProps): React.JSX.Element {
@@ -145,6 +147,7 @@ export function PlayerControls({
         isFullscreen={isFullscreen}
         onToggleMute={onToggleMute}
         onVolumeChange={onVolumeChange}
+        onVolumeCommit={onVolumeCommit}
         onToggleVisualizer={onToggleVisualizer}
         onToggleFullscreen={onToggleFullscreen}
         volSliderSx={volSliderSx}

@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatSeconds } from '../lib/player-format'
 
@@ -31,6 +31,7 @@ export function PlayerSeekbar({
   onSeekCommit
 }: PlayerSeekbarProps): React.JSX.Element {
   const trackRef = useRef<HTMLDivElement>(null)
+  const dragAbortRef = useRef<AbortController | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
 
@@ -41,8 +42,11 @@ export function PlayerSeekbar({
     (e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
       if (!trackRef.current) return null
       const rect = trackRef.current.getBoundingClientRect()
+      if (rect.width <= 0) return null
+      const trackDuration = duration || 100
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
-      return (x / rect.width) * (duration || 100)
+      const raw = (x / rect.width) * trackDuration
+      return Math.min(Math.max(raw, 0), trackDuration)
     },
     [duration]
   )
@@ -54,6 +58,11 @@ export function PlayerSeekbar({
       const val = getValueFromEvent(e)
       if (val !== null) onSeekChange(new Event('change'), val)
 
+      if (dragAbortRef.current) dragAbortRef.current.abort()
+      const controller = new AbortController()
+      dragAbortRef.current = controller
+      const { signal } = controller
+
       const handleMouseMove = (mv: MouseEvent): void => {
         const v = getValueFromEvent(mv)
         if (v !== null) onSeekChange(new Event('change'), v)
@@ -62,14 +71,19 @@ export function PlayerSeekbar({
         setIsDragging(false)
         const v = getValueFromEvent(up)
         if (v !== null) onSeekCommit(new Event('change'), v)
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
+        controller.abort()
       }
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('mousemove', handleMouseMove, { signal })
+      window.addEventListener('mouseup', handleMouseUp, { signal })
     },
     [getValueFromEvent, onSeekChange, onSeekCommit]
   )
+
+  useEffect(() => {
+    return () => {
+      dragAbortRef.current?.abort()
+    }
+  }, [])
 
   const handleTrackMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {

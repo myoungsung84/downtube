@@ -169,6 +169,14 @@ export default function PlayerScreen(): React.JSX.Element {
       video.muted = nextMuted
       setVolume(nextVolume)
       setMuted(nextMuted)
+    },
+    []
+  )
+
+  const handleVolumeCommit = useCallback(
+    (_: React.SyntheticEvent | Event, val: number | number[]) => {
+      const nextVolume = Array.isArray(val) ? val[0] : val
+      const nextMuted = nextVolume === 0
       void setSettingValue(PLAYER_VOLUME_KEY, nextVolume)
       void setSettingValue(PLAYER_MUTED_KEY, nextMuted)
     },
@@ -433,6 +441,7 @@ export default function PlayerScreen(): React.JSX.Element {
             onSeekCommit={handleSeekCommit}
             onToggleMute={toggleMute}
             onVolumeChange={handleVolumeChange}
+            onVolumeCommit={handleVolumeCommit}
             onToggleVisualizer={() => {
               const nextVisible = !visualizerVisible
               setVisualizerVisible(nextVisible)
