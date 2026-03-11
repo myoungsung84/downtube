@@ -13,7 +13,7 @@ const settingsStore = new StoreConstructor<SettingValueMap>({
 })
 
 export function getSetting<K extends SettingKey>(key: K): SettingValueMap[K] {
-  if (!(settingKeys as readonly string[]).includes(key)) {
+  if (!settingKeys.includes(key)) {
     throw new Error(`Invalid setting key: ${String(key)}`)
   }
 
