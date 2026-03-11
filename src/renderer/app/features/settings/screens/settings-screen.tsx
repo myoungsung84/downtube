@@ -1,7 +1,17 @@
 import AudiotrackIcon from '@mui/icons-material/Audiotrack'
+import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
-import { Box, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import {
+  Box,
+  Chip,
+  Divider,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography
+} from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import React, { useEffect } from 'react'
 
@@ -30,31 +40,91 @@ export default function SettingsScreen(): React.JSX.Element {
   }, [hydrateSettings])
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <Stack sx={{ p: 3, width: '100%', maxWidth: 1000 }} spacing={3}>
-        <Stack direction="row" spacing={1.25} alignItems="center">
-          <SettingsOutlinedIcon color="primary" />
-          <Typography variant="h5" fontWeight={800}>
-            설정
-          </Typography>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        pt: 1
+      }}
+    >
+      <Stack sx={{ p: 3, width: '100%', maxWidth: 720 }} spacing={4}>
+        {/* Header */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(var(--mui-palette-primary-mainChannel) / 0.4)'
+            }}
+          >
+            <SettingsOutlinedIcon sx={{ fontSize: 20, color: 'primary.contrastText' }} />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight={800} lineHeight={1.1}>
+              설정
+            </Typography>
+            <Typography variant="caption" color="text.disabled">
+              앱 환경을 맞춤 설정하세요
+            </Typography>
+          </Box>
         </Stack>
 
+        {/* Downloads Section */}
         <Paper
-          elevation={2}
-          sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden'
+          }}
         >
-          <Stack spacing={2.5}>
-            <Typography variant="h6" fontWeight={700}>
+          {/* Section header */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ px: 3, py: 2, bgcolor: 'action.hover' }}
+          >
+            <Typography
+              variant="overline"
+              fontWeight={700}
+              color="text.secondary"
+              letterSpacing={1.5}
+            >
               다운로드
             </Typography>
+          </Stack>
 
-            <Stack spacing={1.25}>
-              <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                기본 다운로드 형식
-              </Typography>
+          <Divider />
+
+          <Stack divider={<Divider />}>
+            {/* Default format setting */}
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ px: 3, py: 2.5 }}
+            >
+              <Stack spacing={0.4}>
+                <Typography variant="body2" fontWeight={700}>
+                  기본 다운로드 형식
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  링크를 추가할 때 기본으로 선택될 형식입니다
+                </Typography>
+              </Stack>
 
               <ToggleButtonGroup
-                size="medium"
+                size="small"
                 exclusive
                 value={defaultType}
                 onChange={(_, next): void => {
@@ -63,37 +133,85 @@ export default function SettingsScreen(): React.JSX.Element {
                   void setSettingValue(DOWNLOADS_DEFAULT_TYPE_KEY, next)
                 }}
                 sx={{
+                  flexShrink: 0,
+                  bgcolor: 'action.hover',
+                  borderRadius: '10px',
+                  p: 0.5,
+                  border: 'none',
+                  gap: 0.5,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    border: 'none !important',
+                    borderRadius: '8px !important',
+                    m: 0
+                  },
                   '& .MuiToggleButton-root': {
-                    px: 3,
-                    py: 1.25,
+                    px: 2,
+                    py: 0.875,
                     fontWeight: 600,
-                    fontSize: '0.9rem',
-                    borderRadius: 2
+                    fontSize: '0.8rem',
+                    color: 'text.secondary',
+                    transition: 'all 0.18s ease',
+                    '&.Mui-selected': {
+                      bgcolor: 'background.paper',
+                      color: 'text.primary',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                      '&:hover': { bgcolor: 'background.paper' }
+                    },
+                    '&:hover:not(.Mui-selected)': {
+                      bgcolor: 'action.selected'
+                    }
                   }
                 }}
               >
                 <ToggleButton value="video">
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <VideoLibraryIcon sx={{ fontSize: 20 }} />
-                    <span>비디오 (영상+음성)</span>
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <VideoLibraryIcon sx={{ fontSize: 15 }} />
+                    <span>비디오</span>
                   </Stack>
                 </ToggleButton>
                 <ToggleButton value="audio">
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <AudiotrackIcon sx={{ fontSize: 20 }} />
-                    <span>오디오만</span>
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <AudiotrackIcon sx={{ fontSize: 15 }} />
+                    <span>오디오</span>
                   </Stack>
                 </ToggleButton>
               </ToggleButtonGroup>
             </Stack>
 
-            <Stack spacing={1.25}>
-              <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                플레이리스트 다운로드 개수
-              </Typography>
+            {/* Playlist limit setting */}
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ px: 3, py: 2.5 }}
+            >
+              <Stack spacing={0.4}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" fontWeight={700}>
+                    플레이리스트 다운로드 개수
+                  </Typography>
+                  <Chip
+                    icon={<PlaylistPlayIcon sx={{ fontSize: '14px !important' }} />}
+                    label={`최대 ${playlistLimit}개`}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      '& .MuiChip-label': { px: 1 }
+                    }}
+                  />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  플레이리스트에서 한 번에 가져올 영상 수
+                </Typography>
+              </Stack>
 
               <ToggleButtonGroup
-                size="medium"
+                size="small"
                 exclusive
                 value={String(playlistLimit)}
                 onChange={(_, next): void => {
@@ -103,12 +221,34 @@ export default function SettingsScreen(): React.JSX.Element {
                   void setSettingValue(DOWNLOADS_PLAYLIST_LIMIT_KEY, parsed)
                 }}
                 sx={{
+                  flexShrink: 0,
+                  bgcolor: 'action.hover',
+                  borderRadius: '10px',
+                  p: 0.5,
+                  border: 'none',
+                  gap: 0.5,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    border: 'none !important',
+                    borderRadius: '8px !important',
+                    m: 0
+                  },
                   '& .MuiToggleButton-root': {
-                    px: 3,
-                    py: 1.25,
+                    px: 2.5,
+                    py: 0.875,
                     fontWeight: 600,
-                    fontSize: '0.9rem',
-                    borderRadius: 2
+                    fontSize: '0.8rem',
+                    color: 'text.secondary',
+                    minWidth: 56,
+                    transition: 'all 0.18s ease',
+                    '&.Mui-selected': {
+                      bgcolor: 'background.paper',
+                      color: 'text.primary',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                      '&:hover': { bgcolor: 'background.paper' }
+                    },
+                    '&:hover:not(.Mui-selected)': {
+                      bgcolor: 'action.selected'
+                    }
                   }
                 }}
               >

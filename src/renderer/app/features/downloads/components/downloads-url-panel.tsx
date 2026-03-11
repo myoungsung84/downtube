@@ -1,11 +1,8 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import SearchIcon from '@mui/icons-material/Search'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import {
   Alert,
-  alpha,
   Button,
-  Chip,
   Fade,
   InputAdornment,
   Paper,
@@ -22,38 +19,24 @@ export default function DownloadsUrlPanel(props: {
 }): React.JSX.Element {
   return (
     <Paper
-      elevation={3}
+      elevation={0}
       sx={{
         p: 2.5,
         borderRadius: 3,
-        border: '2px solid',
-        borderColor: 'primary.main',
-        background: (theme) =>
-          `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(
-            theme.palette.background.paper,
-            1
-          )} 100%)`,
-        transition: 'all 0.3s ease'
+        border: '1px solid',
+        borderColor: 'divider'
       }}
     >
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <SearchIcon sx={{ color: 'primary.main', fontSize: 26 }} />
-          <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.125rem' }}>
-            영상 URL 입력
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="body2" fontWeight={700} color="text.secondary">
+            URL 입력
           </Typography>
-          <Chip
-            size="small"
-            label="1단계"
-            color="primary"
-            variant="filled"
-            sx={{ fontWeight: 700 }}
-          />
         </Stack>
 
         <TextField
           inputRef={props.inputRef}
-          placeholder="https://www.youtube.com/watch?v=... 또는 플레이리스트 URL을 붙여넣으세요"
+          placeholder="YouTube URL 또는 플레이리스트 주소를 붙여넣으세요"
           variant="outlined"
           fullWidth
           disabled={props.submitting !== null}
@@ -63,9 +46,13 @@ export default function DownloadsUrlPanel(props: {
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
-              fontSize: '0.8rem',
-              '&:hover': {
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
+              fontSize: '0.85rem',
+              pr: 0.75,
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'primary.main'
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderWidth: '1px'
               }
             }
           }}
@@ -73,7 +60,7 @@ export default function DownloadsUrlPanel(props: {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <VideoLibraryIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+                  <VideoLibraryIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
                 </InputAdornment>
               ),
               endAdornment: (
@@ -82,15 +69,17 @@ export default function DownloadsUrlPanel(props: {
                     variant="contained"
                     onClick={props.onSubmit}
                     disabled={props.submitting !== null}
+                    disableElevation
                     sx={{
                       fontWeight: 700,
-                      fontSize: '0.9rem',
-                      px: 4,
-                      py: 1.25,
-                      borderRadius: 2
+                      fontSize: '0.85rem',
+                      px: 2.5,
+                      py: 1,
+                      borderRadius: 1.5,
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    {props.submitting ? '처리중...' : '추가하기'}
+                    {props.submitting ? '처리 중…' : '추가'}
                   </Button>
                 </InputAdornment>
               )
@@ -100,11 +89,15 @@ export default function DownloadsUrlPanel(props: {
 
         {props.submitting ? (
           <Fade in>
-            <Alert severity="info" icon={<InfoOutlinedIcon />} sx={{ borderRadius: 2 }}>
+            <Alert
+              severity="info"
+              icon={<InfoOutlinedIcon fontSize="small" />}
+              sx={{ borderRadius: 2, py: 0.75 }}
+            >
               <Typography variant="body2" fontWeight={600}>
                 {props.submitting.kind === 'playlist'
-                  ? '플레이리스트를 분석하고 있어요... 잠시만 기다려주세요 ⏳'
-                  : '영상 정보를 확인하고 있어요... 곧 완료됩니다 🔍'}
+                  ? '플레이리스트를 분석하고 있어요… 잠시만 기다려주세요 ⏳'
+                  : '영상 정보를 확인하고 있어요… 곧 완료됩니다 🔍'}
               </Typography>
             </Alert>
           </Fade>
