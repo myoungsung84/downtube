@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto'
 
-import type { DownloadJob, DownloadQueueEvent } from '../../types/download.types'
-import { parsePlaylistInfos } from './yt-dlp-playlist'
-import { isDownloadStoppedError, runDownloadJob, stopCurrentJobAndCleanup } from './yt-dlp-runner'
+import { parsePlaylistInfos } from '../adapters/yt-dlp/yt-dlp-playlist'
+import type { DownloadJob, DownloadQueueEvent } from '../types'
+import { isDownloadStoppedError, runDownloadJob } from './run-download-job'
+import { stopCurrentJobAndCleanup } from './stop-download-job'
 
 export class DownloadQueue {
   private jobs: DownloadJob[] = []
