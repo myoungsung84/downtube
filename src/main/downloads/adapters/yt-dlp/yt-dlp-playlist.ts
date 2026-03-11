@@ -1,9 +1,8 @@
-import type { DownloadInfo } from '@src/types/download.types'
-import { spawn } from 'child_process'
 import fs from 'fs'
 import treeKill from 'tree-kill'
 
-import { locateYtDlp } from './yt-dlp-utils'
+import type { DownloadInfo } from '../../types'
+import { locateYtDlp, spawnYtDlp } from './yt-dlp'
 
 type YoutubeTabPlaylistJson = {
   extractor?: string
@@ -81,8 +80,6 @@ export async function parsePlaylistInfos(args: {
   const limit = normalizeLimit(args.playlistLimit, 50, 500)
   const timeoutMs = normalizeLimit(args.timeoutMs, 30_000, 120_000)
 
-  console.log('parsePlaylistInfos: normalized url=', normalized, 'limit=', limit)
-
   const cmdArgs = [
     '--flat-playlist',
     '-J',
@@ -95,7 +92,7 @@ export async function parsePlaylistInfos(args: {
   ]
 
   const stdout = await new Promise<string>((resolve, reject) => {
-    const p = spawn(ytDlpPath, cmdArgs, { windowsHide: true })
+    const p = spawnYtDlp(ytDlpPath, cmdArgs)
 
     let out = ''
     const stderrChunks: string[] = []

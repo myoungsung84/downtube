@@ -84,14 +84,29 @@ src/
 ├── main/                          # Electron Main Process
 │   ├── index.ts                   # 앱 초기화 및 윈도우 생성
 │   ├── common/
-│   │   └── initialize-app.ts      # yt-dlp 자동 업데이트 로직
-│   ├── downloads/                 # 다운로드 실행/유틸/큐
-│   │   ├── download-queue.ts
-│   │   ├── yt-dlp-playlist.ts
-│   │   ├── yt-dlp-runner.ts
-│   │   └── yt-dlp-utils.ts
+│   │   ├── initialize-app.ts      # 앱 초기화/업데이트 관련 로직
+│   │   └── register-media-protocol.ts
+│   ├── downloads/                 # 다운로드 도메인 모듈
+│   │   ├── adapters/              # 외부 도구/파일시스템 연동
+│   │   │   ├── ffmpeg/
+│   │   │   │   └── ffmpeg.ts
+│   │   │   ├── fs/
+│   │   │   │   ├── cleanup.ts
+│   │   │   │   └── resolver.ts
+│   │   │   └── yt-dlp/
+│   │   │       ├── yt-dlp.ts
+│   │   │       ├── yt-dlp-info.ts
+│   │   │       └── yt-dlp-playlist.ts
+│   │   ├── application/          # 다운로드 흐름/큐 orchestration
+│   │   │   ├── download-queue.ts
+│   │   │   ├── run-download-job.ts
+│   │   │   └── stop-download-job.ts
+│   │   ├── shared/
+│   │   │   └── download-helpers.ts
+│   │   ├── index.ts
+│   │   └── types.ts
 │   └── ipc-handlers/
-│       └── ipc.ts                 # IPC 핸들러
+│       └── ipc.ts                 # 다운로드/플레이어/초기화 IPC 등록
 ├── preload/                       # Preload Script (IPC 통신 브릿지)
 │   └── index.ts
 ├── renderer/                      # React UI
@@ -106,8 +121,7 @@ src/
 │       ├── pages/                 # 페이지 구성
 │       ├── styles/                # 전역 스타일
 │       └── theme/                 # MUI 테마
-├── types/                         # TypeScript 타입 정의
-│   └── download.types.ts
+├── types/                         # 공용 TypeScript 타입 정의
 └── libs/
     └── utils.ts
 ```
@@ -121,20 +135,20 @@ src/
 
 ## 주요 IPC 채널
 
-| 채널                | 설명                                                             |
-| ------------------- | ---------------------------------------------------------------- |
-| `download-video`    | 비디오 다운로드 큐 추가                                          |
-| `download-audio`    | 오디오 다운로드 큐 추가                                          |
-| `download-playlist` | 플레이리스트 항목 큐 추가 (limit 적용)                           |
-| `download-set-type` | 대기 항목 타입 변경 (queued 상태만 가능)                         |
-| `download-stop`     | 다운로드 중단 (running/queued)                                   |
-| `download-remove`   | 큐/리스트에서 항목 제거 (running 제외)                           |
-| `downloads-list`    | 현재 큐 목록 조회                                                |
-| `downloads-start`   | 큐 시작/재개                                                     |
-| `downloads-pause`   | 큐 일시정지                                                      |
-| `downloads:event`   | 큐 이벤트 스트림 (job-added/job-updated/job-removed/queue-state) |
-| `download-player`   | 플레이어 윈도우 열기                                             |
-| `download-dir-open` | 다운로드 폴더 열기                                               |
+| 채널                | 설명                                                   |
+| ------------------- | ------------------------------------------------------ |
+| `download-video`    | 비디오 다운로드 작업 추가                              |
+| `download-audio`    | 오디오 전용 다운로드 작업 추가                         |
+| `download-playlist` | 플레이리스트 항목을 큐에 추가 (타입/limit/prefix 지원) |
+| `download-set-type` | 대기 중인 작업의 다운로드 타입 변경                    |
+| `download-stop`     | 실행 중 또는 대기 중 작업 중단                         |
+| `download-remove`   | 큐에서 작업 제거 (실행 중 제외)                        |
+| `downloads-list`    | 현재 다운로드 목록 조회                                |
+| `downloads-start`   | 다운로드 큐 시작 또는 재개                             |
+| `downloads-pause`   | 다운로드 큐 일시정지                                   |
+| `downloads:event`   | 다운로드 큐 이벤트 스트림 구독                         |
+| `download-player`   | 플레이어 창 열기                                       |
+| `download-dir-open` | 다운로드 폴더 열기                                     |
 
 ## 개발 팁
 
@@ -144,9 +158,26 @@ src/
 
 ### 디렉토리 구조 이해
 
-- main/: Node.js 기반 백엔드 (파일 시스템, 프로세스 관리)
+- main/: Electron 메인 프로세스 로직 (IPC, 다운로드 실행, 파일/프로세스 관리)
+- main/ipc-handlers: preload API와 연결되는 IPC 채널 등록 레이어
+- main/downloads: 다운로드 도메인 모듈 (application / adapters / shared)
+  - application: 다운로드 큐, 실행 흐름, 중단 처리 같은 orchestration 담당
+  - adapters: yt-dlp / ffmpeg / 파일시스템 등 외부 도구 및 IO 연동 담당
+  - shared: 다운로드 모듈 내부에서 공통으로 쓰는 helper 담당
 - renderer/: React 기반 UI (사용자 인터페이스)
-- preload/: 두 영역 간의 보안 통신 브릿지
+- preload/: 메인/렌더러 간 보안 통신 브릿지
+
+### IPC 구조 메모
+
+- `preload/index.ts`, `preload/index.d.ts`
+  - 렌더러에서 사용할 `window.api` 브릿지와 타입 정의를 제공합니다.
+- `main/ipc-handlers/ipc.ts`
+  - preload에서 노출한 API에 대응하는 실제 IPC 핸들러를 등록합니다.
+- 현재 IPC는 크게 다음 흐름으로 나뉩니다.
+  - 다운로드 큐 제어: 추가, 일시정지, 재개, 중단, 제거, 타입 변경
+  - 다운로드 상태 구독: `downloads:event`
+  - 플레이어 연동: 플레이어 창 열기, 다운로드 폴더/파일 열기, 미디어 메타 조회
+  - 앱 초기화: `initApp`, `onInitState`
 
 ## 라이선스
 

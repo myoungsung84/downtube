@@ -5,11 +5,12 @@ import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import url from 'url'
 
-import type { DownloadJob } from '../../types/download.types'
 import type { InitState } from '../../types/init.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
-import { downloadInfo, locateFfmpeg } from '../downloads/yt-dlp-utils'
+import { locateFfprobe } from '../downloads/adapters/ffmpeg/ffmpeg'
+import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
+import type { DownloadJob } from '../downloads/types'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -170,10 +171,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         return { success: false, message: 'File not found' }
       }
 
-      const ffprobePath = locateFfmpeg().replace(
-        /ffmpeg(\.exe)?$/i,
-        process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
-      )
+      const ffprobePath = locateFfprobe()
       const ffprobeResult = await new Promise<{
         success: boolean
         stdout?: string

@@ -77,3 +77,5 @@ id_ed25519
 # LLM artifacts
 # =========================
 llm/models/
+package-lock.json
+*.tsbuildinfo

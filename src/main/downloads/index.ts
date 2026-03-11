@@ -1,5 +1,5 @@
-import type { DownloadQueueEvent } from '../../types/download.types'
-import { DownloadQueue } from './download-queue'
+import { DownloadQueue } from './application/download-queue'
+import type { DownloadQueueEvent } from './types'
 
 type Listener = (ev: DownloadQueueEvent) => void
 
@@ -13,3 +13,8 @@ export function onDownloadsEvent(fn: Listener): () => void {
   listeners.add(fn)
   return () => listeners.delete(fn)
 }
+
+export { hasRunningTask } from './application/run-download-job'
+export { isDownloadStoppedError, runDownloadJob } from './application/run-download-job'
+export { stopCurrentJobAndCleanup } from './application/stop-download-job'
+export type { DownloadInfo, DownloadJob, DownloadJobStatus, DownloadQueueEvent } from './types'

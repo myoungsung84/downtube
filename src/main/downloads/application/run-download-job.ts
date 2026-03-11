@@ -1,27 +1,16 @@
-import { spawn } from 'child_process'
+import type { ChildProcessWithoutNullStreams } from 'child_process'
 import log from 'electron-log'
-import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
-import treeKill from 'tree-kill'
 
-import type { DownloadJob } from '../../types/download.types'
-import {
-  findRealDownloadedFile,
-  locateFfmpeg,
-  locateYtDlp,
-  parseYtDlpPercent
-} from './yt-dlp-utils'
+import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/ffmpeg/ffmpeg'
+import { removeFileIfExists, removeFilesSync } from '../adapters/fs/cleanup'
+import { findRealDownloadedFile, resolveByPrefixInDir } from '../adapters/fs/resolver'
+import { locateYtDlp, parseYtDlpPercent, spawnYtDlp } from '../adapters/yt-dlp/yt-dlp'
+import { ctx, step } from '../shared/download-helpers'
+import type { DownloadJob } from '../types'
 
-type RunningTask = {
-  videoProcess?: ReturnType<typeof spawn>
-  audioProcess?: ReturnType<typeof spawn>
-  filename: string
-  outputDir: string
-  stopRequested?: boolean
-}
-
-class DownloadStoppedError extends Error {
+export class DownloadStoppedError extends Error {
   code = 'ERR_DOWNLOAD_STOPPED'
   constructor(public phase: 'video' | 'audio' | 'merge') {
     super(`Download stopped by user during ${phase}`)
@@ -29,10 +18,40 @@ class DownloadStoppedError extends Error {
   }
 }
 
+type RunningTask = {
+  videoProcess?: ChildProcessWithoutNullStreams
+  audioProcess?: ChildProcessWithoutNullStreams
+  filename: string
+  outputDir: string
+  stopRequested?: boolean
+}
+
 let currentTask: { jobId: string; task: RunningTask } | null = null
+
+function setCurrentTask(jobId: string, task: RunningTask): void {
+  currentTask = { jobId, task }
+}
+
+function clearCurrentTask(): void {
+  currentTask = null
+}
+
+export function getCurrentTask(jobId: string): RunningTask | null {
+  if (currentTask?.jobId !== jobId) return null
+  return currentTask.task
+}
 
 export function hasRunningTask(jobId: string): boolean {
   return currentTask?.jobId === jobId
+}
+
+export function isDownloadStoppedError(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e != null &&
+    // @ts-expect-error - runtime check
+    (e.code === 'ERR_DOWNLOAD_STOPPED' || e.name === 'DownloadStoppedError')
+  )
 }
 
 let _ffmpegPath: string | null = null
@@ -42,7 +61,7 @@ let _binariesLogged = false
 function ensureBinaries(): { ffmpegPath: string; ytDlpPath: string } {
   if (!_ffmpegPath) {
     _ffmpegPath = locateFfmpeg()
-    ffmpeg.setFfmpegPath(_ffmpegPath)
+    configureFfmpegPath(_ffmpegPath)
   }
   if (!_ytDlpPath) {
     _ytDlpPath = locateYtDlp()
@@ -58,10 +77,6 @@ function ensureBinaries(): { ffmpegPath: string; ytDlpPath: string } {
   }
 
   return { ffmpegPath: _ffmpegPath, ytDlpPath: _ytDlpPath }
-}
-
-function ctx(job: DownloadJob): string {
-  return `[dl] id=${job.id.slice(0, 8)} type=${job.type} name=${job.filename}`
 }
 
 function sanitizeMetadataValue(value?: string): string | undefined {
@@ -91,65 +106,7 @@ function buildFfmpegMetadataOptions(info?: DownloadJob['info']): string[] {
   const options: string[] = []
   if (title) options.push('-metadata', `title=${title}`)
   if (artist) options.push('-metadata', `artist=${artist}`)
-
   return options
-}
-
-async function mergeMediaFiles(args: {
-  videoPath: string
-  audioPath: string
-  outputFile: string
-  metadataOptions?: string[]
-}): Promise<void> {
-  const { videoPath, audioPath, outputFile, metadataOptions = [] } = args
-
-  await new Promise<void>((resolve, reject) => {
-    ffmpeg(videoPath)
-      .input(audioPath)
-      .outputOptions(['-c', 'copy', ...metadataOptions])
-      .save(outputFile)
-      .on('end', resolve)
-      .on('error', reject)
-  })
-}
-
-async function step<T>(label: string, job: DownloadJob, fn: () => Promise<T>): Promise<T> {
-  const t0 = Date.now()
-  log.info(`${ctx(job)} step=${label} start`)
-  try {
-    const v = await fn()
-    log.info(`${ctx(job)} step=${label} ok ms=${Date.now() - t0}`)
-    return v
-  } catch (e) {
-    log.warn(`${ctx(job)} step=${label} fail ms=${Date.now() - t0}`, e)
-    throw e
-  }
-}
-
-const killAsync = (p?: ReturnType<typeof spawn>): Promise<void> => {
-  return new Promise((resolve) => {
-    if (!p || p.killed || !p.pid) return resolve()
-
-    treeKill(p.pid, 'SIGKILL', (err) => {
-      if (err) log.error(`[dl] kill fail pid=${p.pid} msg=${err.message}`)
-      resolve()
-    })
-  })
-}
-
-async function resolveByPrefix(args: {
-  job: DownloadJob
-  dir: string
-  prefix: string
-  fallbackPattern: string
-}): Promise<string> {
-  const { job, dir, prefix, fallbackPattern } = args
-  return step(`resolve:${prefix}`, job, async () => {
-    const files = await fs.promises.readdir(dir)
-    const hit = files.find((f) => f.startsWith(prefix + '.'))
-    if (hit) return path.join(dir, hit)
-    return findRealDownloadedFile(dir, fallbackPattern)
-  })
 }
 
 export function runDownloadJob(
@@ -168,7 +125,7 @@ export function runDownloadJob(
   const audioOnlyFile = path.join(downloadDir, `${baseName}.%(ext)s`)
 
   const task: RunningTask = { filename: baseName, outputDir: downloadDir, stopRequested: false }
-  currentTask = { jobId: job.id, task }
+  setCurrentTask(job.id, task)
 
   log.info(`${ctx(job)} start url=${job.url}`)
   onProgress({ current: 'init' })
@@ -182,7 +139,7 @@ export function runDownloadJob(
     return step(`yt-dlp:${current}`, job, async () => {
       if (task.stopRequested) throw new DownloadStoppedError(current)
 
-      const proc = spawn(ytDlpPath, args, { windowsHide: true })
+      const proc = spawnYtDlp(ytDlpPath, args)
 
       if (current === 'video') task.videoProcess = proc
       if (current === 'audio') task.audioProcess = proc
@@ -223,12 +180,10 @@ export function runDownloadJob(
         ffmpegPath,
         '--embed-metadata',
         '--embed-thumbnail',
-
         '--no-part',
         '--restrict-filenames',
         '--no-warnings',
         '--no-check-certificate',
-
         '--output',
         audioOnlyFile,
         job.url
@@ -278,19 +233,21 @@ export function runDownloadJob(
       'audio'
     )
 
-    const mergedVideo = await resolveByPrefix({
-      job,
-      dir: downloadDir,
-      prefix: `${baseName}_video`,
-      fallbackPattern: `${baseName}_video.*`
-    })
+    const mergedVideo = await step(`resolve:${baseName}_video`, job, async () =>
+      resolveByPrefixInDir({
+        dir: downloadDir,
+        prefix: `${baseName}_video`,
+        fallbackPattern: `${baseName}_video.*`
+      })
+    )
 
-    const mergedAudio = await resolveByPrefix({
-      job,
-      dir: downloadDir,
-      prefix: `${baseName}_audio`,
-      fallbackPattern: `${baseName}_audio.*`
-    })
+    const mergedAudio = await step(`resolve:${baseName}_audio`, job, async () =>
+      resolveByPrefixInDir({
+        dir: downloadDir,
+        prefix: `${baseName}_audio`,
+        fallbackPattern: `${baseName}_audio.*`
+      })
+    )
 
     await step('ffmpeg:merge', job, async () => {
       if (task.stopRequested) throw new DownloadStoppedError('merge')
@@ -314,9 +271,7 @@ export function runDownloadJob(
         log.warn(`${ctx(job)} merge metadata fallback`, error)
 
         try {
-          if (fs.existsSync(outputFile)) {
-            fs.unlinkSync(outputFile)
-          }
+          removeFileIfExists(outputFile)
         } catch (unlinkError) {
           log.warn(`${ctx(job)} merge fallback cleanup warn`, unlinkError)
         }
@@ -329,8 +284,7 @@ export function runDownloadJob(
       }
 
       try {
-        fs.unlinkSync(mergedVideo)
-        fs.unlinkSync(mergedAudio)
+        removeFilesSync([mergedVideo, mergedAudio])
       } catch (e) {
         log.warn(`${ctx(job)} cleanup warn`, e)
       }
@@ -340,46 +294,6 @@ export function runDownloadJob(
     return { outputFile }
   })().finally(() => {
     log.info(`${ctx(job)} end`)
-    currentTask = null
+    clearCurrentTask()
   })
-}
-
-export async function stopCurrentJobAndCleanup(job: DownloadJob): Promise<void> {
-  const task = currentTask?.jobId === job.id ? currentTask.task : null
-  if (!task) return
-
-  task.stopRequested = true
-  log.warn(`${ctx(job)} stop requested`)
-
-  await step('stop:kill', job, async () => {
-    await Promise.all([killAsync(task.videoProcess), killAsync(task.audioProcess)])
-  })
-
-  await step('stop:cleanup', job, async () => {
-    const { filename, outputDir } = task
-    await new Promise((r) => setTimeout(r, 200))
-
-    try {
-      const files = await fs.promises.readdir(outputDir)
-      for (const file of files) {
-        if (!file.startsWith(filename)) continue
-        try {
-          await fs.promises.unlink(path.join(outputDir, file))
-        } catch (e) {
-          log.warn(`${ctx(job)} cleanup unlink warn`, e)
-        }
-      }
-    } catch (e) {
-      log.warn(`${ctx(job)} cleanup readdir warn`, e)
-    }
-  })
-}
-
-export function isDownloadStoppedError(e: unknown): boolean {
-  return (
-    typeof e === 'object' &&
-    e != null &&
-    // @ts-expect-error - runtime check
-    (e.code === 'ERR_DOWNLOAD_STOPPED' || e.name === 'DownloadStoppedError')
-  )
 }
