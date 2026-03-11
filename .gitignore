@@ -82,3 +82,4 @@ id_ed25519
 llm/models/
 package-lock.json
 *.tsbuildinfo
+.codex/
