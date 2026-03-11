@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
+import type { SettingKey, SettingValueMap } from '../types/settings.types'
 
 const api = {
   openPlayer: (payload: { id: string }) => ipcRenderer.invoke('download-player', payload),
@@ -43,7 +44,19 @@ const api = {
     const handler = (_: unknown, state: InitState): void => callback(state)
     ipcRenderer.on('app:init-state', handler)
     return () => ipcRenderer.removeListener('app:init-state', handler)
-  }
+  },
+
+  getSetting: <K extends SettingKey>(key: K): Promise<SettingValueMap[K]> =>
+    ipcRenderer.invoke('settings:get', key),
+
+  getSettings: <const K extends readonly SettingKey[]>(
+    keys: K
+  ): Promise<Pick<SettingValueMap, K[number]>> => ipcRenderer.invoke('settings:get-many', keys),
+
+  setSetting: <K extends SettingKey>(
+    key: K,
+    value: SettingValueMap[K]
+  ): Promise<SettingValueMap[K]> => ipcRenderer.invoke('settings:set', { key, value })
 }
 
 if (process.contextIsolated) {
