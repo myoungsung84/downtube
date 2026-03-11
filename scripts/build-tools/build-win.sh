@@ -22,7 +22,11 @@ pnpm install --frozen-lockfile
 FFMPEG_SRC="$(node -p "require('ffmpeg-static')")"
 FFMPEG_FILENAME="$(basename "$FFMPEG_SRC")"
 
+FFPROBE_SRC="$(node -p "require('ffprobe-static').path")"
+FFPROBE_FILENAME="$(basename "$FFPROBE_SRC")"
+
 cp "$FFMPEG_SRC" "$BIN_DIR/$FFMPEG_FILENAME"
+cp "$FFPROBE_SRC" "$BIN_DIR/$FFPROBE_FILENAME"
 
 bash scripts/build-tools/build.sh
 
