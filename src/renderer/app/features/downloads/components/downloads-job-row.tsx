@@ -29,7 +29,6 @@ import {
   formatPercent,
   getErrorMessage,
   inferTitle,
-  paletteMain,
   resolveDownloadStatus,
   statusTone
 } from '../lib/downloads-utils'
@@ -67,14 +66,10 @@ export default function DownloadsJobRow(props: {
 
   const statusMeta = resolveDownloadStatus(job.status)
   const StatusIcon = statusMeta.icon
-  const statusMainToken = paletteMain(statusMeta.color)
-  const resolveToken = (token: string): string => {
-    const parts = token.split('.')
-    const palette = theme.palette as unknown as Record<string, Record<string, string>>
-    const [category, shade] = parts
-    return palette[category]?.[shade] ?? token
-  }
-  const statusMain = resolveToken(statusMainToken)
+  const statusMain =
+    statusMeta.color === 'default'
+      ? theme.palette.text.secondary
+      : theme.palette[statusMeta.color].main
 
   return (
     <Fade in>

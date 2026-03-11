@@ -1,6 +1,7 @@
 import Store from 'electron-store'
 
 import type { SettingKey, SettingValueMap } from '../../types/settings.types'
+import { settingKeys } from '../../types/settings.types'
 import { settingsDefaults } from './settings-defaults'
 import { validateSettingValue } from './settings-validator'
 
@@ -12,14 +13,24 @@ const settingsStore = new StoreConstructor<SettingValueMap>({
 })
 
 export function getSetting<K extends SettingKey>(key: K): SettingValueMap[K] {
+  if (!(settingKeys as readonly string[]).includes(key)) {
+    throw new Error(`Invalid setting key: ${String(key)}`)
+  }
+
   const rawValue = settingsStore.get(key) as unknown
 
   if (rawValue === undefined) {
     return settingsDefaults[key]
   }
 
-  validateSettingValue(key, rawValue)
-  return rawValue
+  try {
+    validateSettingValue(key, rawValue)
+    return rawValue
+  } catch {
+    const defaultValue = settingsDefaults[key]
+    settingsStore.set(key, defaultValue)
+    return defaultValue
+  }
 }
 
 export function getSettings<const K extends readonly SettingKey[]>(
