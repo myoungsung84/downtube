@@ -67,8 +67,10 @@ export default function PlayerScreen(): React.JSX.Element {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seekbarRef = useRef<HTMLDivElement | null>(null)
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
-  const getSettingValue = useSettingsStore((state) => state.getValue)
   const setSettingValue = useSettingsStore((state) => state.setValue)
+  const storedVolume = useSettingsStore((state) => state.values[PLAYER_VOLUME_KEY])
+  const storedMuted = useSettingsStore((state) => state.values[PLAYER_MUTED_KEY])
+  const storedVisualizerVisible = useSettingsStore((state) => state.values[PLAYER_VISUALIZER_KEY])
 
   const [meta, setMeta] = useState<{
     fileName: string
@@ -90,9 +92,6 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
   const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
-  const storedVolume = getSettingValue(PLAYER_VOLUME_KEY)
-  const storedMuted = getSettingValue(PLAYER_MUTED_KEY)
-  const storedVisualizerVisible = getSettingValue(PLAYER_VISUALIZER_KEY)
 
   const hash = window.location.hash
 
@@ -159,19 +158,16 @@ export default function PlayerScreen(): React.JSX.Element {
     video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + sec))
   }, [])
 
-  const handleVolumeChange = useCallback(
-    (_: Event, val: number | number[]) => {
-      const nextVolume = Array.isArray(val) ? val[0] : val
-      const video = videoRef.current
-      if (!video) return
-      const nextMuted = nextVolume === 0
-      video.volume = nextVolume
-      video.muted = nextMuted
-      setVolume(nextVolume)
-      setMuted(nextMuted)
-    },
-    []
-  )
+  const handleVolumeChange = useCallback((_: Event, val: number | number[]) => {
+    const nextVolume = Array.isArray(val) ? val[0] : val
+    const video = videoRef.current
+    if (!video) return
+    const nextMuted = nextVolume === 0
+    video.volume = nextVolume
+    video.muted = nextMuted
+    setVolume(nextVolume)
+    setMuted(nextMuted)
+  }, [])
 
   const handleVolumeCommit = useCallback(
     (_: React.SyntheticEvent | Event, val: number | number[]) => {
