@@ -4,7 +4,9 @@ import type { SettingKey, SettingValueMap } from '../../types/settings.types'
 import { settingsDefaults } from './settings-defaults'
 import { validateSettingValue } from './settings-validator'
 
-const settingsStore = new Store<SettingValueMap>({
+const StoreConstructor = (Store as unknown as { default?: typeof Store }).default ?? Store
+
+const settingsStore = new StoreConstructor<SettingValueMap>({
   name: 'settings',
   defaults: settingsDefaults
 })
