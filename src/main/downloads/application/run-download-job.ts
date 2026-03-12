@@ -7,7 +7,7 @@ import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/
 import { removeFileIfExists, removeFilesSync } from '../adapters/fs/cleanup'
 import { findRealDownloadedFile, resolveByPrefixInDir } from '../adapters/fs/resolver'
 import { locateYtDlp, parseYtDlpPercent, spawnYtDlp } from '../adapters/yt-dlp/yt-dlp'
-import { ctx, step } from '../shared/download-helpers'
+import { ctx, logYtDlpArgs, logYtDlpStdout, step } from '../shared/download-helpers'
 import type { DownloadJob } from '../types'
 
 export class DownloadStoppedError extends Error {
@@ -109,6 +109,40 @@ function buildFfmpegMetadataOptions(info?: DownloadJob['info']): string[] {
   return options
 }
 
+function buildBestVideoArgs(outputTemplate: string, url: string): string[] {
+  return [
+    '--no-playlist',
+    '--format',
+    'bv',
+    '--print',
+    'before_dl:[selected-video] id=%(format_id)s ext=%(ext)s res=%(resolution)s fps=%(fps)s vcodec=%(vcodec)s tbr=%(tbr)s filesize=%(filesize,s)s',
+    '--no-part',
+    '--restrict-filenames',
+    '--no-warnings',
+    '--no-check-certificate',
+    '--output',
+    outputTemplate,
+    url
+  ]
+}
+
+function buildBestAudioArgs(outputTemplate: string, url: string): string[] {
+  return [
+    '--no-playlist',
+    '--format',
+    'ba',
+    '--print',
+    'before_dl:[selected-audio] id=%(format_id)s ext=%(ext)s abr=%(abr)s asr=%(asr)s acodec=%(acodec)s filesize=%(filesize,s)s',
+    '--no-part',
+    '--restrict-filenames',
+    '--no-warnings',
+    '--no-check-certificate',
+    '--output',
+    outputTemplate,
+    url
+  ]
+}
+
 export function runDownloadJob(
   job: DownloadJob,
   onProgress: (p: { percent?: number; current: DownloadJob['progress']['current'] }) => void
@@ -139,6 +173,8 @@ export function runDownloadJob(
     return step(`yt-dlp:${current}`, job, async () => {
       if (task.stopRequested) throw new DownloadStoppedError(current)
 
+      logYtDlpArgs(job, current, args)
+
       const proc = spawnYtDlp(ytDlpPath, args)
 
       if (current === 'video') task.videoProcess = proc
@@ -146,7 +182,12 @@ export function runDownloadJob(
 
       onProgress({ current, percent: 0 })
 
-      proc.stdout.on('data', (data) => sendPercent(current, data.toString()))
+      proc.stdout.on('data', (data) => {
+        const text = data.toString()
+        sendPercent(current, text)
+
+        logYtDlpStdout(job, current, text)
+      })
       proc.stderr.on('data', (data) => {
         const t = data.toString()
         sendPercent(current, t)
@@ -170,7 +211,7 @@ export function runDownloadJob(
   return (async () => {
     if (job.type === 'audio') {
       const args = [
-        '--no-playlist',
+        ...buildBestAudioArgs(audioOnlyFile, job.url),
         '-x',
         '--audio-format',
         'mp3',
@@ -179,14 +220,7 @@ export function runDownloadJob(
         '--ffmpeg-location',
         ffmpegPath,
         '--embed-metadata',
-        '--embed-thumbnail',
-        '--no-part',
-        '--restrict-filenames',
-        '--no-warnings',
-        '--no-check-certificate',
-        '--output',
-        audioOnlyFile,
-        job.url
+        '--embed-thumbnail'
       ]
 
       await runYtDlp(args, 'audio')
@@ -201,37 +235,9 @@ export function runDownloadJob(
       return { outputFile: real }
     }
 
-    await runYtDlp(
-      [
-        '--no-playlist',
-        '--format',
-        'bestvideo*/bv*',
-        '--no-part',
-        '--restrict-filenames',
-        '--no-warnings',
-        '--no-check-certificate',
-        '--output',
-        videoFile,
-        job.url
-      ],
-      'video'
-    )
+    await runYtDlp(buildBestVideoArgs(videoFile, job.url), 'video')
 
-    await runYtDlp(
-      [
-        '--no-playlist',
-        '--format',
-        'bestaudio*/ba/bestaudio/best',
-        '--no-part',
-        '--restrict-filenames',
-        '--no-warnings',
-        '--no-check-certificate',
-        '--output',
-        audioFile,
-        job.url
-      ],
-      'audio'
-    )
+    await runYtDlp(buildBestAudioArgs(audioFile, job.url), 'audio')
 
     const mergedVideo = await step(`resolve:${baseName}_video`, job, async () =>
       resolveByPrefixInDir({
