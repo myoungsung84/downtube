@@ -1,10 +1,10 @@
-import DownloadIcon from '@mui/icons-material/Download'
-import { alpha, Box, Fade, Paper, Stack, Typography } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import DownloadsEmptyState from '../components/downloads-empty-state'
 import DownloadsJobRow from '../components/downloads-job-row'
 import DownloadsJobRowSkeleton from '../components/downloads-job-row-skeleton'
 import DownloadsQueuePanel from '../components/downloads-queue-panel'
@@ -13,6 +13,24 @@ import { getErrorMessage, inferTitle, isPlaylistUrl, sortJobs } from '../lib/dow
 
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
+
+function isYoutubeUrl(input: string): boolean {
+  try {
+    const url = new URL(input)
+    const host = url.hostname.toLowerCase()
+
+    return (
+      host === 'youtube.com' ||
+      host === 'www.youtube.com' ||
+      host === 'm.youtube.com' ||
+      host === 'music.youtube.com' ||
+      host === 'youtu.be' ||
+      host.endsWith('.youtube.com')
+    )
+  } catch {
+    return false
+  }
+}
 
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
@@ -75,6 +93,10 @@ export default function DownloadsScreen(): React.JSX.Element {
       showToast('URL을 입력해주세요', 'warning')
       return
     }
+    if (!isYoutubeUrl(url)) {
+      showToast('유튜브 URL만 추가할 수 있어요', 'warning')
+      return
+    }
 
     const kind: 'playlist' | 'single' = isPlaylistUrl(url) ? 'playlist' : 'single'
     setSubmitting({ url, kind })
@@ -120,6 +142,11 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const kind: 'playlist' | 'single' = isPlaylistUrl(job.url) ? 'playlist' : 'single'
     setSubmitting({ url: job.url, kind })
+    if (!isYoutubeUrl(job.url)) {
+      showToast('유튜브 URL만 다시 시도할 수 있어요', 'warning')
+      setSubmitting(null)
+      return
+    }
 
     try {
       if (kind === 'playlist') {
@@ -251,56 +278,7 @@ export default function DownloadsScreen(): React.JSX.Element {
               <DownloadsJobRowSkeleton />
             </Stack>
           ) : jobs.length === 0 && !submitting ? (
-            <Fade in>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 6,
-                  textAlign: 'center',
-                  borderRadius: 3,
-                  border: '2px dashed',
-                  borderColor: (theme) => alpha(theme.palette.primary.main, 0.3),
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
-                  background: (theme) =>
-                    `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(
-                      theme.palette.info.main,
-                      0.03
-                    )} 100%)`
-                }}
-              >
-                <Stack spacing={3} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: '50%',
-                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <DownloadIcon sx={{ fontSize: 64, color: 'primary.main', opacity: 0.9 }} />
-                  </Box>
-
-                  <Stack spacing={1.5} alignItems="center">
-                    <Typography variant="h5" fontWeight={700}>
-                      다운로드할 영상을 추가해보세요! 🎬
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      sx={{ maxWidth: 600, lineHeight: 1.8 }}
-                    >
-                      위 입력창에 유튜브 영상 URL을 붙여넣으면 자동으로 목록에 추가됩니다.
-                      <br />
-                      여러 개를 추가한 후 <strong>다운로드 시작</strong> 버튼을 눌러 한번에
-                      다운로드하세요!
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Paper>
-            </Fade>
+            <DownloadsEmptyState />
           ) : (
             <>
               {jobs.map((job) => (
