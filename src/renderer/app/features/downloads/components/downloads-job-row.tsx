@@ -21,6 +21,7 @@ import {
   useTheme
 } from '@mui/material'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
+import Thumbnail from '@renderer/shared/components/ui/Thumbnail'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
 import React from 'react'
 
@@ -90,40 +91,29 @@ export default function DownloadsJobRow(props: {
               flexShrink: 0,
               p: 1.25,
               display: 'flex',
-              alignItems: 'stretch'
+              alignItems: 'center'
             }}
           >
             <Box
               sx={{
                 position: 'relative',
-                flex: 1,
-                borderRadius: 1,
-                overflow: 'hidden',
-                bgcolor: alpha(theme.palette.common.black, 0.08),
-                border: '1px solid',
-                borderColor: 'divider'
+                width: '100%',
+                aspectRatio: '16 / 9',
+                flex: '0 0 auto'
               }}
             >
-              {thumb ? (
-                <Box
-                  component="img"
-                  src={thumb}
-                  alt=""
-                  sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <VideoLibraryIcon sx={{ fontSize: 28, color: 'text.disabled' }} />
-                </Box>
-              )}
+              <Thumbnail
+                url={thumb}
+                w="100%"
+                h="100%"
+                alt={inferTitle(job)}
+                sx={{
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: alpha(theme.palette.common.black, 0.08)
+                }}
+              />
 
               <Box
                 sx={{

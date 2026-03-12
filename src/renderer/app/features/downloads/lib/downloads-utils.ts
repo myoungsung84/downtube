@@ -15,6 +15,45 @@ export function isPlaylistUrl(input: string): boolean {
   }
 }
 
+export function isYoutubeUrl(input: string): boolean {
+  const trimmed = input.trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  const candidates: string[] = [trimmed]
+
+  // 스킴이 없다면 https://를 가정해 한 번 더 파싱을 시도합니다.
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)
+  if (!hasScheme) {
+    candidates.push(`https://${trimmed}`)
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const url = new URL(candidate)
+      const host = url.hostname.toLowerCase()
+
+      if (
+        host === 'youtube.com' ||
+        host === 'www.youtube.com' ||
+        host === 'm.youtube.com' ||
+        host === 'music.youtube.com' ||
+        host === 'youtu.be' ||
+        host.endsWith('.youtube.com')
+      ) {
+        return true
+      }
+    } catch {
+      // 파싱 실패 시 다음 후보 또는 정규식 보완으로 넘어갑니다.
+    }
+  }
+
+  // URL 파싱이 모두 실패한 경우, 유효하지 않은 입력으로 간주합니다.
+  return false
+}
+
 export function paletteMain(
   color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'
 ): string {
