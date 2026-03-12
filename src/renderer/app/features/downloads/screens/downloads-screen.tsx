@@ -9,28 +9,16 @@ import DownloadsJobRow from '../components/downloads-job-row'
 import DownloadsJobRowSkeleton from '../components/downloads-job-row-skeleton'
 import DownloadsQueuePanel from '../components/downloads-queue-panel'
 import DownloadsUrlPanel from '../components/downloads-url-panel'
-import { getErrorMessage, inferTitle, isPlaylistUrl, sortJobs } from '../lib/downloads-utils'
+import {
+  getErrorMessage,
+  inferTitle,
+  isPlaylistUrl,
+  isYoutubeUrl,
+  sortJobs
+} from '../lib/downloads-utils'
 
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
-
-function isYoutubeUrl(input: string): boolean {
-  try {
-    const url = new URL(input)
-    const host = url.hostname.toLowerCase()
-
-    return (
-      host === 'youtube.com' ||
-      host === 'www.youtube.com' ||
-      host === 'm.youtube.com' ||
-      host === 'music.youtube.com' ||
-      host === 'youtu.be' ||
-      host.endsWith('.youtube.com')
-    )
-  } catch {
-    return false
-  }
-}
 
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
@@ -140,13 +128,13 @@ export default function DownloadsScreen(): React.JSX.Element {
   const handleRetry = async (job: DownloadJob): Promise<void> => {
     if (job.status === 'cancelled') await window.api.removeDownload(job.id)
 
-    const kind: 'playlist' | 'single' = isPlaylistUrl(job.url) ? 'playlist' : 'single'
-    setSubmitting({ url: job.url, kind })
     if (!isYoutubeUrl(job.url)) {
       showToast('유튜브 URL만 다시 시도할 수 있어요', 'warning')
-      setSubmitting(null)
       return
     }
+
+    const kind: 'playlist' | 'single' = isPlaylistUrl(job.url) ? 'playlist' : 'single'
+    setSubmitting({ url: job.url, kind })
 
     try {
       if (kind === 'playlist') {

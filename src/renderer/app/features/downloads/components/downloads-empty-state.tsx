@@ -103,15 +103,17 @@ export default function DownloadsEmptyState(): React.JSX.Element {
             alignItems="center"
             sx={{ animation: `${slideUp} 0.5s 0.1s ease both`, opacity: 0 }}
           >
-            <Typography variant="h6" fontWeight={800} letterSpacing={-0.5}>
-              다운로드할 영상을 추가해보세요 🎬
+            <Typography variant="h5" fontWeight={700}>
+              다운로드할 영상을 추가해보세요! 🎬
             </Typography>
             <Typography
-              variant="body2"
+              variant="body1"
               color="text.secondary"
-              sx={{ maxWidth: 400, lineHeight: 1.6 }}
+              sx={{ maxWidth: 600, lineHeight: 1.8 }}
             >
-              유튜브 URL을 붙여넣고 여러 영상을 모아 한 번에 다운로드하세요.
+              위 입력창에 유튜브 영상 URL을 붙여넣으면 자동으로 목록에 추가됩니다.
+              <br />
+              여러 개를 추가한 후 <strong>다운로드 시작</strong> 버튼을 눌러 한번에 다운로드하세요!
             </Typography>
           </Stack>
 
@@ -126,9 +128,9 @@ export default function DownloadsEmptyState(): React.JSX.Element {
               opacity: 0
             }}
           >
-            {steps.map((step, i) => (
+            {steps.map((step) => (
               <Box
-                key={i}
+                key={step.label}
                 sx={{
                   flex: 1,
                   p: 1.5,
