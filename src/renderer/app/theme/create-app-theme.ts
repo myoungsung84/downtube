@@ -1,4 +1,4 @@
-import { alpha, createTheme, type PaletteMode } from '@mui/material/styles'
+import { alpha, createTheme, type PaletteMode, type Theme } from '@mui/material/styles'
 
 type ThemeTokens = {
   backgroundDefault: string
@@ -85,7 +85,7 @@ function getTokens(mode: PaletteMode): ThemeTokens {
   }
 }
 
-export default function createAppTheme(mode: PaletteMode) {
+export default function createAppTheme(mode: PaletteMode): Theme {
   const t = getTokens(mode)
   const isDark = mode === 'dark'
 
@@ -148,9 +148,11 @@ export default function createAppTheme(mode: PaletteMode) {
       MuiCssBaseline: {
         styleOverrides: `
         body {
-          background: ${isDark
-            ? 'linear-gradient(180deg, #0E1420 0%, #090D15 50%, #0E1420 100%)'
-            : 'linear-gradient(180deg, #F7FAFF 0%, #F2F6FC 50%, #F7FAFF 100%)'};
+          background: ${
+            isDark
+              ? 'linear-gradient(180deg, #0E1420 0%, #090D15 50%, #0E1420 100%)'
+              : 'linear-gradient(180deg, #F7FAFF 0%, #F2F6FC 50%, #F7FAFF 100%)'
+          };
           background-attachment: fixed;
           min-height: 100vh;
         }
