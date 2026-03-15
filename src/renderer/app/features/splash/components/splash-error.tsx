@@ -1,4 +1,5 @@
 import { Button, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 type SplashErrorProps = {
@@ -13,7 +14,7 @@ export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.E
         sx={{
           fontSize: '0.98rem',
           fontWeight: 600,
-          color: '#ff8d8d'
+          color: 'error.light'
         }}
       >
         초기화 중 문제가 발생했어요
@@ -22,7 +23,7 @@ export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.E
         sx={{
           fontSize: '0.8rem',
           fontWeight: 300,
-          color: 'rgba(255,255,255,0.42)',
+          color: (theme) => alpha(theme.palette.text.primary, 0.65),
           textAlign: 'center',
           maxWidth: 320,
           lineHeight: 1.7
@@ -37,15 +38,16 @@ export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.E
           fontSize: '0.83rem',
           fontWeight: 500,
           textTransform: 'none',
-          color: '#fff',
-          background: 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.14)',
+          color: 'text.primary',
+          background: (theme) => alpha(theme.palette.text.primary, 0.08),
+          border: '1px solid',
+          borderColor: (theme) => alpha(theme.palette.text.primary, 0.18),
           borderRadius: '100px',
           px: 3,
           py: 0.9,
           '&:hover': {
-            background: 'rgba(255,255,255,0.12)',
-            borderColor: 'rgba(255,255,255,0.22)'
+            background: (theme) => alpha(theme.palette.text.primary, 0.14),
+            borderColor: (theme) => alpha(theme.palette.text.primary, 0.28)
           }
         }}
       >

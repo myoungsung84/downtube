@@ -1,4 +1,5 @@
 import { Box } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 import { PlayerButton } from './player-button'
@@ -42,10 +43,13 @@ export function PlayerCenterControls({
           p: 0,
           width: 52,
           height: 52,
-          background: 'rgba(0,0,0,0.28)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: (theme) => alpha(theme.palette.common.black, 0.28),
+          border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
           backdropFilter: 'blur(8px)',
-          '&:hover': { backgroundColor: 'rgba(0,0,0,0.5)', transform: 'scale(1.08)' },
+          '&:hover': {
+            backgroundColor: (theme) => alpha(theme.palette.common.black, 0.5),
+            transform: 'scale(1.08)'
+          },
           '&:active': { transform: 'scale(0.94)' }
         }}
       >
@@ -59,14 +63,14 @@ export function PlayerCenterControls({
           p: 0,
           width: 66,
           height: 66,
-          background: 'rgba(229,57,53,0.38)',
-          border: '1px solid rgba(229,57,53,0.45)',
+          background: (theme) => alpha(theme.palette.error.main, 0.38),
+          border: (theme) => `1px solid ${alpha(theme.palette.error.main, 0.45)}`,
           backdropFilter: 'blur(12px)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+          boxShadow: (theme) => `0 4px 24px ${alpha(theme.palette.common.black, 0.3)}`,
           '&:hover': {
-            backgroundColor: 'rgba(229,57,53,0.6)',
+            backgroundColor: (theme) => alpha(theme.palette.error.main, 0.6),
             transform: 'scale(1.08)',
-            boxShadow: '0 6px 32px rgba(229,57,53,0.35)'
+            boxShadow: (theme) => `0 6px 32px ${alpha(theme.palette.error.main, 0.35)}`
           },
           '&:active': { transform: 'scale(0.93)' }
         }}
@@ -81,10 +85,13 @@ export function PlayerCenterControls({
           p: 0,
           width: 52,
           height: 52,
-          background: 'rgba(0,0,0,0.28)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          background: (theme) => alpha(theme.palette.common.black, 0.28),
+          border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
           backdropFilter: 'blur(8px)',
-          '&:hover': { backgroundColor: 'rgba(0,0,0,0.5)', transform: 'scale(1.08)' },
+          '&:hover': {
+            backgroundColor: (theme) => alpha(theme.palette.common.black, 0.5),
+            transform: 'scale(1.08)'
+          },
           '&:active': { transform: 'scale(0.94)' }
         }}
       >

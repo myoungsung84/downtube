@@ -1,5 +1,6 @@
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 import { formatSeconds } from '../lib/player-format'
@@ -77,24 +78,27 @@ export function PlayerBottomControls({
             sx={{
               width: '1px',
               height: 14,
-              backgroundColor: 'rgba(255,255,255,0.15)',
+              backgroundColor: (theme) => alpha(theme.palette.common.white, 0.15),
               mx: '18px',
               flexShrink: 0
             }}
           />
           <Typography
             sx={{
-              color: 'rgba(255,255,255,0.88)',
+              color: (theme) => alpha(theme.palette.common.white, 0.88),
               fontSize: '0.78rem',
               fontWeight: 600,
               fontVariantNumeric: 'tabular-nums',
               whiteSpace: 'nowrap',
               userSelect: 'none',
-              textShadow: '0 1px 4px rgba(0,0,0,0.6)'
+              textShadow: (theme) => `0 1px 4px ${alpha(theme.palette.common.black, 0.6)}`
             }}
           >
             {formatSeconds(currentSeekVal)}
-            <Box component="span" sx={{ color: 'rgba(255,255,255,0.28)', mx: '6px' }}>
+            <Box
+              component="span"
+              sx={{ color: (theme) => alpha(theme.palette.common.white, 0.28), mx: '6px' }}
+            >
               /
             </Box>
             {formatSeconds(duration)}
@@ -105,7 +109,7 @@ export function PlayerBottomControls({
             <Box
               sx={{
                 display: 'flex',
-                color: visualizerVisible ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.65)'
+                color: (theme) => alpha(theme.palette.common.white, visualizerVisible ? 0.96 : 0.65)
               }}
             >
               <IcVisualizer />

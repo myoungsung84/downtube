@@ -1,5 +1,6 @@
 import BrokenImageOutlinedIcon from '@mui/icons-material/BrokenImageOutlined'
 import { Box, SxProps } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import * as React from 'react'
 
 type ThumbnailProps = {
@@ -37,7 +38,7 @@ export default function Thumbnail({
         height: h,
         borderRadius: 1,
         overflow: 'hidden',
-        bgcolor: '#000',
+        bgcolor: 'common.black',
         flexShrink: 0,
         cursor: onClick ? 'pointer' : 'default',
 
@@ -67,8 +68,8 @@ export default function Thumbnail({
             height: '100%',
             display: 'grid',
             placeItems: 'center',
-            color: 'rgba(255,255,255,0.35)',
-            bgcolor: 'rgba(255,255,255,0.04)'
+            color: (theme) => alpha(theme.palette.common.white, 0.35),
+            bgcolor: (theme) => alpha(theme.palette.common.white, 0.06)
           }}
         >
           <BrokenImageOutlinedIcon sx={{ fontSize: 28 }} />

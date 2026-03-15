@@ -34,13 +34,15 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Register IPC handlers before renderer boot to avoid invoke race on first paint.
+  ipcHandler(mainWindow)
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/splash`)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/splash' })
   }
-  ipcHandler(mainWindow)
 }
 
 app.whenReady().then(() => {

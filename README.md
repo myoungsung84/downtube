@@ -9,6 +9,7 @@ YouTube 영상을 최고화질로 다운로드할 수 있는 Electron 기반 데
 - **플레이리스트 다운로드**: 목록을 한 번에 큐에 추가
 - **큐 기반 다운로드**: 시작/일시정지/중단/재시도
 - **다운로드 진행률**: 실시간 진행 상황 표시
+- **테마 모드 지원**: 라이트/다크/시스템 테마 전환
 - **자동 업데이트**: yt-dlp 최신 버전 자동 확인 및 업데이트
 
 ## 기술 스택
@@ -49,33 +50,28 @@ pnpm typecheck:web      # React 부분만 체크
 ### 4. 코드 포매팅 및 린팅
 
 ```bash
-pnpm format             # Prettier 포매팅
+pnpm format             # Prettier + ESLint --fix (import 정렬 포함)
 pnpm lint               # ESLint 검사
 ```
 
 ## 빌드
 
-> 주의: 빌드는 반드시 제공된 빌드 스크립트를 사용해야 합니다.
-
-### Windows (64-bit)
+### 공통 번들 빌드
 
 ```bash
-./build-win.sh
+pnpm build
 ```
 
-### macOS (ARM64)
+### 플랫폼 패키징 스크립트
 
 ```bash
-./build-mac.sh
-# Apple Silicon 전용 빌드
-pnpm build:mac:arm64
+pnpm build:win
+pnpm build:mac
 ```
 
-### Linux
+또는 `scripts/build-tools/` 아래 셸 스크립트를 직접 실행할 수 있습니다.
 
-```bash
-npm run build:linux
-```
+> 참고: 현재 `package.json`에는 `build:linux` 스크립트가 정의되어 있지 않습니다.
 
 ## 프로젝트 구조
 
@@ -113,6 +109,7 @@ src/
 │   └── app/
 │       ├── app.tsx                # App 엔트리
 │       ├── main.tsx               # 렌더러 부트스트랩
+│       ├── themed-app.tsx         # 동적 테마 적용 루트
 │       ├── router.tsx
 │       ├── features/
 │       │   ├── downloads/         # 다운로드 화면/컴포넌트

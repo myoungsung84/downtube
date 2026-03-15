@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSettingsStore } from '../../settings/store/use-settings-store'
@@ -15,7 +16,7 @@ import {
 } from '../lib/player-query'
 
 const seekSliderSx: SxProps<Theme> = {
-  color: '#e53935',
+  color: 'error.main',
   height: 2,
   padding: '10px 0',
   mx: 0,
@@ -23,37 +24,44 @@ const seekSliderSx: SxProps<Theme> = {
   '& .MuiSlider-thumb': {
     width: 14,
     height: 14,
-    backgroundColor: '#fff',
-    boxShadow: '0 0 0 2px rgba(229,57,53,0.5)',
+    backgroundColor: 'common.white',
+    boxShadow: (theme) => `0 0 0 2px ${alpha(theme.palette.error.main, 0.5)}`,
     transition: 'box-shadow 0.15s',
     '&:before': { display: 'none' },
-    '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(229,57,53,0.25)' }
+    '&:hover, &.Mui-focusVisible': {
+      boxShadow: (theme) => `0 0 0 8px ${alpha(theme.palette.error.main, 0.25)}`
+    }
   },
   '& .MuiSlider-rail': {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: (theme) => alpha(theme.palette.common.white, 0.25),
     opacity: 1
   },
   '& .MuiSlider-track': {
     border: 'none',
-    backgroundColor: '#e53935',
+    backgroundColor: 'error.main',
     opacity: 1
   }
 }
 
 const volSliderSx: SxProps<Theme> = {
-  color: '#fff',
+  color: 'common.white',
   height: 3,
   width: 80,
   padding: '10px 0',
   '& .MuiSlider-thumb': {
     width: 13,
     height: 13,
-    backgroundColor: '#fff',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+    backgroundColor: 'common.white',
+    boxShadow: (theme) => `0 1px 4px ${alpha(theme.palette.common.black, 0.5)}`,
     '&:before': { display: 'none' },
-    '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 6px rgba(255,255,255,0.2)' }
+    '&:hover, &.Mui-focusVisible': {
+      boxShadow: (theme) => `0 0 0 6px ${alpha(theme.palette.common.white, 0.2)}`
+    }
   },
-  '& .MuiSlider-rail': { backgroundColor: 'rgba(255,255,255,0.25)', opacity: 1 },
+  '& .MuiSlider-rail': {
+    backgroundColor: (theme) => alpha(theme.palette.common.white, 0.25),
+    opacity: 1
+  },
   '& .MuiSlider-track': { border: 'none' }
 }
 
@@ -348,7 +356,7 @@ export default function PlayerScreen(): React.JSX.Element {
       sx={{
         width: '100vw',
         height: '100vh',
-        background: '#000',
+        background: 'common.black',
         overflow: 'hidden',
         position: 'relative',
         WebkitAppRegion: 'no-drag',
@@ -392,7 +400,7 @@ export default function PlayerScreen(): React.JSX.Element {
               height: '100%',
               objectFit: videoObjectFit,
               objectPosition: 'center',
-              backgroundColor: '#000',
+              backgroundColor: 'common.black',
               WebkitAppRegion: 'no-drag',
               cursor: 'inherit',
               '&::-webkit-media-controls': { display: 'none !important' }
@@ -454,7 +462,7 @@ export default function PlayerScreen(): React.JSX.Element {
             alignItems: 'center',
             justifyContent: 'center',
             gap: 1,
-            color: '#fff',
+            color: 'common.white',
             textAlign: 'center',
             px: 3,
             width: '100%',
@@ -462,7 +470,10 @@ export default function PlayerScreen(): React.JSX.Element {
           }}
         >
           <Typography variant="h6">재생할 파일이 없습니다.</Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: (theme) => alpha(theme.palette.common.white, 0.5) }}
+          >
             player window를 열 때 src를 전달하도록 연결이 필요합니다.
           </Typography>
         </Box>

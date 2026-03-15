@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 type PlayerButtonProps = {
@@ -31,14 +32,20 @@ export function PlayerButton({
           justifyContent: 'center',
           background: 'none',
           border: 'none',
-          color: '#fff',
+          color: 'common.white',
           cursor: 'pointer',
           p: pad,
           borderRadius: '50%',
           transition: 'background 0.15s, transform 0.1s',
           flexShrink: 0,
-          '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)', transform: 'scale(1.08)' },
-          '&:active': { backgroundColor: 'rgba(255,255,255,0.22)', transform: 'scale(0.95)' }
+          '&:hover': {
+            backgroundColor: (theme) => alpha(theme.palette.common.white, 0.15),
+            transform: 'scale(1.08)'
+          },
+          '&:active': {
+            backgroundColor: (theme) => alpha(theme.palette.common.white, 0.22),
+            transform: 'scale(0.95)'
+          }
         },
         ...(sxOverride == null ? [] : Array.isArray(sxOverride) ? sxOverride : [sxOverride])
       ]}

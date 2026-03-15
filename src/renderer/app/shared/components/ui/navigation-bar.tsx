@@ -2,6 +2,7 @@ import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutl
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { JSX } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -13,15 +14,27 @@ const NAV_ICON_BTN_SX = {
   p: 0.875,
   borderRadius: 2,
   border: '1px solid',
-  borderColor: 'divider',
-  backgroundColor: 'background.paper',
+  borderColor: (theme) =>
+    theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.16)
+      : theme.palette.divider,
+  backgroundColor: (theme) =>
+    theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.04)
+      : theme.palette.background.paper,
   transition: 'background-color 140ms ease, border-color 140ms ease',
   '&:hover': {
-    backgroundColor: 'action.hover',
+    backgroundColor: (theme) =>
+      theme.palette.mode === 'light'
+        ? alpha(theme.palette.primary.main, 0.1)
+        : theme.palette.action.hover,
     borderColor: 'primary.main'
   },
   '&:active': {
-    backgroundColor: 'action.selected'
+    backgroundColor: (theme) =>
+      theme.palette.mode === 'light'
+        ? alpha(theme.palette.primary.main, 0.14)
+        : theme.palette.action.selected
   }
 }
 
@@ -36,6 +49,13 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
       sx={{
         borderBottom: '1px solid',
         borderColor: 'divider',
+        background: (theme) =>
+          theme.palette.mode === 'light'
+            ? `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.94)} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.015
+              )} 100%)`
+            : theme.palette.background.paper,
         display: 'flex',
         justifyContent: 'center'
       }}

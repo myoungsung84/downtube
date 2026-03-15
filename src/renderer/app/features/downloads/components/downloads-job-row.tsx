@@ -36,6 +36,13 @@ import {
 
 const actionBtnSx = { width: 32, height: 32 } as const
 
+const STATUS_BG_ALPHA: Record<'primary' | 'success' | 'error' | 'warning', { light: number; dark: number }> = {
+  primary: { light: 0.06, dark: 0.12 },
+  success: { light: 0.08, dark: 0.1 },
+  error: { light: 0.08, dark: 0.1 },
+  warning: { light: 0.09, dark: 0.1 }
+}
+
 export default function DownloadsJobRow(props: {
   job: DownloadJob
   isCurrent: boolean
@@ -71,6 +78,12 @@ export default function DownloadsJobRow(props: {
     statusMeta.color === 'default'
       ? theme.palette.text.secondary
       : theme.palette[statusMeta.color].main
+  const statusBg = tone.bgPaletteKey
+    ? alpha(
+        theme.palette[tone.bgPaletteKey].main,
+        STATUS_BG_ALPHA[tone.bgPaletteKey][theme.palette.mode]
+      )
+    : 'transparent'
 
   return (
     <Fade in>
@@ -80,7 +93,7 @@ export default function DownloadsJobRow(props: {
           borderRadius: 1.5,
           border: '1px solid',
           borderColor: props.isCurrent ? 'primary.main' : tone.borderColor,
-          backgroundColor: tone.bg,
+          backgroundColor: statusBg,
           overflow: 'hidden'
         }}
       >
@@ -120,8 +133,11 @@ export default function DownloadsJobRow(props: {
                   position: 'absolute',
                   bottom: 6,
                   right: 6,
-                  bgcolor: 'rgba(0,0,0,0.72)',
-                  color: 'white',
+                  bgcolor: alpha(
+                    theme.palette.common.black,
+                    theme.palette.mode === 'dark' ? 0.72 : 0.62
+                  ),
+                  color: 'common.white',
                   borderRadius: 0.75,
                   px: 0.75,
                   py: 0.25,
@@ -195,7 +211,10 @@ export default function DownloadsJobRow(props: {
                     onChange={(_, v) => v && props.onToggleType(job.id, v)}
                     sx={{
                       height: 30,
-                      bgcolor: alpha(theme.palette.action.active, 0.04),
+                      bgcolor:
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.04)
+                          : alpha(theme.palette.action.active, 0.04),
                       borderRadius: 1.5,
                       p: 0.375,
                       gap: 0.375,

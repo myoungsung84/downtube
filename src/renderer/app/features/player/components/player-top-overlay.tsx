@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 import { IcFolder } from './player-icons'
@@ -55,7 +56,7 @@ export function PlayerTopOverlay({
                 px: '8px',
                 py: '3px',
                 borderRadius: '5px',
-                backgroundColor: '#e53935',
+                backgroundColor: 'error.main',
                 lineHeight: 1
               }}
             >
@@ -64,7 +65,7 @@ export function PlayerTopOverlay({
                   fontSize: '0.6rem',
                   fontWeight: 900,
                   letterSpacing: '0.08em',
-                  color: '#fff',
+                  color: 'common.white',
                   textTransform: 'uppercase',
                   lineHeight: 1.5
                 }}
@@ -76,14 +77,14 @@ export function PlayerTopOverlay({
           <Typography
             title={displayFileName}
             sx={{
-              color: 'rgba(255,255,255,0.92)',
+              color: (theme) => alpha(theme.palette.common.white, 0.92),
               fontWeight: 600,
               fontSize: '0.88rem',
               letterSpacing: '-0.01em',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              textShadow: '0 1px 6px rgba(0,0,0,0.8)'
+              textShadow: (theme) => `0 1px 6px ${alpha(theme.palette.common.black, 0.8)}`
             }}
           >
             {displayFileName || '알 수 없는 파일'}
@@ -97,10 +98,10 @@ export function PlayerTopOverlay({
               display: 'flex',
               alignItems: 'center',
               gap: '5px',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.14)',
+              background: (theme) => alpha(theme.palette.common.white, 0.08),
+              border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.14)}`,
               backdropFilter: 'blur(6px)',
-              color: 'rgba(255,255,255,0.6)',
+              color: (theme) => alpha(theme.palette.common.white, 0.6),
               cursor: 'pointer',
               px: '10px',
               py: '5px',
@@ -109,7 +110,10 @@ export function PlayerTopOverlay({
               fontWeight: 600,
               whiteSpace: 'nowrap',
               transition: 'background 0.15s, color 0.15s',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.14)', color: '#fff' }
+              '&:hover': {
+                backgroundColor: (theme) => alpha(theme.palette.common.white, 0.14),
+                color: 'common.white'
+              }
             }}
           >
             <IcFolder />
@@ -149,8 +153,8 @@ export function PlayerTopOverlay({
                 height: 24,
                 px: '10px',
                 borderRadius: '6px',
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: (theme) => alpha(theme.palette.common.white, 0.08),
+                border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
                 backdropFilter: 'blur(6px)',
                 mr: 0.5
               }}
@@ -159,7 +163,7 @@ export function PlayerTopOverlay({
                 sx={{
                   fontSize: '0.68rem',
                   fontWeight: 600,
-                  color: 'rgba(255,255,255,0.6)',
+                  color: (theme) => alpha(theme.palette.common.white, 0.6),
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1
                 }}
@@ -182,10 +186,19 @@ export function PlayerTopOverlay({
                   height: 24,
                   px: '9px',
                   borderRadius: '6px',
-                  background: isActive ? 'rgba(229,57,53,0.5)' : 'rgba(255,255,255,0.07)',
-                  border: `1px solid ${isActive ? 'rgba(229,57,53,0.7)' : 'rgba(255,255,255,0.1)'}`,
+                  background: (theme) =>
+                    isActive
+                      ? alpha(theme.palette.error.main, 0.5)
+                      : alpha(theme.palette.common.white, 0.07),
+                  border: (theme) =>
+                    `1px solid ${
+                      isActive
+                        ? alpha(theme.palette.error.main, 0.7)
+                        : alpha(theme.palette.common.white, 0.1)
+                    }`,
                   backdropFilter: 'blur(6px)',
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
+                  color: (theme) =>
+                    isActive ? theme.palette.common.white : alpha(theme.palette.common.white, 0.5),
                   cursor: 'pointer',
                   fontSize: '0.68rem',
                   fontWeight: isActive ? 800 : 600,
@@ -193,8 +206,11 @@ export function PlayerTopOverlay({
                   whiteSpace: 'nowrap',
                   transition: 'background 0.15s, color 0.15s, border-color 0.15s',
                   '&:hover': {
-                    backgroundColor: isActive ? 'rgba(229,57,53,0.65)' : 'rgba(255,255,255,0.13)',
-                    color: '#fff'
+                    backgroundColor: (theme) =>
+                      isActive
+                        ? alpha(theme.palette.error.main, 0.65)
+                        : alpha(theme.palette.common.white, 0.13),
+                    color: 'common.white'
                   }
                 }}
               >

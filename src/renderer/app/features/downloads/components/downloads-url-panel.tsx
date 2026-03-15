@@ -2,6 +2,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import {
   Alert,
+  alpha,
   Button,
   Fade,
   InputAdornment,
@@ -24,7 +25,14 @@ export default function DownloadsUrlPanel(props: {
         p: 2.5,
         borderRadius: 3,
         border: '1px solid',
-        borderColor: 'divider'
+        borderColor: 'divider',
+        background: (theme) =>
+          theme.palette.mode === 'light'
+            ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
+                theme.palette.info.main,
+                0.012
+              )} 100%)`
+            : theme.palette.background.paper
       }}
     >
       <Stack spacing={2}>
@@ -48,6 +56,10 @@ export default function DownloadsUrlPanel(props: {
               borderRadius: 2,
               fontSize: '0.85rem',
               pr: 0.75,
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'light'
+                  ? alpha(theme.palette.background.default, 0.7)
+                  : theme.palette.background.paper,
               '&:hover .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'primary.main'
               },

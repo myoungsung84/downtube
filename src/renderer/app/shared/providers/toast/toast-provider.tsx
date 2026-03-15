@@ -60,7 +60,7 @@ export default function ToastProvider({
             boxShadow: 4,
             fontSize: '0.95rem',
             minWidth: 300,
-            color: 'white',
+            color: 'common.white',
             '& .MuiAlert-message': { flex: 1 }
           }}
         >
