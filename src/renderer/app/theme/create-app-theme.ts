@@ -30,30 +30,30 @@ type ThemeTokens = {
 function getTokens(mode: PaletteMode): ThemeTokens {
   if (mode === 'light') {
     return {
-      backgroundDefault: '#F6F8FC',
+      backgroundDefault: '#F4F7FB',
       backgroundPaper: '#FFFFFF',
-      primaryMain: '#2563EB',
-      primaryLight: '#4F83F1',
-      primaryDark: '#1D4ED8',
-      secondaryMain: '#0EA5A4',
-      secondaryLight: '#2CC9C6',
-      secondaryDark: '#0C8A89',
-      textPrimary: '#0F172A',
-      textSecondary: '#334155',
-      textDisabled: '#94A3B8',
-      successMain: '#0F9D58',
-      successLight: '#34C27A',
-      successDark: '#0A7D45',
-      errorMain: '#D93025',
-      errorLight: '#E45A50',
-      errorDark: '#B42318',
-      warningMain: '#C77700',
-      warningLight: '#E19B2B',
-      warningDark: '#A35E00',
+      primaryMain: '#2B6DEB',
+      primaryLight: '#5B90F3',
+      primaryDark: '#1E52BD',
+      secondaryMain: '#1C8B82',
+      secondaryLight: '#39AAA1',
+      secondaryDark: '#166B65',
+      textPrimary: '#0E1A2B',
+      textSecondary: '#3D4D63',
+      textDisabled: '#8A98AD',
+      successMain: '#149A67',
+      successLight: '#39B985',
+      successDark: '#0F7A51',
+      errorMain: '#D94A3A',
+      errorLight: '#E57164',
+      errorDark: '#B4382A',
+      warningMain: '#C57A1E',
+      warningLight: '#DA9A49',
+      warningDark: '#9D6017',
       infoMain: '#0288D1',
       infoLight: '#31A7E5',
       infoDark: '#0169A5',
-      divider: '#D9E1EC'
+      divider: '#D7E0EC'
     }
   }
 
@@ -151,7 +151,7 @@ export default function createAppTheme(mode: PaletteMode): Theme {
           background: ${
             isDark
               ? 'linear-gradient(180deg, #0E1420 0%, #090D15 50%, #0E1420 100%)'
-              : 'linear-gradient(180deg, #F7FAFF 0%, #F2F6FC 50%, #F7FAFF 100%)'
+              : 'linear-gradient(180deg, #F8FAFD 0%, #F1F5FB 50%, #F8FAFD 100%)'
           };
           background-attachment: fixed;
           min-height: 100vh;
@@ -168,12 +168,14 @@ export default function createAppTheme(mode: PaletteMode): Theme {
             textTransform: 'none',
             fontWeight: 600,
             '&:hover': {
-              backgroundColor: alpha(t.primaryMain, isDark ? 0.08 : 0.12)
+              backgroundColor: alpha(t.primaryMain, isDark ? 0.08 : 0.1)
             }
           },
           contained: {
+            boxShadow: isDark ? undefined : `0 1px 2px ${alpha('#0F172A', 0.16)}`,
             '&:hover': {
-              backgroundColor: t.primaryDark
+              backgroundColor: t.primaryDark,
+              boxShadow: isDark ? undefined : `0 2px 8px ${alpha(t.primaryMain, 0.28)}`
             }
           }
         }
@@ -189,7 +191,8 @@ export default function createAppTheme(mode: PaletteMode): Theme {
       MuiPaper: {
         styleOverrides: {
           root: {
-            backgroundImage: 'none'
+            backgroundImage: 'none',
+            boxShadow: isDark ? undefined : `0 1px 2px ${alpha('#0F172A', 0.06)}`
           }
         }
       },
@@ -221,7 +224,7 @@ export default function createAppTheme(mode: PaletteMode): Theme {
         styleOverrides: {
           root: {
             '&:hover': {
-              backgroundColor: alpha(t.primaryMain, isDark ? 0.08 : 0.12)
+              backgroundColor: alpha(t.primaryMain, isDark ? 0.08 : 0.1)
             }
           }
         }

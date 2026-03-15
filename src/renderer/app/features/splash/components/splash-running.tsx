@@ -22,7 +22,8 @@ export function SplashRunning({
           sx={{
             fontSize: '0.8rem',
             fontWeight: 500,
-            color: (theme) => alpha(theme.palette.text.primary, 0.56),
+            color: (theme) =>
+              alpha(theme.palette.text.primary, theme.palette.mode === 'light' ? 0.64 : 0.56),
             letterSpacing: '0.08em',
             textTransform: 'uppercase'
           }}
@@ -65,7 +66,8 @@ export function SplashRunning({
         sx={{
           fontSize: '0.78rem',
           fontWeight: 300,
-          color: (theme) => alpha(theme.palette.text.primary, 0.5),
+          color: (theme) =>
+            alpha(theme.palette.text.primary, theme.palette.mode === 'light' ? 0.62 : 0.5),
           lineHeight: 1.7,
           minHeight: '2.6em',
           textAlign: 'center'
@@ -78,7 +80,8 @@ export function SplashRunning({
         sx={{
           fontSize: '0.75rem',
           fontWeight: 400,
-          color: (theme) => alpha(theme.palette.text.secondary, 0.86),
+          color: (theme) =>
+            alpha(theme.palette.text.secondary, theme.palette.mode === 'light' ? 0.9 : 0.86),
           lineHeight: 1.65,
           textAlign: 'center'
         }}
