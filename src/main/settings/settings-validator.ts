@@ -9,6 +9,13 @@ export function validateSettingValue<K extends SettingKey>(
   value: unknown
 ): asserts value is SettingValueMap[K] {
   switch (key) {
+    case 'app.themeMode': {
+      if (value !== 'light' && value !== 'dark' && value !== 'system') {
+        throw new Error(`[settings] ${key} must be "light", "dark", or "system"`)
+      }
+      return
+    }
+
     case 'player.volume': {
       if (typeof value !== 'number') {
         throw new Error(`[settings] ${key} must be a number`)

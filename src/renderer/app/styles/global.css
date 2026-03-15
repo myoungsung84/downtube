@@ -1,42 +1,57 @@
+:root {
+  --app-bg: #f6f8fc;
+  --app-scroll-track: #f1f5f9;
+  --app-scroll-thumb: rgba(15, 23, 42, 0.22);
+  --app-scroll-thumb-hover: rgba(15, 23, 42, 0.36);
+  --app-color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --app-bg: #0b0e14;
+  --app-scroll-track: #0b0e14;
+  --app-scroll-thumb: rgba(255, 255, 255, 0.2);
+  --app-scroll-thumb-hover: rgba(255, 255, 255, 0.3);
+  --app-color-scheme: dark;
+}
+
 html {
   min-height: 100%;
-  background-color: #0b0e14;
-  color-scheme: dark;
+  background-color: var(--app-bg);
+  color-scheme: var(--app-color-scheme);
 }
 
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #0b0e14;
+  background-color: var(--app-bg);
   background-attachment: fixed;
 }
 
-/* 스크롤바 */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0e14; /* ✅ html과 같은 톤으로 */
+  background: var(--app-scroll-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: var(--app-scroll-thumb);
   border-radius: 999px;
-  border: 2px solid #0b0e14; /* ✅ track과 맞추기 */
+  border: 2px solid var(--app-scroll-track);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.28);
+  background-color: var(--app-scroll-thumb-hover);
 }
 
 ::-webkit-scrollbar-corner {
-  background: #0b0e14;
+  background: var(--app-scroll-track);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) #0b0e14;
+  scrollbar-color: var(--app-scroll-thumb) var(--app-scroll-track);
 }
