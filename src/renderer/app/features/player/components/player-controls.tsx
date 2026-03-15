@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 import { PlayerBottomControls } from './player-bottom-controls'
@@ -81,7 +82,8 @@ export function PlayerControls({
           left: 0,
           right: 0,
           height: 120,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, transparent 100%)',
+          background: (theme) =>
+            `linear-gradient(to bottom, ${alpha(theme.palette.common.black, 0.92)} 0%, transparent 100%)`,
           pointerEvents: 'none',
           opacity: uiVisible ? 1 : 0,
           transition: 'opacity 0.5s ease',
@@ -96,8 +98,11 @@ export function PlayerControls({
           left: 0,
           right: 0,
           height: 160,
-          background:
-            'linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.55) 60%, transparent 100%)',
+          background: (theme) =>
+            `linear-gradient(to top, ${alpha(theme.palette.common.black, 0.96)} 0%, ${alpha(
+              theme.palette.common.black,
+              0.55
+            )} 60%, transparent 100%)`,
           pointerEvents: 'none',
           opacity: uiVisible ? 1 : 0,
           transition: 'opacity 0.5s ease',

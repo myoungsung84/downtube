@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import { alpha } from '@mui/material/styles'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatSeconds } from '../lib/player-format'
@@ -158,10 +159,10 @@ export function PlayerSeekbar({
             >
               <Box
                 sx={{
-                  background: 'rgba(12,12,12,0.9)',
+                  background: (theme) => alpha(theme.palette.common.black, 0.9),
                   backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#fff',
+                  border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+                  color: 'common.white',
                   fontSize: '0.68rem',
                   fontWeight: 700,
                   fontFamily: '"SF Mono","Fira Code","Courier New",monospace',
@@ -171,7 +172,7 @@ export function PlayerSeekbar({
                   py: '4px',
                   borderRadius: '6px',
                   whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+                  boxShadow: (theme) => `0 4px 16px ${alpha(theme.palette.common.black, 0.5)}`
                 }}
               >
                 {formatSeconds(hoverTime)}
@@ -186,7 +187,7 @@ export function PlayerSeekbar({
                   height: 0,
                   borderLeft: '4px solid transparent',
                   borderRight: '4px solid transparent',
-                  borderTop: '4px solid rgba(12,12,12,0.9)'
+                  borderTop: (theme) => `4px solid ${alpha(theme.palette.common.black, 0.9)}`
                 }}
               />
             </Box>
@@ -213,7 +214,7 @@ export function PlayerSeekbar({
                 transform: 'translateY(-50%)',
                 height: 'inherit',
                 borderRadius: '999px',
-                background: 'rgba(255,255,255,0.15)'
+                background: (theme) => alpha(theme.palette.common.white, 0.15)
               }}
             />
 
@@ -226,7 +227,7 @@ export function PlayerSeekbar({
                 transform: 'translateY(-50%)',
                 height: 'inherit',
                 borderRadius: '999px',
-                background: 'rgba(255,255,255,0.08)',
+                background: (theme) => alpha(theme.palette.common.white, 0.08),
                 transition: 'width 0.6s ease'
               }}
             />
@@ -259,7 +260,7 @@ export function PlayerSeekbar({
                 width: active ? '12px' : '0px',
                 height: active ? '12px' : '0px',
                 borderRadius: '50%',
-                background: '#fff',
+                background: 'common.white',
                 pointerEvents: 'none',
                 zIndex: 4,
                 transition:
