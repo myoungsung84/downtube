@@ -1,7 +1,7 @@
 import { CssBaseline, useMediaQuery } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import App from './app'
 import createAppTheme from './theme/create-app-theme'
@@ -43,7 +43,7 @@ export default function ThemedApp(): React.JSX.Element {
   const themeMode = storedThemeMode ?? cachedThemeMode
   const resolvedMode = themeMode === 'system' ? (prefersDark ? 'dark' : 'light') : themeMode
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolvedMode
   }, [resolvedMode])
 

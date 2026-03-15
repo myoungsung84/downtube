@@ -36,6 +36,13 @@ import {
 
 const actionBtnSx = { width: 32, height: 32 } as const
 
+const STATUS_BG_ALPHA: Record<'primary' | 'success' | 'error' | 'warning', { light: number; dark: number }> = {
+  primary: { light: 0.06, dark: 0.12 },
+  success: { light: 0.08, dark: 0.1 },
+  error: { light: 0.08, dark: 0.1 },
+  warning: { light: 0.09, dark: 0.1 }
+}
+
 export default function DownloadsJobRow(props: {
   job: DownloadJob
   isCurrent: boolean
@@ -71,16 +78,12 @@ export default function DownloadsJobRow(props: {
     statusMeta.color === 'default'
       ? theme.palette.text.secondary
       : theme.palette[statusMeta.color].main
-  const statusBg =
-    tone.tone === 'running'
-      ? alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.06 : 0.12)
-      : tone.tone === 'completed'
-        ? alpha(theme.palette.success.main, theme.palette.mode === 'light' ? 0.08 : 0.1)
-        : tone.tone === 'failed'
-          ? alpha(theme.palette.error.main, theme.palette.mode === 'light' ? 0.08 : 0.1)
-          : tone.tone === 'cancelled'
-            ? alpha(theme.palette.warning.main, theme.palette.mode === 'light' ? 0.09 : 0.1)
-            : 'transparent'
+  const statusBg = tone.bgPaletteKey
+    ? alpha(
+        theme.palette[tone.bgPaletteKey].main,
+        STATUS_BG_ALPHA[tone.bgPaletteKey][theme.palette.mode]
+      )
+    : 'transparent'
 
   return (
     <Fade in>
