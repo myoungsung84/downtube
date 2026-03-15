@@ -71,6 +71,16 @@ export default function DownloadsJobRow(props: {
     statusMeta.color === 'default'
       ? theme.palette.text.secondary
       : theme.palette[statusMeta.color].main
+  const statusBg =
+    tone.tone === 'running'
+      ? theme.palette.action.hover
+      : tone.tone === 'completed'
+        ? alpha(theme.palette.success.main, 0.1)
+        : tone.tone === 'failed'
+          ? alpha(theme.palette.error.main, 0.1)
+          : tone.tone === 'cancelled'
+            ? alpha(theme.palette.warning.main, 0.1)
+            : 'transparent'
 
   return (
     <Fade in>
@@ -80,7 +90,7 @@ export default function DownloadsJobRow(props: {
           borderRadius: 1.5,
           border: '1px solid',
           borderColor: props.isCurrent ? 'primary.main' : tone.borderColor,
-          backgroundColor: tone.bg,
+          backgroundColor: statusBg,
           overflow: 'hidden'
         }}
       >
@@ -120,8 +130,11 @@ export default function DownloadsJobRow(props: {
                   position: 'absolute',
                   bottom: 6,
                   right: 6,
-                  bgcolor: 'rgba(0,0,0,0.72)',
-                  color: 'white',
+                  bgcolor: alpha(
+                    theme.palette.common.black,
+                    theme.palette.mode === 'dark' ? 0.72 : 0.62
+                  ),
+                  color: 'common.white',
                   borderRadius: 0.75,
                   px: 0.75,
                   py: 0.25,

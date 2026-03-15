@@ -3,6 +3,7 @@ import PlaylistPlayIcon from '@mui/icons-material/PlaylistPlay'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary'
 import {
+  alpha,
   Box,
   Chip,
   Divider,
@@ -40,7 +41,11 @@ export default function SettingsScreen(): React.JSX.Element {
       : 10
 
   useEffect(() => {
-    void hydrateSettings([APP_THEME_MODE_KEY, DOWNLOADS_DEFAULT_TYPE_KEY, DOWNLOADS_PLAYLIST_LIMIT_KEY])
+    void hydrateSettings([
+      APP_THEME_MODE_KEY,
+      DOWNLOADS_DEFAULT_TYPE_KEY,
+      DOWNLOADS_PLAYLIST_LIMIT_KEY
+    ])
   }, [hydrateSettings])
 
   return (
@@ -65,7 +70,7 @@ export default function SettingsScreen(): React.JSX.Element {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(var(--mui-palette-primary-mainChannel) / 0.4)'
+              boxShadow: (theme) => `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
             }}
           >
             <SettingsOutlinedIcon sx={{ fontSize: 20, color: 'primary.contrastText' }} />
@@ -149,7 +154,7 @@ export default function SettingsScreen(): React.JSX.Element {
                   '&.Mui-selected': {
                     bgcolor: 'background.paper',
                     color: 'text.primary',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                    boxShadow: (theme) => `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
                     '&:hover': { bgcolor: 'background.paper' }
                   },
                   '&:hover:not(.Mui-selected)': {
@@ -242,7 +247,7 @@ export default function SettingsScreen(): React.JSX.Element {
                     '&.Mui-selected': {
                       bgcolor: 'background.paper',
                       color: 'text.primary',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                      boxShadow: (theme) => `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
                       '&:hover': { bgcolor: 'background.paper' }
                     },
                     '&:hover:not(.Mui-selected)': {
@@ -331,7 +336,7 @@ export default function SettingsScreen(): React.JSX.Element {
                     '&.Mui-selected': {
                       bgcolor: 'background.paper',
                       color: 'text.primary',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                      boxShadow: (theme) => `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
                       '&:hover': { bgcolor: 'background.paper' }
                     },
                     '&:hover:not(.Mui-selected)': {

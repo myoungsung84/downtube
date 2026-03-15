@@ -1,4 +1,5 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import React from 'react'
 
 type SplashRunningProps = {
@@ -21,7 +22,7 @@ export function SplashRunning({
           sx={{
             fontSize: '0.8rem',
             fontWeight: 500,
-            color: 'rgba(255,255,255,0.52)',
+            color: (theme) => alpha(theme.palette.text.primary, 0.56),
             letterSpacing: '0.08em',
             textTransform: 'uppercase'
           }}
@@ -32,7 +33,7 @@ export function SplashRunning({
           sx={{
             fontSize: '0.94rem',
             fontWeight: 500,
-            color: '#fff',
+            color: 'text.primary',
             textAlign: 'center'
           }}
         >
@@ -47,11 +48,14 @@ export function SplashRunning({
           sx={{
             height: 8,
             borderRadius: 999,
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.12),
             '& .MuiLinearProgress-bar': {
               borderRadius: 999,
-              background:
-                'linear-gradient(90deg, rgba(150,170,255,0.92) 0%, rgba(255,255,255,0.92) 100%)'
+              background: (theme) =>
+                `linear-gradient(90deg, ${alpha(theme.palette.primary.light, 0.92)} 0%, ${alpha(
+                  theme.palette.common.white,
+                  theme.palette.mode === 'dark' ? 0.92 : 0.7
+                )} 100%)`
             }
           }}
         />
@@ -61,7 +65,7 @@ export function SplashRunning({
         sx={{
           fontSize: '0.78rem',
           fontWeight: 300,
-          color: 'rgba(255,255,255,0.44)',
+          color: (theme) => alpha(theme.palette.text.primary, 0.5),
           lineHeight: 1.7,
           minHeight: '2.6em',
           textAlign: 'center'
@@ -74,7 +78,7 @@ export function SplashRunning({
         sx={{
           fontSize: '0.75rem',
           fontWeight: 400,
-          color: 'rgba(255,255,255,0.48)',
+          color: (theme) => alpha(theme.palette.text.secondary, 0.86),
           lineHeight: 1.65,
           textAlign: 'center'
         }}

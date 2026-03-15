@@ -35,7 +35,7 @@ export function SplashBrand({ isError }: SplashBrandProps): React.JSX.Element {
           fontWeight: 600,
           fontSize: '1.75rem',
           letterSpacing: '-0.3px',
-          color: '#fff'
+          color: 'text.primary'
         }}
       >
         DownTube

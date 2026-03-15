@@ -62,8 +62,10 @@ export default function SplashScreen(): React.JSX.Element {
         justifyContent="center"
         height="100vh"
         sx={{
-          background:
-            'radial-gradient(circle at top, rgba(82, 109, 255, 0.16), transparent 32%), linear-gradient(180deg, #0d1018 0%, #0a0c12 100%)'
+          background: (theme) =>
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at top, rgba(82, 109, 255, 0.16), transparent 32%), linear-gradient(180deg, #0d1018 0%, #0a0c12 100%)'
+              : 'radial-gradient(circle at top, rgba(37, 99, 235, 0.13), transparent 34%), linear-gradient(180deg, #f7faff 0%, #eef3fb 100%)'
         }}
       >
         <Stack
