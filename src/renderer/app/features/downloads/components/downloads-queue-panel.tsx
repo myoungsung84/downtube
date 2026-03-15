@@ -6,6 +6,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen'
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import React from 'react'
 
@@ -33,14 +34,33 @@ export default function DownloadsQueuePanel(props: {
   return (
     <Paper
       elevation={0}
-      sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        overflow: 'hidden',
+        background: (theme) =>
+          theme.palette.mode === 'light'
+            ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
+                theme.palette.primary.main,
+                0.012
+              )} 100%)`
+            : theme.palette.background.paper
+      }}
     >
       {/* Header row */}
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        sx={{ px: 2.5, py: 1.75, bgcolor: 'action.hover' }}
+        sx={{
+          px: 2.5,
+          py: 1.75,
+          bgcolor: (theme) =>
+            theme.palette.mode === 'light'
+              ? alpha(theme.palette.primary.main, 0.05)
+              : theme.palette.action.hover
+        }}
       >
         <Stack direction="row" spacing={1.25} alignItems="center">
           <DownloadingIcon sx={{ fontSize: 20, color: 'primary.main' }} />
@@ -53,7 +73,16 @@ export default function DownloadsQueuePanel(props: {
             color={isActive ? 'primary' : 'default'}
             variant={isActive ? 'filled' : 'outlined'}
             icon={isActive ? <DownloadIcon sx={{ fontSize: '14px !important' }} /> : undefined}
-            sx={{ fontWeight: 600, height: 22, fontSize: '0.72rem', '& .MuiChip-label': { px: 1 } }}
+            sx={{
+              fontWeight: 600,
+              height: 22,
+              fontSize: '0.72rem',
+              borderColor: (theme) =>
+                theme.palette.mode === 'light'
+                  ? alpha(theme.palette.primary.main, 0.24)
+                  : undefined,
+              '& .MuiChip-label': { px: 1 }
+            }}
           />
         </Stack>
 

@@ -73,13 +73,13 @@ export default function DownloadsJobRow(props: {
       : theme.palette[statusMeta.color].main
   const statusBg =
     tone.tone === 'running'
-      ? theme.palette.action.hover
+      ? alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.06 : 0.12)
       : tone.tone === 'completed'
-        ? alpha(theme.palette.success.main, 0.1)
+        ? alpha(theme.palette.success.main, theme.palette.mode === 'light' ? 0.08 : 0.1)
         : tone.tone === 'failed'
-          ? alpha(theme.palette.error.main, 0.1)
+          ? alpha(theme.palette.error.main, theme.palette.mode === 'light' ? 0.08 : 0.1)
           : tone.tone === 'cancelled'
-            ? alpha(theme.palette.warning.main, 0.1)
+            ? alpha(theme.palette.warning.main, theme.palette.mode === 'light' ? 0.09 : 0.1)
             : 'transparent'
 
   return (
@@ -208,7 +208,10 @@ export default function DownloadsJobRow(props: {
                     onChange={(_, v) => v && props.onToggleType(job.id, v)}
                     sx={{
                       height: 30,
-                      bgcolor: alpha(theme.palette.action.active, 0.04),
+                      bgcolor:
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.04)
+                          : alpha(theme.palette.action.active, 0.04),
                       borderRadius: 1.5,
                       p: 0.375,
                       gap: 0.375,

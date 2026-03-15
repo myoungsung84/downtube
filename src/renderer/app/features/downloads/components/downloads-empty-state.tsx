@@ -51,9 +51,9 @@ export default function DownloadsEmptyState(): React.JSX.Element {
           borderColor: (theme) => alpha(theme.palette.primary.main, 0.25),
           background: (theme) =>
             `linear-gradient(160deg,
-              ${alpha(theme.palette.primary.main, 0.04)} 0%,
+              ${alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.035 : 0.04)} 0%,
               ${alpha(theme.palette.background.paper, 1)} 50%,
-              ${alpha(theme.palette.info.main, 0.04)} 100%)`,
+              ${alpha(theme.palette.info.main, theme.palette.mode === 'light' ? 0.03 : 0.04)} 100%)`,
           position: 'relative',
           overflow: 'hidden',
           '&::before': {
@@ -61,7 +61,7 @@ export default function DownloadsEmptyState(): React.JSX.Element {
             position: 'absolute',
             inset: 0,
             background: (theme) =>
-              `radial-gradient(ellipse 60% 40% at 50% 0%, ${alpha(theme.palette.primary.main, 0.06)}, transparent)`,
+              `radial-gradient(ellipse 60% 40% at 50% 0%, ${alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.05 : 0.06)}, transparent)`,
             pointerEvents: 'none'
           }
         }}
@@ -109,7 +109,12 @@ export default function DownloadsEmptyState(): React.JSX.Element {
             <Typography
               variant="body1"
               color="text.secondary"
-              sx={{ maxWidth: 600, lineHeight: 1.8 }}
+              sx={{
+                maxWidth: 600,
+                lineHeight: 1.8,
+                color: (theme) =>
+                  alpha(theme.palette.text.secondary, theme.palette.mode === 'light' ? 0.92 : 1)
+              }}
             >
               위 입력창에 유튜브 영상 URL을 붙여넣으면 자동으로 목록에 추가됩니다.
               <br />
