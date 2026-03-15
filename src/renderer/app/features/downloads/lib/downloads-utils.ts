@@ -134,22 +134,23 @@ export function formatDuration(durationSec: number | undefined): string | undefi
 }
 
 export function statusTone(status: DownloadJob['status']): {
-  borderColor?: string
-  tone?: 'neutral' | 'running' | 'completed' | 'failed' | 'cancelled'
-  chipColor?: 'default' | 'success' | 'error' | 'warning' | 'info'
+  borderColor: string
+  tone: 'neutral' | 'running' | 'completed' | 'failed' | 'cancelled'
+  chipColor: 'default' | 'success' | 'error' | 'warning' | 'info'
+  bgPaletteKey: 'primary' | 'success' | 'error' | 'warning' | null
 } {
   switch (status) {
     case 'running':
-      return { borderColor: 'primary.main', tone: 'running', chipColor: 'info' }
+      return { borderColor: 'primary.main', tone: 'running', chipColor: 'info', bgPaletteKey: 'primary' }
     case 'completed':
-      return { borderColor: 'success.main', tone: 'completed', chipColor: 'success' }
+      return { borderColor: 'success.main', tone: 'completed', chipColor: 'success', bgPaletteKey: 'success' }
     case 'failed':
-      return { borderColor: 'error.main', tone: 'failed', chipColor: 'error' }
+      return { borderColor: 'error.main', tone: 'failed', chipColor: 'error', bgPaletteKey: 'error' }
     case 'cancelled':
-      return { borderColor: 'warning.main', tone: 'cancelled', chipColor: 'warning' }
+      return { borderColor: 'warning.main', tone: 'cancelled', chipColor: 'warning', bgPaletteKey: 'warning' }
     case 'queued':
     default:
-      return { borderColor: 'divider', tone: 'neutral', chipColor: 'default' }
+      return { borderColor: 'divider', tone: 'neutral', chipColor: 'default', bgPaletteKey: null }
   }
 }
 
