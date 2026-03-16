@@ -45,19 +45,27 @@ export default function DownloadsUrlPanel(props: {
   } = props
 
   const PaperWithHeader = React.useCallback(
-    ({ children, ...paperProps }: PaperProps) => (
-      <Paper
-        {...paperProps}
-        sx={{
-          mt: 0.5,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.09)',
-          overflow: 'hidden',
-          ...paperProps.sx
-        }}
-      >
+    ({ children, ...paperProps }: PaperProps) => {
+      const extraSx = Array.isArray(paperProps.sx)
+        ? paperProps.sx
+        : paperProps.sx
+          ? [paperProps.sx]
+          : []
+      return (
+        <Paper
+          {...paperProps}
+          sx={[
+            {
+              mt: 0.5,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.09)',
+              overflow: 'hidden'
+            },
+            ...extraSx
+          ]}
+        >
         {recentUrls.length > 0 && (
           <>
             <Stack
@@ -94,8 +102,9 @@ export default function DownloadsUrlPanel(props: {
           </>
         )}
         {children}
-      </Paper>
-    ),
+        </Paper>
+      )
+    },
     [recentUrls.length, onClearRecentUrls]
   )
 

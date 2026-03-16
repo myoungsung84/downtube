@@ -35,6 +35,7 @@ export default function DownloadsScreen(): React.JSX.Element {
   const [jobs, setJobs] = useState<DownloadJob[]>([])
   const [hydrating, setHydrating] = useState(true)
   const [inputValue, setInputValue] = useState('')
+  const [pendingFocusUrl, setPendingFocusUrl] = useState<string | undefined>(undefined)
 
   const [queueRunning, setQueueRunning] = useState(false)
   const [queuePaused, setQueuePaused] = useState(true)
@@ -100,17 +101,23 @@ export default function DownloadsScreen(): React.JSX.Element {
   }, [hydrateSettings])
 
   const persistRecentUrl = (item: RecentUrlHistoryItem): void => {
-    const nextRecentUrls = updateRecentUrlHistory(recentUrls, item)
+    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item)
     void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
   }
 
   const handleSelectRecentUrl = (item: RecentUrlHistoryItem): void => {
     setInputValue(item.url)
-    if (!refUrl.current) return
-    refUrl.current.value = item.url
-    refUrl.current.focus()
-    refUrl.current.setSelectionRange(item.url.length, item.url.length)
+    setPendingFocusUrl(item.url)
   }
+
+  useEffect(() => {
+    if (pendingFocusUrl === undefined) return
+    const input = refUrl.current
+    if (!input) return
+    input.focus()
+    input.setSelectionRange(pendingFocusUrl.length, pendingFocusUrl.length)
+    setPendingFocusUrl(undefined)
+  }, [pendingFocusUrl])
 
   const handleRemoveRecentUrl = (url: string): void => {
     void setSettingValue(
@@ -161,7 +168,6 @@ export default function DownloadsScreen(): React.JSX.Element {
       }
 
       setInputValue('')
-      if (refUrl.current) refUrl.current.value = ''
     } catch {
       showToast('주소를 추가하지 못했어요. 입력한 주소를 확인해주세요 😢', 'error')
     } finally {
