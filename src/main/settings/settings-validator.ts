@@ -64,15 +64,16 @@ export function validateSettingValue<K extends SettingKey>(
       if (
         !value.every(
           (item) =>
-            typeof item === 'string' ||
-            (typeof item === 'object' &&
-              item != null &&
-              typeof item.url === 'string' &&
-              typeof item.title === 'string' &&
-              (item.kind === 'single' || item.kind === 'playlist'))
+            typeof item === 'object' &&
+            item != null &&
+            typeof item.url === 'string' &&
+            typeof item.title === 'string' &&
+            (item.kind === 'single' || item.kind === 'playlist')
         )
       ) {
-        throw new Error(`[settings] ${key} must contain only recent URL history items`)
+        throw new Error(
+          `[settings] ${key} must contain only objects with { url: string, title: string, kind: "single" | "playlist" }`
+        )
       }
       return
     }
