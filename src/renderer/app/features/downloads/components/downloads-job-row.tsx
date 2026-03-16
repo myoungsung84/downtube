@@ -21,7 +21,7 @@ import {
   useTheme
 } from '@mui/material'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
-import Thumbnail from '@renderer/shared/components/ui/Thumbnail'
+import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
 import React from 'react'
 
