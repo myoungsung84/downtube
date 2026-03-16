@@ -149,7 +149,7 @@ export default function DownloadsUrlPanel(props: {
           options={recentUrls}
           inputValue={inputValue}
           disabled={submitting !== null}
-          getOptionLabel={(option) => (typeof option === 'string' ? option : option.title)}
+          getOptionLabel={(option) => (typeof option === 'string' ? option : option.url)}
           onInputChange={(_, value) => onChangeInputValue(value)}
           onChange={(_, value) => {
             if (!value || typeof value === 'string') return
