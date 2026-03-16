@@ -129,7 +129,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     if (job.status === 'cancelled') await window.api.removeDownload(job.id)
 
     if (!isYoutubeUrl(job.url)) {
-      showToast('유튜브 URL만 다시 시도할 수 있어요', 'warning')
+      showToast('정확한 주소를 입력해 주세요', 'warning')
       return
     }
 

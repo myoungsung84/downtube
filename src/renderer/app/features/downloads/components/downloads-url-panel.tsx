@@ -44,7 +44,7 @@ export default function DownloadsUrlPanel(props: {
 
         <TextField
           inputRef={props.inputRef}
-          placeholder="YouTube URL 또는 플레이리스트 주소를 붙여넣으세요"
+          placeholder="영상 또는 재생목록 주소를 붙여넣으세요"
           variant="outlined"
           fullWidth
           disabled={props.submitting !== null}
