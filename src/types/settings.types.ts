@@ -4,7 +4,8 @@ export const settingKeys = [
   'player.muted',
   'player.visualizerEnabled',
   'downloads.defaultType',
-  'downloads.playlistLimit'
+  'downloads.playlistLimit',
+  'downloads.recentUrls'
 ] as const
 
 export type SettingKey = (typeof settingKeys)[number]
@@ -16,4 +17,5 @@ export type SettingValueMap = {
   'player.visualizerEnabled': boolean
   'downloads.defaultType': 'video' | 'audio'
   'downloads.playlistLimit': number
+  'downloads.recentUrls': string[]
 }

@@ -6,5 +6,6 @@ export const settingsDefaults: SettingValueMap = {
   'player.muted': false,
   'player.visualizerEnabled': false,
   'downloads.defaultType': 'video',
-  'downloads.playlistLimit': 10
+  'downloads.playlistLimit': 10,
+  'downloads.recentUrls': []
 }

@@ -57,6 +57,16 @@ export function validateSettingValue<K extends SettingKey>(
       return
     }
 
+    case 'downloads.recentUrls': {
+      if (!Array.isArray(value)) {
+        throw new Error(`[settings] ${key} must be an array`)
+      }
+      if (!value.every((item) => typeof item === 'string')) {
+        throw new Error(`[settings] ${key} must contain only strings`)
+      }
+      return
+    }
+
     default:
       return assertNever(key)
   }

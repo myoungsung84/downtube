@@ -24,7 +24,6 @@ export function isYoutubeUrl(input: string): boolean {
 
   const candidates: string[] = [trimmed]
 
-  // 스킴이 없다면 https://를 가정해 한 번 더 파싱을 시도합니다.
   const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)
   if (!hasScheme) {
     candidates.push(`https://${trimmed}`)
@@ -126,6 +125,13 @@ export function sortJobs(jobs: DownloadJob[]): DownloadJob[] {
   return [...jobs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
 }
 
+export function updateRecentUrls(prev: string[], nextUrl: string, limit = 10): string[] {
+  const normalized = nextUrl.trim()
+  if (!normalized) return prev
+
+  return [normalized, ...prev.filter((item) => item !== normalized)].slice(0, limit)
+}
+
 export function formatDuration(durationSec: number | undefined): string | undefined {
   if (durationSec == null || !Number.isFinite(durationSec) || durationSec < 0) return undefined
   const m = Math.floor(durationSec / 60)
@@ -141,13 +147,33 @@ export function statusTone(status: DownloadJob['status']): {
 } {
   switch (status) {
     case 'running':
-      return { borderColor: 'primary.main', tone: 'running', chipColor: 'info', bgPaletteKey: 'primary' }
+      return {
+        borderColor: 'primary.main',
+        tone: 'running',
+        chipColor: 'info',
+        bgPaletteKey: 'primary'
+      }
     case 'completed':
-      return { borderColor: 'success.main', tone: 'completed', chipColor: 'success', bgPaletteKey: 'success' }
+      return {
+        borderColor: 'success.main',
+        tone: 'completed',
+        chipColor: 'success',
+        bgPaletteKey: 'success'
+      }
     case 'failed':
-      return { borderColor: 'error.main', tone: 'failed', chipColor: 'error', bgPaletteKey: 'error' }
+      return {
+        borderColor: 'error.main',
+        tone: 'failed',
+        chipColor: 'error',
+        bgPaletteKey: 'error'
+      }
     case 'cancelled':
-      return { borderColor: 'warning.main', tone: 'cancelled', chipColor: 'warning', bgPaletteKey: 'warning' }
+      return {
+        borderColor: 'warning.main',
+        tone: 'cancelled',
+        chipColor: 'warning',
+        bgPaletteKey: 'warning'
+      }
     case 'queued':
     default:
       return { borderColor: 'divider', tone: 'neutral', chipColor: 'default', bgPaletteKey: null }
