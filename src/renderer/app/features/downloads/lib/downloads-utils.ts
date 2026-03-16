@@ -5,6 +5,7 @@ import DownloadingIcon from '@mui/icons-material/Downloading'
 import ErrorIcon from '@mui/icons-material/Error'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import type { DownloadJob } from '@src/types/download.types'
+import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 
 export function isPlaylistUrl(input: string): boolean {
   try {
@@ -24,7 +25,6 @@ export function isYoutubeUrl(input: string): boolean {
 
   const candidates: string[] = [trimmed]
 
-  // 스킴이 없다면 https://를 가정해 한 번 더 파싱을 시도합니다.
   const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)
   if (!hasScheme) {
     candidates.push(`https://${trimmed}`)
@@ -126,6 +126,82 @@ export function sortJobs(jobs: DownloadJob[]): DownloadJob[] {
   return [...jobs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
 }
 
+function buildRecentFallbackTitle(kind: RecentUrlHistoryItem['kind']): string {
+  return kind === 'playlist' ? '재생목록' : '영상'
+}
+
+export function normalizeRecentUrlHistory(
+  value: unknown,
+  isPlaylist: (input: string) => boolean
+): RecentUrlHistoryItem[] {
+  if (!Array.isArray(value)) return []
+
+  return value.flatMap((item) => {
+    if (typeof item === 'string') {
+      const url = item.trim()
+      if (!url) return []
+
+      const kind: RecentUrlHistoryItem['kind'] = isPlaylist(url) ? 'playlist' : 'single'
+      return [{ url, kind, title: buildRecentFallbackTitle(kind) }]
+    }
+
+    if (typeof item !== 'object' || item == null) return []
+    if (typeof item.url !== 'string' || typeof item.title !== 'string') return []
+    if (item.kind !== 'single' && item.kind !== 'playlist') return []
+
+    const url = item.url.trim()
+    const title = item.title.trim()
+    if (!url) return []
+
+    return [
+      {
+        url,
+        title: title || buildRecentFallbackTitle(item.kind),
+        kind: item.kind
+      }
+    ]
+  })
+}
+
+export function updateRecentUrlHistory(
+  prev: RecentUrlHistoryItem[],
+  nextItem: RecentUrlHistoryItem,
+  limit = 10
+): RecentUrlHistoryItem[] {
+  const url = nextItem.url.trim()
+  const title = nextItem.title.trim()
+  if (!url) return prev
+
+  return [
+    {
+      url,
+      title: title || buildRecentFallbackTitle(nextItem.kind),
+      kind: nextItem.kind
+    },
+    ...prev.filter((item) => item.url !== url)
+  ].slice(0, limit)
+}
+
+export function updateRecentUrlHistoryTitle(
+  prev: RecentUrlHistoryItem[],
+  url: string,
+  title: string
+): RecentUrlHistoryItem[] {
+  const normalizedUrl = url.trim()
+  const normalizedTitle = title.trim()
+  if (!normalizedUrl || !normalizedTitle) return prev
+
+  let changed = false
+  const next = prev.map((item) => {
+    if (item.url !== normalizedUrl) return item
+    if (item.title === normalizedTitle) return item
+    changed = true
+    return { ...item, title: normalizedTitle }
+  })
+
+  return changed ? next : prev
+}
+
 export function formatDuration(durationSec: number | undefined): string | undefined {
   if (durationSec == null || !Number.isFinite(durationSec) || durationSec < 0) return undefined
   const m = Math.floor(durationSec / 60)
@@ -141,13 +217,33 @@ export function statusTone(status: DownloadJob['status']): {
 } {
   switch (status) {
     case 'running':
-      return { borderColor: 'primary.main', tone: 'running', chipColor: 'info', bgPaletteKey: 'primary' }
+      return {
+        borderColor: 'primary.main',
+        tone: 'running',
+        chipColor: 'info',
+        bgPaletteKey: 'primary'
+      }
     case 'completed':
-      return { borderColor: 'success.main', tone: 'completed', chipColor: 'success', bgPaletteKey: 'success' }
+      return {
+        borderColor: 'success.main',
+        tone: 'completed',
+        chipColor: 'success',
+        bgPaletteKey: 'success'
+      }
     case 'failed':
-      return { borderColor: 'error.main', tone: 'failed', chipColor: 'error', bgPaletteKey: 'error' }
+      return {
+        borderColor: 'error.main',
+        tone: 'failed',
+        chipColor: 'error',
+        bgPaletteKey: 'error'
+      }
     case 'cancelled':
-      return { borderColor: 'warning.main', tone: 'cancelled', chipColor: 'warning', bgPaletteKey: 'warning' }
+      return {
+        borderColor: 'warning.main',
+        tone: 'cancelled',
+        chipColor: 'warning',
+        bgPaletteKey: 'warning'
+      }
     case 'queued':
     default:
       return { borderColor: 'divider', tone: 'neutral', chipColor: 'default', bgPaletteKey: null }

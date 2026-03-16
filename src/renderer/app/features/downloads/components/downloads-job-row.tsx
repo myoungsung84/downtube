@@ -36,7 +36,10 @@ import {
 
 const actionBtnSx = { width: 32, height: 32 } as const
 
-const STATUS_BG_ALPHA: Record<'primary' | 'success' | 'error' | 'warning', { light: number; dark: number }> = {
+const STATUS_BG_ALPHA: Record<
+  'primary' | 'success' | 'error' | 'warning',
+  { light: number; dark: number }
+> = {
   primary: { light: 0.06, dark: 0.12 },
   success: { light: 0.08, dark: 0.1 },
   error: { light: 0.08, dark: 0.1 },

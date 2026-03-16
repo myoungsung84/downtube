@@ -2,6 +2,7 @@ import { Box, Stack } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
+import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import DownloadsEmptyState from '../components/downloads-empty-state'
@@ -14,20 +15,27 @@ import {
   inferTitle,
   isPlaylistUrl,
   isYoutubeUrl,
-  sortJobs
+  normalizeRecentUrlHistory,
+  sortJobs,
+  updateRecentUrlHistory,
+  updateRecentUrlHistoryTitle
 } from '../lib/downloads-utils'
 
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
+const DOWNLOADS_RECENT_URLS_KEY = 'downloads.recentUrls' as const
 
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
 
   const { showToast } = useToast()
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
+  const setSettingValue = useSettingsStore((state) => state.setValue)
 
   const [jobs, setJobs] = useState<DownloadJob[]>([])
   const [hydrating, setHydrating] = useState(true)
+  const [inputValue, setInputValue] = useState('')
+  const [pendingFocusUrl, setPendingFocusUrl] = useState<string | undefined>(undefined)
 
   const [queueRunning, setQueueRunning] = useState(false)
   const [queuePaused, setQueuePaused] = useState(true)
@@ -37,10 +45,12 @@ export default function DownloadsScreen(): React.JSX.Element {
     null
   )
   const jobsRef = useRef<DownloadJob[]>([])
+  const recentUrlsRef = useRef<RecentUrlHistoryItem[]>([])
   const storedDefaultType = useSettingsStore((state) => state.values[DOWNLOADS_DEFAULT_TYPE_KEY])
   const storedPlaylistLimit = useSettingsStore(
     (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
   )
+  const storedRecentUrls = useSettingsStore((state) => state.values[DOWNLOADS_RECENT_URLS_KEY])
   const defaultType: 'video' | 'audio' = storedDefaultType === 'audio' ? 'audio' : 'video'
   const playlistLimit =
     typeof storedPlaylistLimit === 'number' &&
@@ -49,6 +59,13 @@ export default function DownloadsScreen(): React.JSX.Element {
     storedPlaylistLimit >= 1
       ? storedPlaylistLimit
       : 10
+  const recentUrls = useMemo(
+    () =>
+      Array.isArray(storedRecentUrls)
+        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl)
+        : [],
+    [storedRecentUrls]
+  )
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
   const hasQueued = queuedCount > 0
@@ -72,8 +89,46 @@ export default function DownloadsScreen(): React.JSX.Element {
   }, [jobs])
 
   useEffect(() => {
-    void hydrateSettings([DOWNLOADS_DEFAULT_TYPE_KEY, DOWNLOADS_PLAYLIST_LIMIT_KEY])
+    recentUrlsRef.current = recentUrls
+  }, [recentUrls])
+
+  useEffect(() => {
+    void hydrateSettings([
+      DOWNLOADS_DEFAULT_TYPE_KEY,
+      DOWNLOADS_PLAYLIST_LIMIT_KEY,
+      DOWNLOADS_RECENT_URLS_KEY
+    ])
   }, [hydrateSettings])
+
+  const persistRecentUrl = (item: RecentUrlHistoryItem): void => {
+    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item)
+    void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
+  }
+
+  const handleSelectRecentUrl = (item: RecentUrlHistoryItem): void => {
+    setInputValue(item.url)
+    setPendingFocusUrl(item.url)
+  }
+
+  useEffect(() => {
+    if (pendingFocusUrl === undefined) return
+    const input = refUrl.current
+    if (!input) return
+    input.focus()
+    input.setSelectionRange(pendingFocusUrl.length, pendingFocusUrl.length)
+    setPendingFocusUrl(undefined)
+  }, [pendingFocusUrl])
+
+  const handleRemoveRecentUrl = (url: string): void => {
+    void setSettingValue(
+      DOWNLOADS_RECENT_URLS_KEY,
+      recentUrls.filter((item) => item.url !== url)
+    )
+  }
+
+  const handleClearRecentUrls = (): void => {
+    void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, [])
+  }
 
   const handleDownloadInfo = async (inputUrl: string): Promise<void> => {
     const url = inputUrl.trim()
@@ -88,6 +143,11 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const kind: 'playlist' | 'single' = isPlaylistUrl(url) ? 'playlist' : 'single'
     setSubmitting({ url, kind })
+    persistRecentUrl({
+      url,
+      kind,
+      title: kind === 'playlist' ? '재생목록' : '영상'
+    })
 
     try {
       if (kind === 'playlist') {
@@ -107,7 +167,7 @@ export default function DownloadsScreen(): React.JSX.Element {
         showToast('다운로드 목록에 추가했어요! 아래 "시작" 버튼을 눌러보세요 🎉', 'success')
       }
 
-      if (refUrl.current) refUrl.current.value = ''
+      setInputValue('')
     } catch {
       showToast('주소를 추가하지 못했어요. 입력한 주소를 확인해주세요 😢', 'error')
     } finally {
@@ -193,6 +253,14 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const off = window.api.onDownloadsEvent((ev: DownloadQueueEvent): void => {
       if (ev.type === 'job-added') {
+        const nextRecentUrls = updateRecentUrlHistoryTitle(
+          recentUrlsRef.current,
+          ev.job.url,
+          ev.job.info?.title ?? ''
+        )
+        if (nextRecentUrls !== recentUrlsRef.current) {
+          void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
+        }
         setJobs((prev) => sortJobs([...prev.filter((j) => j.id !== ev.job.id), ev.job]))
         return
       }
@@ -228,15 +296,21 @@ export default function DownloadsScreen(): React.JSX.Element {
     return (): void => {
       off?.()
     }
-  }, [showToast])
+  }, [setSettingValue, showToast])
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Stack sx={{ p: 3, width: '100%', maxWidth: 1400 }} spacing={3}>
         <DownloadsUrlPanel
           inputRef={refUrl}
+          inputValue={inputValue}
+          recentUrls={recentUrls}
           submitting={submitting}
-          onSubmit={() => void handleDownloadInfo(refUrl.current?.value || '')}
+          onChangeInputValue={setInputValue}
+          onClearRecentUrls={handleClearRecentUrls}
+          onRemoveRecentUrl={handleRemoveRecentUrl}
+          onSelectRecentUrl={handleSelectRecentUrl}
+          onSubmit={() => void handleDownloadInfo(inputValue)}
         />
 
         <DownloadsQueuePanel
