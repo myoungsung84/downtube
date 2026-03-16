@@ -66,42 +66,42 @@ export default function DownloadsUrlPanel(props: {
             ...extraSx
           ]}
         >
-        {recentUrls.length > 0 && (
-          <>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              sx={{ px: 1.5, pt: 1.25, pb: 0.75 }}
-            >
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <HistoryIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
-                  최근 기록
-                </Typography>
-              </Stack>
-              <Button
-                size="small"
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  onClearRecentUrls()
-                }}
-                sx={{
-                  minWidth: 0,
-                  px: 0.75,
-                  py: 0.25,
-                  fontSize: '0.72rem',
-                  color: 'text.disabled',
-                  '&:hover': { color: 'error.main' }
-                }}
+          {recentUrls.length > 0 && (
+            <>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ px: 1.5, pt: 1.25, pb: 0.75 }}
               >
-                전체 삭제
-              </Button>
-            </Stack>
-            <Divider />
-          </>
-        )}
-        {children}
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                  <HistoryIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                  <Typography variant="caption" fontWeight={600} color="text.secondary">
+                    최근 기록
+                  </Typography>
+                </Stack>
+                <Button
+                  size="small"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    onClearRecentUrls()
+                  }}
+                  sx={{
+                    minWidth: 0,
+                    px: 0.75,
+                    py: 0.25,
+                    fontSize: '0.72rem',
+                    color: 'text.disabled',
+                    '&:hover': { color: 'error.main' }
+                  }}
+                >
+                  전체 삭제
+                </Button>
+              </Stack>
+              <Divider />
+            </>
+          )}
+          {children}
         </Paper>
       )
     },
