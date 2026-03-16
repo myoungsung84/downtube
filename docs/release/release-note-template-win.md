@@ -44,3 +44,34 @@ Downtube의 소스 코드는 MIT License로 배포됩니다.
 YouTube 및 기타 플랫폼의 콘텐츠를 다운로드할 경우, 해당 콘텐츠의 저작권과 서비스 약관을 반드시 확인해야 합니다.
 개인적인 용도를 넘어서는 사용(상업적 이용, 재배포 등)에는 저작권 소유자의 사전 동의가 필요할 수 있습니다.
 본 애플리케이션 사용으로 인해 발생하는 저작권 침해 또는 약관 위반에 대한 책임은 사용자에게 있습니다.
+
+How to use:
+
+Extract the ZIP file
+Run Downtube.exe
+
+⚠ Windows SmartScreen Notice
+This application is a desktop app built and distributed directly by an independent developer.
+Because it is not signed with a Microsoft code-signing certificate,
+Windows SmartScreen may display a warning.
+
+This does not necessarily mean the app is malicious.
+It is a standard security warning that Windows may show
+for newly distributed or less widely recognized applications.
+
+How to run:
+
+On the SmartScreen warning screen, click [More info]
+Then click [Run anyway]
+
+This project is publicly maintained on GitHub,
+and you can review both the source code and build process directly.
+
+❗ Notes
+Downtube source code is distributed under the MIT License.
+This application uses external open-source tools such as yt-dlp and FFmpeg, and each tool remains subject to its own license terms.
+Bundled external tools operate as independent executables.
+Some antivirus software may incorrectly detect this application or bundled external tools as false positives.
+If you download content from YouTube or other platforms, you must review the relevant copyright rules and terms of service.
+Uses beyond personal purposes, including commercial use or redistribution, may require prior permission from the copyright holder.
+The user is solely responsible for any copyright infringement or terms-of-service violations resulting from use of this application.
