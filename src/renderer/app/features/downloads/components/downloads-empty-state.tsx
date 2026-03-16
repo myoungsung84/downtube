@@ -23,8 +23,8 @@ const slideUp = keyframes`
 const steps = [
   {
     icon: <LinkIcon sx={{ fontSize: 18 }} />,
-    label: 'URL 붙여넣기',
-    desc: '유튜브 링크를 위 입력창에 붙여넣으세요'
+    label: '주소 붙여넣기',
+    desc: '영상 주소를 위 입력창에 붙여넣으세요'
   },
   {
     icon: <PlaylistAddIcon sx={{ fontSize: 18 }} />,
@@ -116,7 +116,7 @@ export default function DownloadsEmptyState(): React.JSX.Element {
                   alpha(theme.palette.text.secondary, theme.palette.mode === 'light' ? 0.92 : 1)
               }}
             >
-              위 입력창에 유튜브 영상 URL을 붙여넣으면 자동으로 목록에 추가됩니다.
+              위 입력창에 영상 주소를 붙여넣으면 자동으로 목록에 추가됩니다.
               <br />
               여러 개를 추가한 후 <strong>다운로드 시작</strong> 버튼을 눌러 한번에 다운로드하세요!
             </Typography>

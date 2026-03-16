@@ -38,13 +38,13 @@ export default function DownloadsUrlPanel(props: {
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography variant="body2" fontWeight={700} color="text.secondary">
-            URL 입력
+            주소 입력
           </Typography>
         </Stack>
 
         <TextField
           inputRef={props.inputRef}
-          placeholder="영상 또는 재생목록 주소를 붙여넣으세요"
+          placeholder="영상 주소 또는 재생목록 주소를 붙여넣으세요"
           variant="outlined"
           fullWidth
           disabled={props.submitting !== null}
@@ -108,8 +108,8 @@ export default function DownloadsUrlPanel(props: {
             >
               <Typography variant="body2" fontWeight={600}>
                 {props.submitting.kind === 'playlist'
-                  ? '플레이리스트를 분석하고 있어요… 잠시만 기다려주세요 ⏳'
-                  : '영상 정보를 확인하고 있어요… 곧 완료됩니다 🔍'}
+                  ? '재생목록 정보를 확인하고 있어요… 잠시만 기다려주세요 ⏳'
+                  : '주소 정보를 확인하고 있어요… 곧 완료됩니다 🔍'}
               </Typography>
             </Alert>
           </Fade>

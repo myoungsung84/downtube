@@ -159,7 +159,7 @@ export default function DownloadsQueuePanel(props: {
               fullWidth
               title={
                 !props.hasQueued
-                  ? '먼저 영상 URL을 추가해주세요'
+                  ? '먼저 영상 주소를 추가해주세요'
                   : props.queuePaused
                     ? '일시정지된 다운로드를 계속합니다'
                     : '대기중인 다운로드를 시작합니다'

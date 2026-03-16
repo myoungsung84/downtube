@@ -78,11 +78,11 @@ export default function DownloadsScreen(): React.JSX.Element {
   const handleDownloadInfo = async (inputUrl: string): Promise<void> => {
     const url = inputUrl.trim()
     if (!url) {
-      showToast('URL을 입력해주세요', 'warning')
+      showToast('주소를 입력해주세요', 'warning')
       return
     }
     if (!isYoutubeUrl(url)) {
-      showToast('유튜브 URL만 추가할 수 있어요', 'warning')
+      showToast('올바른 영상 주소만 추가할 수 있어요', 'warning')
       return
     }
 
@@ -109,7 +109,7 @@ export default function DownloadsScreen(): React.JSX.Element {
 
       if (refUrl.current) refUrl.current.value = ''
     } catch {
-      showToast('URL을 추가하는데 실패했어요. 주소를 확인해주세요 😢', 'error')
+      showToast('주소를 추가하지 못했어요. 입력한 주소를 확인해주세요 😢', 'error')
     } finally {
       setSubmitting(null)
     }
