@@ -6,6 +6,7 @@ command -v gh >/dev/null 2>&1 || { echo "Error: gh CLI not found."; exit 1; }
 APP_NAME="$(node -p "require('./package.json').name")"
 APP_VERSION="$(node -p "require('./package.json').version")"
 TAG_NAME="v${APP_VERSION}-win"
+RELEASE_TITLE="DownTube v${APP_VERSION} for Windows"
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "Error: working tree is dirty. Commit changes before release."
@@ -50,7 +51,7 @@ if gh release view "$TAG_NAME" >/dev/null 2>&1; then
 else
   gh release create "$TAG_NAME" \
     --draft \
-    --title "$TAG_NAME" \
+    --title "$RELEASE_TITLE" \
     --notes "$NOTES" \
     "$ZIP_PATH"
 fi
@@ -58,5 +59,6 @@ fi
 echo "OK"
 echo "app:   $APP_NAME"
 echo "tag:   $TAG_NAME"
+echo "title: $RELEASE_TITLE"
 echo "asset: $ZIP_PATH"
 echo "next:  publish the draft release on GitHub"
