@@ -2,6 +2,7 @@ import { Box, Stack } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
+import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import DownloadsEmptyState from '../components/downloads-empty-state'
@@ -14,8 +15,10 @@ import {
   inferTitle,
   isPlaylistUrl,
   isYoutubeUrl,
+  normalizeRecentUrlHistory,
   sortJobs,
-  updateRecentUrls
+  updateRecentUrlHistory,
+  updateRecentUrlHistoryTitle
 } from '../lib/downloads-utils'
 
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
@@ -41,6 +44,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     null
   )
   const jobsRef = useRef<DownloadJob[]>([])
+  const recentUrlsRef = useRef<RecentUrlHistoryItem[]>([])
   const storedDefaultType = useSettingsStore((state) => state.values[DOWNLOADS_DEFAULT_TYPE_KEY])
   const storedPlaylistLimit = useSettingsStore(
     (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
@@ -54,9 +58,13 @@ export default function DownloadsScreen(): React.JSX.Element {
     storedPlaylistLimit >= 1
       ? storedPlaylistLimit
       : 10
-  const recentUrls = Array.isArray(storedRecentUrls)
-    ? storedRecentUrls.filter((item): item is string => typeof item === 'string')
-    : []
+  const recentUrls = useMemo(
+    () =>
+      Array.isArray(storedRecentUrls)
+        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl)
+        : [],
+    [storedRecentUrls]
+  )
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
   const hasQueued = queuedCount > 0
@@ -80,6 +88,10 @@ export default function DownloadsScreen(): React.JSX.Element {
   }, [jobs])
 
   useEffect(() => {
+    recentUrlsRef.current = recentUrls
+  }, [recentUrls])
+
+  useEffect(() => {
     void hydrateSettings([
       DOWNLOADS_DEFAULT_TYPE_KEY,
       DOWNLOADS_PLAYLIST_LIMIT_KEY,
@@ -87,23 +99,23 @@ export default function DownloadsScreen(): React.JSX.Element {
     ])
   }, [hydrateSettings])
 
-  const persistRecentUrl = (url: string): void => {
-    const nextRecentUrls = updateRecentUrls(recentUrls, url)
+  const persistRecentUrl = (item: RecentUrlHistoryItem): void => {
+    const nextRecentUrls = updateRecentUrlHistory(recentUrls, item)
     void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
   }
 
-  const handleSelectRecentUrl = (url: string): void => {
-    setInputValue(url)
+  const handleSelectRecentUrl = (item: RecentUrlHistoryItem): void => {
+    setInputValue(item.url)
     if (!refUrl.current) return
-    refUrl.current.value = url
+    refUrl.current.value = item.url
     refUrl.current.focus()
-    refUrl.current.setSelectionRange(url.length, url.length)
+    refUrl.current.setSelectionRange(item.url.length, item.url.length)
   }
 
   const handleRemoveRecentUrl = (url: string): void => {
     void setSettingValue(
       DOWNLOADS_RECENT_URLS_KEY,
-      recentUrls.filter((item) => item !== url)
+      recentUrls.filter((item) => item.url !== url)
     )
   }
 
@@ -124,7 +136,11 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const kind: 'playlist' | 'single' = isPlaylistUrl(url) ? 'playlist' : 'single'
     setSubmitting({ url, kind })
-    persistRecentUrl(url)
+    persistRecentUrl({
+      url,
+      kind,
+      title: kind === 'playlist' ? '재생목록' : '영상'
+    })
 
     try {
       if (kind === 'playlist') {
@@ -231,6 +247,14 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const off = window.api.onDownloadsEvent((ev: DownloadQueueEvent): void => {
       if (ev.type === 'job-added') {
+        const nextRecentUrls = updateRecentUrlHistoryTitle(
+          recentUrlsRef.current,
+          ev.job.url,
+          ev.job.info?.title ?? ''
+        )
+        if (nextRecentUrls !== recentUrlsRef.current) {
+          void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
+        }
         setJobs((prev) => sortJobs([...prev.filter((j) => j.id !== ev.job.id), ev.job]))
         return
       }
@@ -266,7 +290,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     return (): void => {
       off?.()
     }
-  }, [showToast])
+  }, [setSettingValue, showToast])
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>

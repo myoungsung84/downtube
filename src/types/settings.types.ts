@@ -1,3 +1,9 @@
+export type RecentUrlHistoryItem = {
+  url: string
+  title: string
+  kind: 'single' | 'playlist'
+}
+
 export const settingKeys = [
   'app.themeMode',
   'player.volume',
@@ -17,5 +23,5 @@ export type SettingValueMap = {
   'player.visualizerEnabled': boolean
   'downloads.defaultType': 'video' | 'audio'
   'downloads.playlistLimit': number
-  'downloads.recentUrls': string[]
+  'downloads.recentUrls': RecentUrlHistoryItem[]
 }

@@ -5,6 +5,7 @@ import DownloadingIcon from '@mui/icons-material/Downloading'
 import ErrorIcon from '@mui/icons-material/Error'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import type { DownloadJob } from '@src/types/download.types'
+import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 
 export function isPlaylistUrl(input: string): boolean {
   try {
@@ -125,11 +126,80 @@ export function sortJobs(jobs: DownloadJob[]): DownloadJob[] {
   return [...jobs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
 }
 
-export function updateRecentUrls(prev: string[], nextUrl: string, limit = 10): string[] {
-  const normalized = nextUrl.trim()
-  if (!normalized) return prev
+function buildRecentFallbackTitle(kind: RecentUrlHistoryItem['kind']): string {
+  return kind === 'playlist' ? '재생목록' : '영상'
+}
 
-  return [normalized, ...prev.filter((item) => item !== normalized)].slice(0, limit)
+export function normalizeRecentUrlHistory(
+  value: unknown,
+  isPlaylist: (input: string) => boolean
+): RecentUrlHistoryItem[] {
+  if (!Array.isArray(value)) return []
+
+  return value.flatMap((item) => {
+    if (typeof item === 'string') {
+      const url = item.trim()
+      if (!url) return []
+
+      const kind: RecentUrlHistoryItem['kind'] = isPlaylist(url) ? 'playlist' : 'single'
+      return [{ url, kind, title: buildRecentFallbackTitle(kind) }]
+    }
+
+    if (typeof item !== 'object' || item == null) return []
+    if (typeof item.url !== 'string' || typeof item.title !== 'string') return []
+    if (item.kind !== 'single' && item.kind !== 'playlist') return []
+
+    const url = item.url.trim()
+    const title = item.title.trim()
+    if (!url) return []
+
+    return [
+      {
+        url,
+        title: title || buildRecentFallbackTitle(item.kind),
+        kind: item.kind
+      }
+    ]
+  })
+}
+
+export function updateRecentUrlHistory(
+  prev: RecentUrlHistoryItem[],
+  nextItem: RecentUrlHistoryItem,
+  limit = 10
+): RecentUrlHistoryItem[] {
+  const url = nextItem.url.trim()
+  const title = nextItem.title.trim()
+  if (!url) return prev
+
+  return [
+    {
+      url,
+      title: title || buildRecentFallbackTitle(nextItem.kind),
+      kind: nextItem.kind
+    },
+    ...prev.filter((item) => item.url !== url)
+  ].slice(0, limit)
+}
+
+export function updateRecentUrlHistoryTitle(
+  prev: RecentUrlHistoryItem[],
+  url: string,
+  title: string
+): RecentUrlHistoryItem[] {
+  const normalizedUrl = url.trim()
+  const normalizedTitle = title.trim()
+  if (!normalizedUrl || !normalizedTitle) return prev
+
+  let changed = false
+  const next = prev.map((item) => {
+    if (item.url !== normalizedUrl) return item
+    if (item.title === normalizedTitle) return item
+    changed = true
+    return { ...item, title: normalizedTitle }
+  })
+
+  return changed ? next : prev
 }
 
 export function formatDuration(durationSec: number | undefined): string | undefined {

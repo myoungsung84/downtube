@@ -18,17 +18,18 @@ import {
   TextField,
   Typography
 } from '@mui/material'
+import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import React from 'react'
 
 export default function DownloadsUrlPanel(props: {
   inputRef: React.RefObject<HTMLInputElement | null>
   inputValue: string
-  recentUrls: string[]
+  recentUrls: RecentUrlHistoryItem[]
   submitting: null | { url: string; kind: 'playlist' | 'single' }
   onChangeInputValue: (value: string) => void
   onClearRecentUrls: () => void
   onRemoveRecentUrl: (url: string) => void
-  onSelectRecentUrl: (url: string) => void
+  onSelectRecentUrl: (item: RecentUrlHistoryItem) => void
   onSubmit: () => void
 }): React.JSX.Element {
   const {
@@ -121,16 +122,28 @@ export default function DownloadsUrlPanel(props: {
         </Typography>
 
         <Autocomplete
+          autoHighlight
           freeSolo
           fullWidth
           disableClearable
-          filterOptions={(options) => options}
+          filterOptions={(options, state) => {
+            const keyword = state.inputValue.trim().toLowerCase()
+            if (!keyword) return options
+
+            return options.filter((option) => {
+              return (
+                option.title.toLowerCase().includes(keyword) ||
+                option.url.toLowerCase().includes(keyword)
+              )
+            })
+          }}
           options={recentUrls}
           inputValue={inputValue}
           disabled={submitting !== null}
+          getOptionLabel={(option) => (typeof option === 'string' ? option : option.title)}
           onInputChange={(_, value) => onChangeInputValue(value)}
           onChange={(_, value) => {
-            if (typeof value !== 'string') return
+            if (!value || typeof value === 'string') return
             onSelectRecentUrl(value)
           }}
           PaperComponent={PaperWithHeader}
@@ -199,18 +212,8 @@ export default function DownloadsUrlPanel(props: {
             />
           )}
           renderOption={(optionProps, option) => {
-            let domain = option
-            let path = ''
-            try {
-              const parsed = new URL(option)
-              domain = parsed.hostname
-              path = parsed.pathname + parsed.search
-            } catch {
-              // noop
-            }
-
             return (
-              <li {...optionProps} key={option} style={{ padding: 0 }}>
+              <li {...optionProps} key={option.url} style={{ padding: 0 }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -228,42 +231,41 @@ export default function DownloadsUrlPanel(props: {
                       flex: 1,
                       minWidth: 0,
                       display: 'flex',
-                      alignItems: 'baseline',
+                      flexDirection: 'column',
                       gap: 0.25
                     }}
                   >
                     <Typography
                       variant="body2"
                       sx={{
-                        flexShrink: 0,
-                        fontWeight: 500,
-                        fontSize: '0.82rem',
-                        color: 'text.primary'
+                        fontWeight: 600,
+                        fontSize: '0.84rem',
+                        color: 'text.primary',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      {domain}
+                      {option.title}
                     </Typography>
-                    {path && path !== '/' && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '0.78rem',
-                          color: 'text.disabled',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {path}
-                      </Typography>
-                    )}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {option.kind === 'playlist' ? '재생목록 주소' : '영상 주소'} · {option.url}
+                    </Typography>
                   </Box>
                   <IconButton
                     size="small"
                     onMouseDown={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      onRemoveRecentUrl(option)
+                      onRemoveRecentUrl(option.url)
                     }}
                     sx={{
                       flexShrink: 0,
