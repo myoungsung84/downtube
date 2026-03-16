@@ -116,6 +116,10 @@ function buildBestVideoArgs(outputTemplate: string, url: string): string[] {
     'bv',
     '--print',
     'before_dl:[selected-video] id=%(format_id)s ext=%(ext)s res=%(resolution)s fps=%(fps)s vcodec=%(vcodec)s tbr=%(tbr)s filesize=%(filesize,s)s',
+    '--progress',
+    '--progress-delta',
+    '1',
+    '--newline',
     '--no-part',
     '--restrict-filenames',
     '--no-warnings',
@@ -133,6 +137,10 @@ function buildBestAudioArgs(outputTemplate: string, url: string): string[] {
     'ba',
     '--print',
     'before_dl:[selected-audio] id=%(format_id)s ext=%(ext)s abr=%(abr)s asr=%(asr)s acodec=%(acodec)s filesize=%(filesize,s)s',
+    '--progress',
+    '--progress-delta',
+    '1',
+    '--newline',
     '--no-part',
     '--restrict-filenames',
     '--no-warnings',
@@ -141,6 +149,63 @@ function buildBestAudioArgs(outputTemplate: string, url: string): string[] {
     outputTemplate,
     url
   ]
+}
+
+function attachYtDlpOutputListeners(
+  proc: ChildProcessWithoutNullStreams,
+  job: DownloadJob,
+  current: 'video' | 'audio',
+  onPercent: (text: string) => void
+): void {
+  let stdoutBuffer = ''
+  let stderrBuffer = ''
+
+  const flushBuffer = (
+    source: 'stdout' | 'stderr',
+    chunk: string,
+    logger: (line: string) => void
+  ): void => {
+    const next = `${source === 'stdout' ? stdoutBuffer : stderrBuffer}${chunk}`.replace(/\r/g, '\n')
+    const parts = next.split('\n')
+    const rest = parts.pop() ?? ''
+
+    if (source === 'stdout') stdoutBuffer = rest
+    else stderrBuffer = rest
+
+    for (const line of parts) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      onPercent(trimmed)
+      logger(trimmed)
+    }
+  }
+
+  proc.stdout.on('data', (data) => {
+    flushBuffer('stdout', data.toString(), (line) => {
+      logYtDlpStdout(job, current, line)
+    })
+  })
+
+  proc.stderr.on('data', (data) => {
+    flushBuffer('stderr', data.toString(), (line) => {
+      log.error(`${ctx(job)} yt-dlp:${current} stderr`, line)
+    })
+  })
+
+  proc.on('close', () => {
+    const stdoutRest = stdoutBuffer.trim()
+    const stderrRest = stderrBuffer.trim()
+
+    if (stdoutRest) {
+      onPercent(stdoutRest)
+      logYtDlpStdout(job, current, stdoutRest)
+    }
+
+    if (stderrRest) {
+      onPercent(stderrRest)
+      log.error(`${ctx(job)} yt-dlp:${current} stderr`, stderrRest)
+    }
+  })
 }
 
 export function runDownloadJob(
@@ -182,17 +247,7 @@ export function runDownloadJob(
 
       onProgress({ current, percent: 0 })
 
-      proc.stdout.on('data', (data) => {
-        const text = data.toString()
-        sendPercent(current, text)
-
-        logYtDlpStdout(job, current, text)
-      })
-      proc.stderr.on('data', (data) => {
-        const t = data.toString()
-        sendPercent(current, t)
-        log.error(`${ctx(job)} yt-dlp:${current} stderr`, t)
-      })
+      attachYtDlpOutputListeners(proc, job, current, (text) => sendPercent(current, text))
 
       await new Promise<void>((res, rej) => {
         proc.on('error', (err) => {
@@ -202,7 +257,7 @@ export function runDownloadJob(
 
         proc.on('close', (code) => {
           if (task.stopRequested) return rej(new DownloadStoppedError(current))
-          code === 0 ? res() : rej(new Error(`${current} download failed: ${code}`))
+          code === 0 ? res() : rej(new Error(`${current} download failed with exit code ${code}`))
         })
       })
     })
