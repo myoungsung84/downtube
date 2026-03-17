@@ -2,11 +2,14 @@
 
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { InitState } from '@src/types/init.types'
+import type { LibraryItem } from '@src/types/library.types'
 import type { SettingKey, SettingValueMap } from '@src/types/settings.types'
 
 interface AppAPI {
   openPlayer: (payload: { id: string }) => Promise<{ success: boolean; message?: string }>
-  openDownloadDir: () => Promise<void>
+  openPlayerFile: (filePath: string) => Promise<{ success: boolean; message?: string }>
+  openDownloadDir: () => Promise<{ success: boolean; message?: string }>
+  openDownloadsRootDir: () => Promise<{ success: boolean; message?: string }>
   openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
   readMediaMeta: (path: string) => Promise<{
     success: boolean
@@ -38,6 +41,8 @@ interface AppAPI {
   removeDownload: (jobId: string) => Promise<{ success: boolean; message?: string }>
 
   listDownloads: () => Promise<DownloadJob[]>
+  listLibraryItems: () => Promise<LibraryItem[]>
+  deleteLibraryItem: (filePath: string) => Promise<{ success: boolean; message?: string }>
 
   onDownloadsEvent: (callback: (ev: DownloadQueueEvent) => void) => () => void
 

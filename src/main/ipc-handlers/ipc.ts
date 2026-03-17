@@ -12,6 +12,7 @@ import { downloadsQueue, onDownloadsEvent } from '../downloads'
 import { locateFfprobe } from '../downloads/adapters/ffmpeg/ffmpeg'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
 import type { DownloadJob } from '../downloads/types'
+import { deleteLibraryItem, listLibraryItems } from '../library/library'
 import { getSetting, getSettings, setSetting } from '../settings/settings-store'
 
 const registeredHandlers = new Set<string>()
@@ -26,6 +27,63 @@ function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.hand
   }
   ipcMain.handle(channel, handler)
   registeredHandlers.add(channel)
+}
+
+function getDownloadDir(): string {
+  return path.join(app.getPath('downloads'), 'DownTube')
+}
+
+function getDownloadsRootDir(): string {
+  return app.getPath('downloads')
+}
+
+async function openPlayerWindow(
+  mainWindow: BrowserWindow,
+  filePath: string
+): Promise<{ success: boolean; message?: string }> {
+  if (!filePath) return { success: false, message: 'Output file path not found' }
+  if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
+
+  const mediaUrl = new URL('downtube-media://media')
+  mediaUrl.searchParams.set('path', filePath)
+  const mediaSrc = mediaUrl.toString()
+
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    playerWindow.close()
+  }
+
+  playerWindow = new BrowserWindow({
+    width: 1280,
+    height: 820,
+    minWidth: 980,
+    minHeight: 640,
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
+      contextIsolation: true
+    }
+  })
+
+  const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
+  const playerHash = `/player?${new URLSearchParams({ src: mediaSrc }).toString()}`
+  const playerUrl = !app.isPackaged
+    ? `http://localhost:${devPort}/#${playerHash}`
+    : url.format({
+        pathname: path.join(__dirname, '../renderer/index.html'),
+        protocol: 'file:',
+        slashes: true,
+        hash: playerHash
+      })
+
+  await playerWindow.loadURL(playerUrl)
+
+  if (!app.isPackaged) {
+    playerWindow.webContents.openDevTools({ mode: 'detach' })
+  }
+
+  playerWindow.show()
+  return { success: true }
 }
 
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
@@ -96,52 +154,27 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
     const filePath = job.finalFilePath ?? job.outputFile
     if (!filePath) return { success: false, message: 'Output file path not found' }
-    if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
-    const mediaUrl = new URL('downtube-media://media')
-    mediaUrl.searchParams.set('path', filePath)
-    const mediaSrc = mediaUrl.toString()
+    return openPlayerWindow(mainWindow, filePath)
+  })
 
-    if (playerWindow && !playerWindow.isDestroyed()) {
-      playerWindow.close()
-    }
-
-    playerWindow = new BrowserWindow({
-      width: 1280,
-      height: 820,
-      minWidth: 980,
-      minHeight: 640,
-      show: false,
-      autoHideMenuBar: true,
-      webPreferences: {
-        preload: path.join(__dirname, '../preload/index.js'),
-        contextIsolation: true
+  safeSetHandler('download-player-file', async (_, filePath: string) => {
+    try {
+      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+        return { success: false, message: 'Invalid path' }
       }
-    })
 
-    const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
-    const playerHash = `/player?${new URLSearchParams({ src: mediaSrc }).toString()}`
-    const playerUrl = !app.isPackaged
-      ? `http://localhost:${devPort}/#${playerHash}`
-      : url.format({
-          pathname: path.join(__dirname, '../renderer/index.html'),
-          protocol: 'file:',
-          slashes: true,
-          hash: playerHash
-        })
-
-    await playerWindow.loadURL(playerUrl)
-
-    if (!app.isPackaged) {
-      playerWindow.webContents.openDevTools({ mode: 'detach' })
+      return await openPlayerWindow(mainWindow, filePath)
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open player'
+      }
     }
-
-    playerWindow.show()
-    return { success: true }
   })
 
   safeSetHandler('download-dir-open', async () => {
     try {
-      const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+      const downloadDir = getDownloadDir()
       if (!fs.existsSync(downloadDir)) {
         mkdirSync(downloadDir, { recursive: true })
       }
@@ -156,6 +189,22 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to open download directory'
+      }
+    }
+  })
+
+  safeSetHandler('downloads-root-open', async () => {
+    try {
+      const result = await shell.openPath(getDownloadsRootDir())
+      if (result) {
+        return { success: false, message: result || 'Failed to open downloads root directory' }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to open downloads root directory'
       }
     }
   })
@@ -249,7 +298,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       return { success: false, message: 'Already downloading' }
     }
 
-    const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+    const downloadDir = getDownloadDir()
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_VOD`
 
@@ -276,7 +325,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       return { success: false, message: 'Already downloading' }
     }
 
-    const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+    const downloadDir = getDownloadDir()
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_AUD`
 
@@ -313,7 +362,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       const type = payload.type
       const playlistLimit = payload.playlistLimit ?? 50
 
-      const downloadDir = path.join(app.getPath('downloads'), 'DownTube')
+      const downloadDir = getDownloadDir()
 
       const timestamp = Math.floor(Date.now() / 1000).toString()
       const filenamePrefix = payload.filenamePrefix ?? `${timestamp}_PL`
@@ -364,6 +413,23 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   })
 
   safeSetHandler('downloads-list', async () => downloadsQueue.getJobs())
+
+  safeSetHandler('library-list', async () => {
+    return listLibraryItems(getDownloadDir())
+  })
+
+  safeSetHandler('library-delete', async (_, filePath: string) => {
+    try {
+      await deleteLibraryItem(getDownloadDir(), filePath)
+      return { success: true }
+    } catch (error) {
+      log.error('Error deleting library item:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete file'
+      }
+    }
+  })
 
   safeSetHandler('downloads-start', async () => {
     downloadsQueue.start()

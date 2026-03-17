@@ -1,4 +1,5 @@
 import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutlined'
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
@@ -42,6 +43,8 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
   const navigate = useNavigate()
   const location = useLocation()
   const isSettingsPage = location.pathname === '/settings'
+  const isLibraryPage = location.pathname === '/library'
+  const showBackButton = isSettingsPage || isLibraryPage
 
   return (
     <Box
@@ -72,7 +75,7 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
       >
         {/* Left actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
-          {isSettingsPage && (
+          {showBackButton && (
             <Tooltip title="뒤로 가기" placement="bottom" arrow>
               <IconButton onClick={() => navigate('/')} sx={NAV_ICON_BTN_SX}>
                 <ArrowBackIosNewOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -80,8 +83,11 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
             </Tooltip>
           )}
 
-          <Tooltip title="저장 폴더 열기" placement="bottom" arrow>
-            <IconButton onClick={onDirectory} sx={NAV_ICON_BTN_SX}>
+          <Tooltip title="라이브러리" placement="bottom" arrow>
+            <IconButton
+              onClick={onDirectory}
+              sx={NAV_ICON_BTN_SX}
+            >
               <FolderOpenOutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
             </IconButton>
           </Tooltip>
@@ -126,7 +132,32 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
         </Stack>
 
         {/* Right actions */}
-        <Stack direction="row" sx={{ flex: 1 }} justifyContent="flex-end">
+        <Stack direction="row" spacing={1} sx={{ flex: 1 }} justifyContent="flex-end">
+          <Tooltip title="라이브러리" placement="bottom" arrow>
+            <IconButton
+              onClick={() => navigate('/library')}
+              sx={{
+                ...NAV_ICON_BTN_SX,
+                ...(isLibraryPage && {
+                  backgroundColor: 'primary.main',
+                  borderColor: 'primary.main',
+                  '& svg': { color: 'primary.contrastText' },
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                    borderColor: 'primary.dark'
+                  }
+                })
+              }}
+            >
+              <Inventory2OutlinedIcon
+                sx={{
+                  fontSize: 22,
+                  color: 'text.secondary'
+                }}
+              />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="설정" placement="bottom" arrow>
             <IconButton
               onClick={() => navigate('/settings')}
