@@ -4,7 +4,7 @@ import fs, { mkdirSync } from 'fs'
 import path from 'path'
 
 import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/ffmpeg/ffmpeg'
-import { removeFileIfExists, removeFilesIfExistSync, removeFilesSync } from '../adapters/fs/cleanup'
+import { removeFileIfExists, removeFilesIfExistsSync, removeFilesSync } from '../adapters/fs/cleanup'
 import { findRealDownloadedFile, resolveByPrefixInDir } from '../adapters/fs/resolver'
 import { locateYtDlp, parseYtDlpPercent, spawnYtDlp } from '../adapters/yt-dlp/yt-dlp'
 import { ctx, logYtDlpArgs, logYtDlpStdout, step } from '../shared/download-helpers'
@@ -158,15 +158,32 @@ async function writeSidecarThumbnail(job: DownloadJob, outputFile: string): Prom
   const thumbnailUrl = job.info?.thumbnail?.trim()
   if (!thumbnailUrl) return
 
-  const response = await fetch(thumbnailUrl)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
+  let response: Response
+  try {
+    response = await fetch(thumbnailUrl, { signal: controller.signal })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      log.warn(`${ctx(job)} thumbnail fetch timed out`)
+    } else {
+      log.warn(`${ctx(job)} thumbnail fetch failed`, error)
+    }
+    return
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
   if (!response.ok) {
-    throw new Error(`thumbnail download failed with status ${response.status}`)
+    log.warn(`${ctx(job)} thumbnail download failed with status ${response.status}`)
+    return
   }
 
   const thumbnailExt = inferThumbnailExtension(thumbnailUrl, response.headers.get('content-type'))
   const sidecarBasePath = getSidecarBasePath(outputFile)
 
-  removeFilesIfExistSync([
+  removeFilesIfExistsSync([
     `${sidecarBasePath}.jpg`,
     `${sidecarBasePath}.png`,
     `${sidecarBasePath}.webp`
@@ -179,7 +196,11 @@ async function writeSidecarThumbnail(job: DownloadJob, outputFile: string): Prom
 }
 
 async function writeOutputSidecars(job: DownloadJob, outputFile: string): Promise<void> {
-  await writeSidecarJson(job, outputFile)
+  try {
+    await writeSidecarJson(job, outputFile)
+  } catch (error) {
+    log.warn(`${ctx(job)} json sidecar warn`, error)
+  }
 
   try {
     await writeSidecarThumbnail(job, outputFile)
@@ -365,7 +386,10 @@ export function runDownloadJob(
         return findRealDownloadedFile(downloadDir, `${baseName}.*`)
       })
 
-      await step('sidecar:audio', job, async () => writeOutputSidecars(job, real))
+      await step('sidecar:audio', job, async () => {
+        if (task.stopRequested) throw new DownloadStoppedError('audio')
+        await writeOutputSidecars(job, real)
+      })
 
       onProgress({ current: 'complete', percent: 100 })
       return { outputFile: real }
@@ -432,7 +456,10 @@ export function runDownloadJob(
       }
     })
 
-    await step('sidecar:video', job, async () => writeOutputSidecars(job, outputFile))
+    await step('sidecar:video', job, async () => {
+      if (task.stopRequested) throw new DownloadStoppedError('video')
+      await writeOutputSidecars(job, outputFile)
+    })
 
     onProgress({ current: 'complete', percent: 100 })
     return { outputFile }
