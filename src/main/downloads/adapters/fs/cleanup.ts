@@ -29,3 +29,10 @@ export function removeFilesSync(filePaths: string[]): void {
     fs.unlinkSync(filePath)
   }
 }
+
+export function removeFilesIfExistSync(filePaths: string[]): void {
+  for (const filePath of filePaths) {
+    if (!fs.existsSync(filePath)) continue
+    fs.unlinkSync(filePath)
+  }
+}
