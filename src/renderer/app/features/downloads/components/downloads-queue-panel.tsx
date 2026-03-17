@@ -86,7 +86,7 @@ export default function DownloadsQueuePanel(props: {
           />
         </Stack>
 
-        <AppTooltip title="다운로드 폴더 열기">
+        <AppTooltip title="폴더 열기">
           <Button
             variant="text"
             size="small"
@@ -94,7 +94,7 @@ export default function DownloadsQueuePanel(props: {
             onClick={props.onOpenDir}
             sx={{ fontWeight: 600, fontSize: '0.8rem', borderRadius: 1.5, color: 'text.secondary' }}
           >
-            다운로드 폴더 열기
+            폴더 열기
           </Button>
         </AppTooltip>
       </Stack>

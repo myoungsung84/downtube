@@ -3,19 +3,19 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import MovieRoundedIcon from '@mui/icons-material/MovieRounded'
+import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import {
   Box,
   Button,
   Chip,
   CircularProgress,
+  Divider,
   IconButton,
   Menu,
   MenuItem,
   Paper,
   Stack,
-  Tab,
-  Tabs,
   Typography,
   useTheme
 } from '@mui/material'
@@ -24,6 +24,8 @@ import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function toMediaUrl(filePath?: string): string | undefined {
   if (!filePath) return undefined
@@ -34,22 +36,18 @@ function toMediaUrl(filePath?: string): string | undefined {
 
 function formatFileSize(fileSize: number): string {
   if (!Number.isFinite(fileSize) || fileSize <= 0) return '0 B'
-
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   let value = fileSize
   let unitIndex = 0
-
   while (value >= 1024 && unitIndex < units.length - 1) {
     value /= 1024
     unitIndex += 1
   }
-
   return `${value >= 100 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`
 }
 
 function formatDate(item: LibraryItem): string {
   const timestamp = item.downloadedAt ? Date.parse(item.downloadedAt) : item.createdAt
-
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -59,25 +57,151 @@ function formatDate(item: LibraryItem): string {
   }).format(Number.isFinite(timestamp) ? timestamp : item.createdAt)
 }
 
+// ─── types ────────────────────────────────────────────────────────────────────
+
+type MenuState =
+  | { phase: 'idle' }
+  | { phase: 'open'; anchorEl: HTMLElement; item: LibraryItem }
+  | { phase: 'confirmDelete'; anchorEl: HTMLElement; item: LibraryItem }
+
+// ─── SegmentedControl ─────────────────────────────────────────────────────────
+
+interface SegmentedControlProps {
+  value: LibraryItemType
+  onChange: (value: LibraryItemType) => void
+  videoCnt: number
+  audioCnt: number
+}
+
+function SegmentedControl({
+  value,
+  onChange,
+  videoCnt,
+  audioCnt
+}: SegmentedControlProps): React.JSX.Element {
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+
+  const segments: { key: LibraryItemType; label: string; count: number }[] = [
+    { key: 'video', label: '비디오', count: videoCnt },
+    { key: 'audio', label: '오디오', count: audioCnt }
+  ]
+
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        borderRadius: 1.25,
+        p: '3px',
+        bgcolor: isDark
+          ? alpha(theme.palette.common.black, 0.4)
+          : alpha(theme.palette.common.black, 0.07),
+        border: '1px solid',
+        borderColor: isDark
+          ? alpha(theme.palette.common.white, 0.07)
+          : alpha(theme.palette.common.black, 0.1),
+        gap: '2px'
+      }}
+    >
+      {segments.map(({ key, label, count }) => {
+        const active = value === key
+        const accentColor =
+          key === 'video' ? theme.palette.primary.main : theme.palette.warning.main
+
+        return (
+          <Box
+            key={key}
+            component="button"
+            onClick={() => onChange(key)}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.65,
+              px: 1.5,
+              py: 0.6,
+              borderRadius: 0.9,
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: '0.78rem',
+              fontWeight: active ? 700 : 500,
+              letterSpacing: active ? '-0.01em' : 0,
+              color: active
+                ? accentColor
+                : isDark
+                  ? alpha(theme.palette.common.white, 0.45)
+                  : theme.palette.text.secondary,
+              bgcolor: active
+                ? isDark
+                  ? alpha(accentColor, 0.16)
+                  : theme.palette.background.paper
+                : 'transparent',
+              boxShadow:
+                active && !isDark
+                  ? `0 1px 4px ${alpha(theme.palette.common.black, 0.1)}, 0 0 0 0.5px ${alpha(theme.palette.common.black, 0.06)}`
+                  : 'none',
+              transition: 'color 150ms, background-color 150ms, box-shadow 150ms',
+              '&:hover': !active
+                ? {
+                    color: isDark
+                      ? alpha(theme.palette.common.white, 0.7)
+                      : theme.palette.text.primary,
+                    bgcolor: isDark
+                      ? alpha(theme.palette.common.white, 0.06)
+                      : alpha(theme.palette.common.black, 0.04)
+                  }
+                : {}
+            }}
+          >
+            {label}
+            <Box
+              component="span"
+              sx={{
+                minWidth: 18,
+                textAlign: 'center',
+                px: 0.55,
+                borderRadius: 0.5,
+                fontSize: '0.63rem',
+                fontWeight: 700,
+                lineHeight: 1.65,
+                bgcolor: active
+                  ? alpha(accentColor, isDark ? 0.22 : 0.12)
+                  : alpha(theme.palette.text.secondary, 0.1),
+                color: active ? accentColor : 'text.disabled',
+                transition: 'background-color 150ms, color 150ms'
+              }}
+            >
+              {count}
+            </Box>
+          </Box>
+        )
+      })}
+    </Box>
+  )
+}
+
+// ─── LibraryScreen ────────────────────────────────────────────────────────────
+
 export default function LibraryScreen(): React.JSX.Element {
   const theme = useTheme()
   const { showToast } = useToast()
+  const isDark = theme.palette.mode === 'dark'
+
   const [items, setItems] = useState<LibraryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [tab, setTab] = useState<LibraryItemType>('video')
-  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null)
-  const [menuItem, setMenuItem] = useState<LibraryItem | null>(null)
+  const [menuState, setMenuState] = useState<MenuState>({ phase: 'idle' })
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const videoItems = useMemo(() => items.filter((item) => item.type === 'video'), [items])
-  const audioItems = useMemo(() => items.filter((item) => item.type === 'audio'), [items])
+  const videoItems = useMemo(() => items.filter((i) => i.type === 'video'), [items])
+  const audioItems = useMemo(() => items.filter((i) => i.type === 'audio'), [items])
   const visibleItems = tab === 'video' ? videoItems : audioItems
 
   const loadItems = useCallback(
     async (mode: 'initial' | 'refresh' = 'initial'): Promise<void> => {
       if (mode === 'refresh') setRefreshing(true)
       else setLoading(true)
-
       try {
         setItems(await window.api.listLibraryItems())
       } catch {
@@ -107,337 +231,530 @@ export default function LibraryScreen(): React.JSX.Element {
 
   const handleOpenFileLocation = async (item: LibraryItem): Promise<void> => {
     const result = await window.api.openDownloadItem(item.filePath)
-    if (!result.success) {
-      showToast(result.message ?? '파일 위치를 열지 못했습니다.', 'error')
-    }
+    if (!result.success) showToast(result.message ?? '파일 위치를 열지 못했습니다.', 'error')
   }
 
   const handleDelete = async (item: LibraryItem): Promise<void> => {
-    const confirmed = window.confirm(
-      `"${item.title ?? item.fileName}"을 라이브러리에서 삭제할까요?\n원본 파일과 연결된 메타데이터가 함께 삭제됩니다.`
-    )
-    if (!confirmed) return
-
+    setDeletingId(item.id)
+    closeMenu()
     const result = await window.api.deleteLibraryItem(item.filePath)
+    setDeletingId(null)
     if (!result.success) {
       showToast(result.message ?? '삭제하지 못했습니다.', 'error')
       return
     }
-
-    setItems((prev) => prev.filter((current) => current.filePath !== item.filePath))
+    setItems((prev) => prev.filter((c) => c.filePath !== item.filePath))
     showToast('삭제했습니다.', 'success')
   }
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
     if (item.type !== 'video') return
-
-    // TODO: 연속 재생 단계에서 현재 목록과 인덱스를 플레이어에 함께 전달한다.
     const result = await window.api.openPlayerFile(item.filePath)
-    if (!result.success) {
-      showToast(result.message ?? '플레이어를 열지 못했습니다.', 'error')
-    }
+    if (!result.success) showToast(result.message ?? '플레이어를 열지 못했습니다.', 'error')
   }
 
-  const closeMenu = (): void => {
-    setMenuAnchorEl(null)
-    setMenuItem(null)
-  }
+  const closeMenu = (): void => setMenuState({ phase: 'idle' })
+
+  const isMenuOpen = menuState.phase === 'open' || menuState.phase === 'confirmDelete'
+  const menuAnchorEl = isMenuOpen ? menuState.anchorEl : null
+  const menuItem = isMenuOpen ? menuState.item : null
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={2.5}>
+      <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={1.75}>
+        {/* ── 헤더 패널 ─────────────────────────────────────────────────── */}
         <Paper
           elevation={0}
           sx={{
             borderRadius: 2,
             border: '1px solid',
-            borderColor: 'divider',
-            p: 2.5,
-            background: (currentTheme) =>
-              `linear-gradient(135deg, ${alpha(currentTheme.palette.primary.main, 0.05)}, ${alpha(
-                currentTheme.palette.warning.main,
-                0.06
-              )})`
+            borderColor: isDark
+              ? alpha(theme.palette.common.white, 0.08)
+              : alpha(theme.palette.common.black, 0.1),
+            px: 2.25,
+            py: 1.75,
+            background: isDark
+              ? `linear-gradient(135deg,
+                  ${alpha(theme.palette.primary.main, 0.07)},
+                  ${alpha(theme.palette.background.paper, 0)})`
+              : `linear-gradient(135deg,
+                  ${alpha(theme.palette.primary.main, 0.04)},
+                  ${alpha(theme.palette.warning.main, 0.03)})`
           }}
         >
-          <Stack spacing={2}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-              <Stack spacing={0.5}>
-                <Typography variant="h5" fontWeight={900} letterSpacing="-0.03em">
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+            {/* 좌: 타이틀 + 세그먼트 탭 */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Stack spacing={0.2}>
+                <Typography variant="h5" fontWeight={900} letterSpacing="-0.03em" lineHeight={1.2}>
                   라이브러리
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="caption" color="text.disabled">
                   완료된 항목만 모아 봅니다.
                 </Typography>
               </Stack>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                useFlexGap
-                flexWrap="wrap"
-                justifyContent="flex-end"
-              >
-                <Button
-                  variant="outlined"
-                  startIcon={
-                    refreshing ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : (
-                      <RefreshRoundedIcon />
-                    )
-                  }
-                  disabled={loading || refreshing}
-                  onClick={() => void loadItems('refresh')}
-                >
-                  새로고침
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<FolderOpenRoundedIcon />}
-                  onClick={() => void handleOpenDownloadsFolder()}
-                >
-                  다운로드 폴더 열기
-                </Button>
-              </Stack>
+              {/* 수직 구분선 */}
+              <Box
+                sx={{
+                  width: '1px',
+                  height: 28,
+                  bgcolor: isDark
+                    ? alpha(theme.palette.common.white, 0.1)
+                    : alpha(theme.palette.common.black, 0.1)
+                }}
+              />
+
+              <SegmentedControl
+                value={tab}
+                onChange={setTab}
+                videoCnt={videoItems.length}
+                audioCnt={audioItems.length}
+              />
             </Stack>
 
-            <Tabs
-              value={tab}
-              onChange={(_, value: LibraryItemType) => setTab(value)}
-              sx={{ minHeight: 40 }}
-            >
-              <Tab label={`비디오 ${videoItems.length}`} value="video" />
-              <Tab label={`오디오 ${audioItems.length}`} value="audio" />
-            </Tabs>
+            {/* 우: 액션 버튼 */}
+            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap alignItems="center">
+              <IconButton
+                size="small"
+                disabled={loading || refreshing}
+                onClick={() => void loadItems('refresh')}
+                title="새로고침"
+                sx={{
+                  width: 30,
+                  height: 30,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1.25,
+                  color: refreshing ? 'primary.main' : 'text.secondary'
+                }}
+              >
+                {refreshing ? (
+                  <CircularProgress size={13} color="inherit" />
+                ) : (
+                  <RefreshRoundedIcon sx={{ fontSize: 16 }} />
+                )}
+              </IconButton>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<FolderOpenRoundedIcon sx={{ fontSize: 15 }} />}
+                onClick={() => void handleOpenDownloadsFolder()}
+                sx={{
+                  fontSize: '0.75rem',
+                  height: 30,
+                  px: 1.5,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&:hover': { color: 'text.primary', borderColor: 'text.secondary' }
+                }}
+              >
+                폴더 열기
+              </Button>
+            </Stack>
           </Stack>
         </Paper>
 
-        {loading ? (
-          <Paper
-            elevation={0}
-            sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', py: 8 }}
-          >
-            <Stack alignItems="center" spacing={1.5}>
-              <CircularProgress size={28} />
-              <Typography variant="body2" color="text.secondary">
-                불러오는 중
-              </Typography>
-            </Stack>
-          </Paper>
-        ) : visibleItems.length === 0 ? (
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: 2,
-              border: '1px dashed',
-              borderColor: 'divider',
-              px: 3,
-              py: 7
-            }}
-          >
-            <Stack alignItems="center" spacing={1.5}>
-              <Stack
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 3,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: alpha(theme.palette.primary.main, 0.08)
-                }}
-              >
-                {tab === 'video' ? (
-                  <MovieRoundedIcon sx={{ fontSize: 34, color: 'primary.main' }} />
-                ) : (
-                  <AudioFileRoundedIcon sx={{ fontSize: 34, color: 'warning.main' }} />
-                )}
+        {/* ── 리스트 패널 ───────────────────────────────────────────────── */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: isDark
+              ? alpha(theme.palette.common.white, 0.08)
+              : alpha(theme.palette.common.black, 0.1),
+            overflow: 'hidden'
+          }}
+        >
+          {loading ? (
+            <Box sx={{ py: 8 }}>
+              <Stack alignItems="center" spacing={1.5}>
+                <CircularProgress size={26} />
+                <Typography variant="body2" color="text.secondary">
+                  불러오는 중…
+                </Typography>
               </Stack>
-              <Typography fontWeight={700}>
-                {tab === 'video' ? '비디오가 없습니다.' : '오디오가 없습니다.'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                다운로드가 끝나면 여기에 표시됩니다.
-              </Typography>
-            </Stack>
-          </Paper>
-        ) : (
-          <Stack spacing={1.25}>
-            {visibleItems.map((item) => {
-              const isVideo = item.type === 'video'
-              const thumbnailUrl = toMediaUrl(item.thumbnailPath)
-              const hasThumbnail = Boolean(thumbnailUrl)
-
-              return (
-                <Paper
-                  key={item.id}
-                  elevation={0}
-                  onClick={isVideo ? () => void handleOpenPlayer(item) : undefined}
+            </Box>
+          ) : visibleItems.length === 0 ? (
+            <Box sx={{ py: 9 }}>
+              <Stack alignItems="center" spacing={2}>
+                <Box
                   sx={{
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    overflow: 'hidden',
-                    cursor: isVideo ? 'pointer' : 'default',
-                    transition:
-                      'background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
-                    '&:hover': isVideo
-                      ? {
-                          backgroundColor:
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.025)
-                              : alpha(theme.palette.primary.main, 0.08),
-                          borderColor: alpha(theme.palette.primary.main, 0.45),
-                          boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.05)}`
-                        }
-                      : undefined
+                    width: 64,
+                    height: 64,
+                    borderRadius: 3,
+                    display: 'grid',
+                    placeItems: 'center',
+                    bgcolor: alpha(
+                      tab === 'video' ? theme.palette.primary.main : theme.palette.warning.main,
+                      isDark ? 0.12 : 0.07
+                    )
                   }}
                 >
-                  <Stack direction="row" sx={{ minHeight: 108 }}>
-                    <Box sx={{ width: 176, flexShrink: 0, p: 1.25 }}>
-                      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '16 / 9' }}>
-                        {hasThumbnail ? (
-                          <Thumbnail
-                            url={thumbnailUrl}
-                            w="100%"
-                            h="100%"
-                            alt={item.title ?? item.fileName}
-                            sx={{
-                              borderRadius: 1.5,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              bgcolor: alpha(theme.palette.common.black, 0.1)
-                            }}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              borderRadius: 1.5,
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              display: 'grid',
-                              placeItems: 'center',
-                              background: `linear-gradient(135deg, ${alpha(
-                                isVideo ? theme.palette.primary.main : theme.palette.warning.main,
-                                0.16
-                              )}, ${alpha(theme.palette.primary.main, 0.08)})`
-                            }}
-                          >
-                            {isVideo ? (
-                              <MovieRoundedIcon sx={{ fontSize: 34, color: 'primary.main' }} />
-                            ) : (
-                              <AudioFileRoundedIcon sx={{ fontSize: 34, color: 'warning.main' }} />
-                            )}
-                          </Box>
-                        )}
+                  {tab === 'video' ? (
+                    <MovieRoundedIcon sx={{ fontSize: 30, color: 'primary.main', opacity: 0.6 }} />
+                  ) : (
+                    <AudioFileRoundedIcon
+                      sx={{ fontSize: 30, color: 'warning.main', opacity: 0.6 }}
+                    />
+                  )}
+                </Box>
+                <Stack alignItems="center" spacing={0.4}>
+                  <Typography fontWeight={700} fontSize="0.9rem">
+                    {tab === 'video' ? '아직 비디오가 없습니다' : '아직 오디오가 없습니다'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    다운로드가 완료되면 여기에 표시됩니다.
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Box>
+          ) : (
+            <Stack
+              divider={
+                <Divider
+                  sx={{
+                    borderColor: isDark
+                      ? alpha(theme.palette.common.white, 0.05)
+                      : alpha(theme.palette.common.black, 0.06)
+                  }}
+                />
+              }
+            >
+              {visibleItems.map((item) => {
+                const isVideo = item.type === 'video'
+                const thumbnailUrl = toMediaUrl(item.thumbnailPath)
+                const hasThumbnail = Boolean(thumbnailUrl)
+                const isDeleting = deletingId === item.id
 
-                        <Chip
-                          size="small"
-                          icon={isVideo ? <MovieRoundedIcon /> : <AudioFileRoundedIcon />}
-                          label={isVideo ? '비디오' : '오디오'}
-                          sx={{
-                            position: 'absolute',
-                            left: 8,
-                            bottom: 8,
-                            height: 24,
-                            fontWeight: 700,
-                            bgcolor: alpha(theme.palette.common.black, 0.72),
-                            color: 'common.white',
-                            '& .MuiChip-icon': {
-                              color: 'inherit',
-                              fontSize: 15
+                return (
+                  <Box
+                    key={item.id}
+                    onClick={isVideo && !isDeleting ? () => void handleOpenPlayer(item) : undefined}
+                    sx={{
+                      cursor: isVideo && !isDeleting ? 'pointer' : 'default',
+                      opacity: isDeleting ? 0.4 : 1,
+                      transition: 'opacity 180ms ease, background-color 120ms ease',
+                      '&:hover':
+                        isVideo && !isDeleting
+                          ? {
+                              bgcolor: isDark
+                                ? alpha(theme.palette.primary.main, 0.06)
+                                : alpha(theme.palette.primary.main, 0.025)
                             }
-                          }}
-                        />
-                      </Box>
-                    </Box>
-
-                    <Stack sx={{ minWidth: 0, flex: 1, px: 2, py: 1.75 }} spacing={1.25}>
-                      <Stack
-                        direction="row"
-                        spacing={2}
-                        alignItems="flex-start"
-                        justifyContent="space-between"
-                      >
-                        <Stack spacing={0.75} sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            fontWeight={800}
-                            sx={{ fontSize: '0.98rem', lineHeight: 1.35 }}
-                            noWrap
-                            title={item.title ?? item.fileName}
-                          >
-                            {item.title ?? item.fileName}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            noWrap
-                            title={item.uploader}
-                          >
-                            {item.uploader ?? '업로더 정보 없음'}
-                          </Typography>
-                        </Stack>
-
-                        <IconButton
-                          size="small"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setMenuAnchorEl(event.currentTarget)
-                            setMenuItem(item)
+                          : undefined
+                    }}
+                  >
+                    <Stack direction="row" sx={{ minHeight: 92 }}>
+                      {/* 썸네일 */}
+                      <Box sx={{ width: 152, flexShrink: 0, p: 1.25, pr: 0 }}>
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            width: '100%',
+                            aspectRatio: '16 / 9',
+                            borderRadius: 1.25,
+                            overflow: 'hidden',
+                            border: '1px solid',
+                            borderColor: isDark
+                              ? alpha(theme.palette.common.white, 0.07)
+                              : alpha(theme.palette.common.black, 0.1)
                           }}
                         >
-                          <MoreHorizRoundedIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Stack>
+                          {hasThumbnail ? (
+                            <Thumbnail
+                              url={thumbnailUrl}
+                              w="100%"
+                              h="100%"
+                              alt={item.title ?? item.fileName}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'grid',
+                                placeItems: 'center',
+                                background: `linear-gradient(135deg,
+                                  ${alpha(isVideo ? theme.palette.primary.main : theme.palette.warning.main, 0.15)},
+                                  ${alpha(theme.palette.primary.main, 0.05)})`
+                              }}
+                            >
+                              {isVideo ? (
+                                <MovieRoundedIcon
+                                  sx={{ fontSize: 24, color: 'primary.main', opacity: 0.45 }}
+                                />
+                              ) : (
+                                <AudioFileRoundedIcon
+                                  sx={{ fontSize: 24, color: 'warning.main', opacity: 0.45 }}
+                                />
+                              )}
+                            </Box>
+                          )}
 
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                        <Chip size="small" variant="outlined" label={formatDate(item)} />
-                        <Chip
-                          size="small"
-                          variant="outlined"
-                          label={formatFileSize(item.fileSize)}
-                        />
-                        <Chip size="small" variant="outlined" label={`.${item.extension}`} />
-                        <Chip size="small" variant="outlined" label={item.fileName} />
-                      </Stack>
+                          {/* 재생 오버레이 */}
+                          {isVideo && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: 'transparent',
+                                opacity: 0,
+                                transition: 'opacity 130ms ease, background-color 130ms ease',
+                                '*:hover > * > * > * > &': {
+                                  opacity: 1,
+                                  bgcolor: alpha(theme.palette.common.black, 0.4)
+                                }
+                              }}
+                            >
+                              <PlayCircleOutlineRoundedIcon
+                                sx={{ fontSize: 26, color: 'common.white' }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
 
-                      <Typography variant="caption" color="text.secondary">
-                        {isVideo ? '재생 가능' : '오디오는 아직 재생을 지원하지 않습니다.'}
-                      </Typography>
+                      {/* 콘텐츠 */}
+                      <Stack
+                        sx={{ minWidth: 0, flex: 1, px: 2, py: 1.5 }}
+                        justifyContent="space-between"
+                      >
+                        {/* 상단: 타이틀 + 업로더 + 메뉴 */}
+                        <Stack
+                          direction="row"
+                          alignItems="flex-start"
+                          justifyContent="space-between"
+                          spacing={1.5}
+                        >
+                          <Stack spacing={0.3} sx={{ minWidth: 0, flex: 1 }}>
+                            <Typography
+                              fontWeight={700}
+                              sx={{ fontSize: '0.88rem', lineHeight: 1.4 }}
+                              noWrap
+                              title={item.title ?? item.fileName}
+                            >
+                              {item.title ?? item.fileName}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              noWrap
+                              title={item.uploader ?? undefined}
+                              sx={{
+                                color: isDark
+                                  ? alpha(theme.palette.common.white, 0.4)
+                                  : theme.palette.text.secondary,
+                                fontSize: '0.72rem'
+                              }}
+                            >
+                              {item.uploader ?? '업로더 정보 없음'}
+                            </Typography>
+                          </Stack>
+
+                          <IconButton
+                            size="small"
+                            disabled={isDeleting}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMenuState({ phase: 'open', anchorEl: e.currentTarget, item })
+                            }}
+                            sx={{
+                              mt: -0.25,
+                              flexShrink: 0,
+                              width: 26,
+                              height: 26,
+                              color: isDark
+                                ? alpha(theme.palette.common.white, 0.35)
+                                : theme.palette.text.secondary,
+                              '&:hover': { color: 'text.primary' }
+                            }}
+                          >
+                            {isDeleting ? (
+                              <CircularProgress size={12} />
+                            ) : (
+                              <MoreHorizRoundedIcon sx={{ fontSize: 16 }} />
+                            )}
+                          </IconButton>
+                        </Stack>
+
+                        {/* 하단: 메타 정보 */}
+                        <Stack
+                          direction="row"
+                          spacing={0.6}
+                          useFlexGap
+                          flexWrap="wrap"
+                          alignItems="center"
+                        >
+                          <Typography
+                            sx={{
+                              fontSize: '0.68rem',
+                              color: isDark
+                                ? alpha(theme.palette.common.white, 0.28)
+                                : theme.palette.text.disabled
+                            }}
+                          >
+                            {formatDate(item)}
+                          </Typography>
+
+                          <Box
+                            component="span"
+                            sx={{
+                              width: '3px',
+                              height: '3px',
+                              borderRadius: '50%',
+                              flexShrink: 0,
+                              bgcolor: isDark
+                                ? alpha(theme.palette.common.white, 0.15)
+                                : alpha(theme.palette.common.black, 0.2)
+                            }}
+                          />
+
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={formatFileSize(item.fileSize)}
+                            sx={{
+                              height: 18,
+                              fontSize: '0.66rem',
+                              borderRadius: 0.75,
+                              borderColor: isDark
+                                ? alpha(theme.palette.common.white, 0.1)
+                                : alpha(theme.palette.common.black, 0.13),
+                              color: isDark
+                                ? alpha(theme.palette.common.white, 0.45)
+                                : theme.palette.text.secondary
+                            }}
+                          />
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={`.${item.extension}`}
+                            sx={{
+                              height: 18,
+                              fontSize: '0.66rem',
+                              borderRadius: 0.75,
+                              borderColor: isDark
+                                ? alpha(theme.palette.common.white, 0.1)
+                                : alpha(theme.palette.common.black, 0.13),
+                              color: isDark
+                                ? alpha(theme.palette.common.white, 0.45)
+                                : theme.palette.text.secondary
+                            }}
+                          />
+
+                          {!isVideo && (
+                            <Chip
+                              size="small"
+                              label="재생 미지원"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.66rem',
+                                borderRadius: 0.75,
+                                bgcolor: alpha(theme.palette.warning.main, isDark ? 0.12 : 0.08),
+                                color: isDark
+                                  ? theme.palette.warning.light
+                                  : theme.palette.warning.dark,
+                                border: 'none'
+                              }}
+                            />
+                          )}
+                        </Stack>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </Paper>
-              )
-            })}
-          </Stack>
-        )}
-
-        <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={closeMenu}>
-          <MenuItem
-            onClick={() => {
-              const currentItem = menuItem
-              closeMenu()
-              if (currentItem) void handleOpenFileLocation(currentItem)
-            }}
-          >
-            <FolderOpenRoundedIcon sx={{ mr: 1.25, fontSize: 18 }} />
-            파일 위치 열기
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              const currentItem = menuItem
-              closeMenu()
-              if (currentItem) void handleDelete(currentItem)
-            }}
-            sx={{ color: 'error.main' }}
-          >
-            <DeleteOutlineRoundedIcon sx={{ mr: 1.25, fontSize: 18 }} />
-            삭제
-          </MenuItem>
-        </Menu>
+                  </Box>
+                )
+              })}
+            </Stack>
+          )}
+        </Paper>
       </Stack>
+
+      {/* 컨텍스트 메뉴 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={closeMenu}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        slotProps={{
+          paper: { sx: { minWidth: 164, borderRadius: 1.5 } }
+        }}
+      >
+        <MenuItem
+          dense
+          onClick={() => {
+            const cur = menuItem
+            closeMenu()
+            if (cur) void handleOpenFileLocation(cur)
+          }}
+        >
+          <FolderOpenRoundedIcon sx={{ mr: 1.25, fontSize: 16, color: 'text.secondary' }} />
+          <Typography variant="body2">파일 위치 열기</Typography>
+        </MenuItem>
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {menuState.phase !== 'confirmDelete' ? (
+          <MenuItem
+            dense
+            sx={{ color: 'error.main' }}
+            onClick={() => {
+              if (menuState.phase === 'open') {
+                setMenuState({
+                  phase: 'confirmDelete',
+                  anchorEl: menuState.anchorEl,
+                  item: menuState.item
+                })
+              }
+            }}
+          >
+            <DeleteOutlineRoundedIcon sx={{ mr: 1.25, fontSize: 16 }} />
+            <Typography variant="body2" color="error">
+              삭제
+            </Typography>
+          </MenuItem>
+        ) : (
+          <Box sx={{ px: 1.5, pt: 0.5, pb: 1.25 }}>
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+              정말 삭제할까요?
+            </Typography>
+            <Stack direction="row" spacing={0.75}>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                disableElevation
+                fullWidth
+                sx={{ fontSize: '0.72rem', py: 0.5 }}
+                onClick={() => {
+                  const cur = menuItem
+                  if (cur) void handleDelete(cur)
+                }}
+              >
+                삭제
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                fullWidth
+                sx={{ fontSize: '0.72rem', py: 0.5 }}
+                onClick={closeMenu}
+              >
+                취소
+              </Button>
+            </Stack>
+          </Box>
+        )}
+      </Menu>
     </Box>
   )
 }
