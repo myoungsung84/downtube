@@ -20,10 +20,10 @@ The Korean section below is provided as a reference translation.
 
 Only the latest release is supported for security fixes.
 
-| Version | Supported |
-| --- | --- |
-| Latest | yes |
-| Older versions | no |
+| Version        | Supported |
+| -------------- | --------- |
+| Latest         | yes       |
+| Older versions | no        |
 
 ---
 
@@ -82,10 +82,10 @@ This is a personal open source project. Security fixes are handled on a best-eff
 
 보안 수정은 최신 릴리즈만 지원 대상으로 봅니다.
 
-| Version | Supported |
-| --- | --- |
-| Latest | yes |
-| Older versions | no |
+| Version        | Supported |
+| -------------- | --------- |
+| Latest         | yes       |
+| Older versions | no        |
 
 ---
 
