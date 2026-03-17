@@ -4,7 +4,7 @@ import fs, { mkdirSync } from 'fs'
 import path from 'path'
 
 import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/ffmpeg/ffmpeg'
-import { removeFileIfExists, removeFilesSync } from '../adapters/fs/cleanup'
+import { removeFileIfExists, removeFilesIfExistsSync, removeFilesSync } from '../adapters/fs/cleanup'
 import { findRealDownloadedFile, resolveByPrefixInDir } from '../adapters/fs/resolver'
 import { locateYtDlp, parseYtDlpPercent, spawnYtDlp } from '../adapters/yt-dlp/yt-dlp'
 import { ctx, logYtDlpArgs, logYtDlpStdout, step } from '../shared/download-helpers'
@@ -107,6 +107,106 @@ function buildFfmpegMetadataOptions(info?: DownloadJob['info']): string[] {
   if (title) options.push('-metadata', `title=${title}`)
   if (artist) options.push('-metadata', `artist=${artist}`)
   return options
+}
+
+function getSidecarBasePath(outputFile: string): string {
+  const ext = path.extname(outputFile)
+  return ext ? outputFile.slice(0, -ext.length) : outputFile
+}
+
+function buildSidecarMetadata(job: DownloadJob, outputFile: string): Record<string, unknown> {
+  return {
+    id: job.id,
+    url: job.url,
+    type: job.type,
+    filename: job.filename,
+    outputFile: path.basename(outputFile),
+    outputPath: outputFile,
+    downloadedAt: new Date().toISOString(),
+    info: job.info ?? null
+  }
+}
+
+async function writeSidecarJson(job: DownloadJob, outputFile: string): Promise<void> {
+  const jsonPath = `${getSidecarBasePath(outputFile)}.json`
+  const metadata = buildSidecarMetadata(job, outputFile)
+
+  await fs.promises.writeFile(jsonPath, JSON.stringify(metadata, null, 2), 'utf-8')
+}
+
+function inferThumbnailExtension(thumbnailUrl: string, contentType?: string | null): string {
+  const lowerContentType = contentType?.toLowerCase() ?? ''
+  if (lowerContentType.includes('image/jpeg') || lowerContentType.includes('image/jpg'))
+    return '.jpg'
+  if (lowerContentType.includes('image/png')) return '.png'
+  if (lowerContentType.includes('image/webp')) return '.webp'
+
+  try {
+    const url = new URL(thumbnailUrl)
+    const ext = path.extname(url.pathname).toLowerCase()
+    if (ext === '.jpg' || ext === '.jpeg') return '.jpg'
+    if (ext === '.png') return '.png'
+    if (ext === '.webp') return '.webp'
+  } catch {
+    // ignore extension parse failure
+  }
+
+  return '.jpg'
+}
+
+async function writeSidecarThumbnail(job: DownloadJob, outputFile: string): Promise<void> {
+  const thumbnailUrl = job.info?.thumbnail?.trim()
+  if (!thumbnailUrl) return
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
+  let response: Response
+  try {
+    response = await fetch(thumbnailUrl, { signal: controller.signal })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      log.warn(`${ctx(job)} thumbnail fetch timed out`)
+    } else {
+      log.warn(`${ctx(job)} thumbnail fetch failed`, error)
+    }
+    return
+  } finally {
+    clearTimeout(timeoutId)
+  }
+
+  if (!response.ok) {
+    log.warn(`${ctx(job)} thumbnail download failed with status ${response.status}`)
+    return
+  }
+
+  const thumbnailExt = inferThumbnailExtension(thumbnailUrl, response.headers.get('content-type'))
+  const sidecarBasePath = getSidecarBasePath(outputFile)
+
+  removeFilesIfExistsSync([
+    `${sidecarBasePath}.jpg`,
+    `${sidecarBasePath}.png`,
+    `${sidecarBasePath}.webp`
+  ])
+
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  await fs.promises.writeFile(`${sidecarBasePath}${thumbnailExt}`, buffer)
+}
+
+async function writeOutputSidecars(job: DownloadJob, outputFile: string): Promise<void> {
+  try {
+    await writeSidecarJson(job, outputFile)
+  } catch (error) {
+    log.warn(`${ctx(job)} json sidecar warn`, error)
+  }
+
+  try {
+    await writeSidecarThumbnail(job, outputFile)
+  } catch (error) {
+    log.warn(`${ctx(job)} thumbnail sidecar warn`, error)
+  }
 }
 
 function buildBestVideoArgs(outputTemplate: string, url: string): string[] {
@@ -286,6 +386,11 @@ export function runDownloadJob(
         return findRealDownloadedFile(downloadDir, `${baseName}.*`)
       })
 
+      await step('sidecar:audio', job, async () => {
+        if (task.stopRequested) throw new DownloadStoppedError('audio')
+        await writeOutputSidecars(job, real)
+      })
+
       onProgress({ current: 'complete', percent: 100 })
       return { outputFile: real }
     }
@@ -349,6 +454,11 @@ export function runDownloadJob(
       } catch (e) {
         log.warn(`${ctx(job)} cleanup warn`, e)
       }
+    })
+
+    await step('sidecar:video', job, async () => {
+      if (task.stopRequested) throw new DownloadStoppedError('video')
+      await writeOutputSidecars(job, outputFile)
     })
 
     onProgress({ current: 'complete', percent: 100 })
