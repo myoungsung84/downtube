@@ -62,9 +62,9 @@ export default function NavigationBar(): JSX.Element {
         direction="row"
         alignItems="center"
         sx={{
-          px: 2.5,
+          px: 3,
           py: 1.5,
-          maxWidth: 1280,
+          maxWidth: 1400,
           width: '100%'
         }}
       >

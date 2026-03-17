@@ -38,7 +38,7 @@ export default function AppLayout(props: {
         </Box>
       ) : null}
 
-      <Box sx={{ flex: 1, overflow: 'auto', scrollbarGutter: 'stable' }}>{props.children}</Box>
+      <Box sx={{ flex: 1, overflow: 'auto' }}>{props.children}</Box>
     </Box>
   )
 }
