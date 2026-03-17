@@ -4,7 +4,7 @@ import React from 'react'
 
 export default function LibraryPage(): React.JSX.Element {
   return (
-    <AppLayout onDirectory={() => window.api.openDownloadDir()}>
+    <AppLayout>
       <LibraryScreen />
     </AppLayout>
   )

@@ -6,7 +6,6 @@ import React from 'react'
 export default function AppLayout(props: {
   children: React.ReactNode
   showNav?: boolean
-  onDirectory?: () => void
 }): React.JSX.Element {
   const showNav = props.showNav ?? true
 
@@ -35,7 +34,7 @@ export default function AppLayout(props: {
             borderColor: 'divider'
           }}
         >
-          <NavigationBar onDirectory={props.onDirectory} />
+          <NavigationBar />
         </Box>
       ) : null}
 

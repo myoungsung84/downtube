@@ -94,7 +94,7 @@ export default function DownloadsQueuePanel(props: {
             onClick={props.onOpenDir}
             sx={{ fontWeight: 600, fontSize: '0.8rem', borderRadius: 1.5, color: 'text.secondary' }}
           >
-            폴더 열기
+            다운로드 폴더 열기
           </Button>
         </AppTooltip>
       </Stack>

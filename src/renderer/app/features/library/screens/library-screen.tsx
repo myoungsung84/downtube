@@ -1,8 +1,6 @@
 import AudioFileRoundedIcon from '@mui/icons-material/AudioFileRounded'
-import AutoAwesomeMosaicRoundedIcon from '@mui/icons-material/AutoAwesomeMosaicRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded'
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import MovieRoundedIcon from '@mui/icons-material/MovieRounded'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
@@ -107,13 +105,6 @@ export default function LibraryScreen(): React.JSX.Element {
     }
   }
 
-  const handleOpenDownloadsRoot = async (): Promise<void> => {
-    const result = await window.api.openDownloadsRootDir()
-    if (!result.success) {
-      showToast(result.message ?? '루트 경로를 열지 못했습니다.', 'error')
-    }
-  }
-
   const handleOpenFileLocation = async (item: LibraryItem): Promise<void> => {
     const result = await window.api.openDownloadItem(item.filePath)
     if (!result.success) {
@@ -206,14 +197,7 @@ export default function LibraryScreen(): React.JSX.Element {
                   startIcon={<FolderOpenRoundedIcon />}
                   onClick={() => void handleOpenDownloadsFolder()}
                 >
-                  다운로드 폴더
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Inventory2OutlinedIcon />}
-                  onClick={() => void handleOpenDownloadsRoot()}
-                >
-                  루트 경로
+                  다운로드 폴더 열기
                 </Button>
               </Stack>
             </Stack>
@@ -282,6 +266,7 @@ export default function LibraryScreen(): React.JSX.Element {
             {visibleItems.map((item) => {
               const isVideo = item.type === 'video'
               const thumbnailUrl = toMediaUrl(item.thumbnailPath)
+              const hasThumbnail = Boolean(thumbnailUrl)
 
               return (
                 <Paper
@@ -311,7 +296,7 @@ export default function LibraryScreen(): React.JSX.Element {
                   <Stack direction="row" sx={{ minHeight: 108 }}>
                     <Box sx={{ width: 176, flexShrink: 0, p: 1.25 }}>
                       <Box sx={{ position: 'relative', width: '100%', aspectRatio: '16 / 9' }}>
-                        {isVideo ? (
+                        {hasThumbnail ? (
                           <Thumbnail
                             url={thumbnailUrl}
                             w="100%"
@@ -334,12 +319,17 @@ export default function LibraryScreen(): React.JSX.Element {
                               borderColor: 'divider',
                               display: 'grid',
                               placeItems: 'center',
-                              background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.16)}, ${alpha(theme.palette.primary.main, 0.08)})`
+                              background: `linear-gradient(135deg, ${alpha(
+                                isVideo ? theme.palette.primary.main : theme.palette.warning.main,
+                                0.16
+                              )}, ${alpha(theme.palette.primary.main, 0.08)})`
                             }}
                           >
-                            <AutoAwesomeMosaicRoundedIcon
-                              sx={{ fontSize: 34, color: 'warning.dark' }}
-                            />
+                            {isVideo ? (
+                              <MovieRoundedIcon sx={{ fontSize: 34, color: 'primary.main' }} />
+                            ) : (
+                              <AudioFileRoundedIcon sx={{ fontSize: 34, color: 'warning.main' }} />
+                            )}
                           </Box>
                         )}
 

@@ -1,15 +1,10 @@
 import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutlined'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
-import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { JSX } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-
-type NavigationBarProps = {
-  onDirectory?: () => void
-}
 
 const NAV_ICON_BTN_SX = {
   p: 0.875,
@@ -39,7 +34,7 @@ const NAV_ICON_BTN_SX = {
   }
 }
 
-export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.Element {
+export default function NavigationBar(): JSX.Element {
   const navigate = useNavigate()
   const location = useLocation()
   const isSettingsPage = location.pathname === '/settings'
@@ -85,10 +80,22 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
 
           <Tooltip title="라이브러리" placement="bottom" arrow>
             <IconButton
-              onClick={onDirectory}
-              sx={NAV_ICON_BTN_SX}
+              onClick={() => navigate('/library')}
+              aria-label="라이브러리"
+              sx={{
+                ...NAV_ICON_BTN_SX,
+                ...(isLibraryPage && {
+                  backgroundColor: 'primary.main',
+                  borderColor: 'primary.main',
+                  '& svg': { color: 'primary.contrastText' },
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                    borderColor: 'primary.dark'
+                  }
+                })
+              }}
             >
-              <FolderOpenOutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
+              <Inventory2OutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -133,31 +140,6 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
 
         {/* Right actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} justifyContent="flex-end">
-          <Tooltip title="라이브러리" placement="bottom" arrow>
-            <IconButton
-              onClick={() => navigate('/library')}
-              sx={{
-                ...NAV_ICON_BTN_SX,
-                ...(isLibraryPage && {
-                  backgroundColor: 'primary.main',
-                  borderColor: 'primary.main',
-                  '& svg': { color: 'primary.contrastText' },
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
-                    borderColor: 'primary.dark'
-                  }
-                })
-              }}
-            >
-              <Inventory2OutlinedIcon
-                sx={{
-                  fontSize: 22,
-                  color: 'text.secondary'
-                }}
-              />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title="설정" placement="bottom" arrow>
             <IconButton
               onClick={() => navigate('/settings')}
