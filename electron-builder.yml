@@ -5,6 +5,7 @@ directories:
   buildResources: build
 
 files:
+  - 'out/**'
   - 'dist/**'
   - 'dist-electron/**'
   - 'assets/**'
@@ -18,6 +19,16 @@ files:
 asarUnpack:
   - resources/**
   - assets/**
+
+extraResources:
+  - from: bin
+    to: bin
+    filter:
+      - '**/*'
+  - from: assets
+    to: assets
+    filter:
+      - '**/*'
 
 win:
   executableName: downtube
