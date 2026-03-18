@@ -66,6 +66,10 @@ export function paletteMain(
   return `${color}.main`
 }
 
+function assertNever(x: never): never {
+  throw new Error(`Unexpected value: ${String(x)}`)
+}
+
 export function resolveDownloadStatus(status: DownloadJob['status']): {
   labelKey: string
   color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'
@@ -108,11 +112,7 @@ export function resolveDownloadStatus(status: DownloadJob['status']): {
       }
 
     default:
-      return {
-        labelKey: 'job.status.queued',
-        color: 'default',
-        icon: ScheduleIcon
-      }
+      return assertNever(status)
   }
 }
 
@@ -132,8 +132,7 @@ export function sortJobs(jobs: DownloadJob[]): DownloadJob[] {
 
 export function normalizeRecentUrlHistory(
   value: unknown,
-  isPlaylist: (input: string) => boolean,
-  getFallbackTitle: (kind: RecentUrlHistoryItem['kind']) => string
+  isPlaylist: (input: string) => boolean
 ): RecentUrlHistoryItem[] {
   if (!Array.isArray(value)) return []
 
@@ -143,7 +142,7 @@ export function normalizeRecentUrlHistory(
       if (!url) return []
 
       const kind: RecentUrlHistoryItem['kind'] = isPlaylist(url) ? 'playlist' : 'single'
-      return [{ url, kind, title: getFallbackTitle(kind) }]
+      return [{ url, kind, title: '' }]
     }
 
     if (typeof item !== 'object' || isNil(item)) return []
@@ -154,39 +153,20 @@ export function normalizeRecentUrlHistory(
     const title = item.title.trim()
     if (!url) return []
 
-    return [
-      {
-        url,
-        title: title || getFallbackTitle(item.kind),
-        kind: item.kind
-      }
-    ]
+    return [{ url, title, kind: item.kind }]
   })
 }
 
 export function updateRecentUrlHistory(
   prev: RecentUrlHistoryItem[],
   nextItem: RecentUrlHistoryItem,
-  getFallbackTitle: (kind: RecentUrlHistoryItem['kind']) => string,
   limit = 10
 ): RecentUrlHistoryItem[] {
   const url = nextItem.url.trim()
   const title = nextItem.title.trim()
   if (!url) return prev
 
-  return [
-    ...uniqBy(
-      [
-        {
-          url,
-          title: title || getFallbackTitle(nextItem.kind),
-          kind: nextItem.kind
-        },
-        ...prev
-      ],
-      'url'
-    )
-  ].slice(0, limit)
+  return [...uniqBy([{ url, title, kind: nextItem.kind }, ...prev], 'url')].slice(0, limit)
 }
 
 export function updateRecentUrlHistoryTitle(

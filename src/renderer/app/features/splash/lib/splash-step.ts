@@ -1,9 +1,24 @@
-const DEFAULT_STEP_TEXT_KEY = 'status.waiting'
+export type SplashTextKey =
+  | 'status.waiting'
+  | 'steps.preparing.text'
+  | 'steps.checking_binaries.text'
+  | 'steps.downloading_binaries.text'
+  | 'steps.finalizing.text'
+  | 'steps.starting_services.text'
+
+export type SplashDetailKey =
+  | 'steps.preparing.detail'
+  | 'steps.checking_binaries.detail'
+  | 'steps.downloading_binaries.detail'
+  | 'steps.finalizing.detail'
+  | 'steps.starting_services.detail'
+
+const DEFAULT_STEP_TEXT_KEY: SplashTextKey = 'status.waiting'
 const DEFAULT_PROGRESS = 12
 
 type SplashStepMeta = {
-  textKey: string
-  detailKey: string
+  textKey: SplashTextKey
+  detailKey: SplashDetailKey
   progress: number
 }
 
@@ -40,11 +55,11 @@ function getStepMeta(step?: string): SplashStepMeta | undefined {
   return SPLASH_STEP_META[step]
 }
 
-export function mapStepToTextKey(step?: string): string {
+export function mapStepToTextKey(step?: string): SplashTextKey {
   return getStepMeta(step)?.textKey ?? DEFAULT_STEP_TEXT_KEY
 }
 
-export function mapStepToDetailKey(step?: string): string | undefined {
+export function mapStepToDetailKey(step?: string): SplashDetailKey | undefined {
   return getStepMeta(step)?.detailKey
 }
 

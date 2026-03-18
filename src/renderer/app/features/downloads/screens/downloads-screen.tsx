@@ -65,11 +65,9 @@ export default function DownloadsScreen(): React.JSX.Element {
   const recentUrls = useMemo(
     () =>
       Array.isArray(storedRecentUrls)
-        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl, (kind) =>
-            t(kind === 'playlist' ? 'history.kind.playlist' : 'history.kind.video')
-          )
+        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl)
         : [],
-    [storedRecentUrls, t]
+    [storedRecentUrls]
   )
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
@@ -106,9 +104,7 @@ export default function DownloadsScreen(): React.JSX.Element {
   }, [hydrateSettings])
 
   const persistRecentUrl = (item: RecentUrlHistoryItem): void => {
-    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item, (kind) =>
-      t(kind === 'playlist' ? 'history.kind.playlist' : 'history.kind.video')
-    )
+    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item)
     void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
   }
 
