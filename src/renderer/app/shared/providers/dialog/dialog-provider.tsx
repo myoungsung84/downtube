@@ -12,6 +12,7 @@ import {
   useTheme
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DialogContext } from './dialog-context'
@@ -67,6 +68,7 @@ export default function DialogProvider({
   children: React.ReactNode
 }): React.JSX.Element {
   const theme = useTheme()
+  const { t } = useI18n()
   const isDark = theme.palette.mode === 'dark'
   const [dialog, setDialog] = useState<DialogState>(INITIAL_DIALOG_STATE)
   const resolverRef = useRef<((result?: boolean) => void) | null>(null)
@@ -109,8 +111,10 @@ export default function DialogProvider({
 
   const isDanger = dialog.options?.variant === 'danger'
   const confirmButtonColor = isDanger ? 'error' : 'primary'
-  const confirmText = dialog.options?.confirmText ?? (dialog.type === 'confirm' ? '확인' : '닫기')
-  const cancelText = dialog.options?.cancelText ?? '취소'
+  const confirmText =
+    dialog.options?.confirmText ??
+    (dialog.type === 'confirm' ? t('actions.confirm') : t('actions.close'))
+  const cancelText = dialog.options?.cancelText ?? t('actions.cancel')
 
   const iconConfig = useIconConfig(
     dialog.options?.variant,

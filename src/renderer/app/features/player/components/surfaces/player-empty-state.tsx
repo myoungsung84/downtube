@@ -1,8 +1,10 @@
 import { Box, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 export function PlayerEmptyState(): React.JSX.Element {
+  const { t } = useI18n('player')
   return (
     <Box
       sx={{
@@ -18,9 +20,9 @@ export function PlayerEmptyState(): React.JSX.Element {
         height: '100%'
       }}
     >
-      <Typography variant="h6">재생할 파일이 없습니다.</Typography>
+      <Typography variant="h6">{t('empty.title')}</Typography>
       <Typography variant="body2" sx={{ color: (theme) => alpha(theme.palette.common.white, 0.5) }}>
-        player window를 열 때 src를 전달하도록 연결이 필요합니다.
+        {t('empty.description')}
       </Typography>
     </Box>
   )

@@ -1,5 +1,6 @@
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 type SplashRunningProps = {
@@ -15,6 +16,7 @@ export function SplashRunning({
   progressValue,
   logText
 }: SplashRunningProps): React.JSX.Element {
+  const { t } = useI18n('splash')
   return (
     <Stack spacing={2.4} sx={{ width: '100%' }}>
       <Stack spacing={0.5} alignItems="center">
@@ -28,7 +30,7 @@ export function SplashRunning({
             textTransform: 'uppercase'
           }}
         >
-          initialization
+          {t('running.label')}
         </Typography>
         <Typography
           sx={{

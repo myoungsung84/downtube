@@ -1,0 +1,41 @@
+{
+  "error": {
+    "actions": {
+      "retry": "Try again"
+    },
+    "title": "A problem occurred during initialization"
+  },
+  "log": {
+    "auto_download_notice": "Required files will be downloaded automatically if they are missing",
+    "error_retry": "Please try again after the problem is resolved",
+    "running": "{{stepText}} · Starting up reliably"
+  },
+  "running": {
+    "label": "Initializing"
+  },
+  "status": {
+    "waiting": "Please wait a moment"
+  },
+  "steps": {
+    "checking_binaries": {
+      "detail": "Checking required components such as yt-dlp and ffmpeg",
+      "text": "Checking required files"
+    },
+    "downloading_binaries": {
+      "detail": "Missing files will be downloaded automatically",
+      "text": "Downloading required files"
+    },
+    "finalizing": {
+      "detail": "Doing the final setup so the app is ready to use",
+      "text": "Finishing up"
+    },
+    "preparing": {
+      "detail": "Preparing the environment required to run the app",
+      "text": "Preparing the environment"
+    },
+    "starting_services": {
+      "detail": "Starting internal services and getting ready to move to the first screen",
+      "text": "Starting services"
+    }
+  }
+}

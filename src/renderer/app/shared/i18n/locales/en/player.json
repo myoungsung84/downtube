@@ -1,0 +1,34 @@
+{
+  "audio_panel": {
+    "aria": {
+      "pause": "Pause",
+      "play": "Play"
+    }
+  },
+  "controls": {
+    "bottom": {
+      "fullscreen": "Fullscreen (F)",
+      "mute": "Mute (M)",
+      "visualizer": "Audio visualizer"
+    },
+    "center": {
+      "forward_10": "Forward 10 seconds (→)",
+      "replay_10": "Back 10 seconds (←)",
+      "toggle_play": "Play/Pause (Space)"
+    }
+  },
+  "empty": {
+    "description": "Could not load the file to play. Please open it again from the list.",
+    "title": "No file to play."
+  },
+  "fallback": {
+    "unknown_file": "Unknown file"
+  },
+  "overlay": {
+    "actions": {
+      "open_folder_label": "Folder",
+      "open_folder_title": "Open folder"
+    },
+    "unknown_file": "Unknown file"
+  }
+}

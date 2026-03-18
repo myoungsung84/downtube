@@ -14,21 +14,28 @@ import {
   Typography
 } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
+import type { AppLanguagePreference } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
 
+const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
 
 export default function SettingsScreen(): React.JSX.Element {
+  const { t, changeLanguage } = useI18n('settings')
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
   const setSettingValue = useSettingsStore((state) => state.setValue)
+  const storedLanguage = useSettingsStore((state) => state.values[APP_LANGUAGE_KEY])
   const storedThemeMode = useSettingsStore((state) => state.values[APP_THEME_MODE_KEY])
   const storedDefaultType = useSettingsStore((state) => state.values[DOWNLOADS_DEFAULT_TYPE_KEY])
   const storedPlaylistLimit = useSettingsStore(
     (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
   )
 
+  const language: AppLanguagePreference =
+    storedLanguage === 'ko' || storedLanguage === 'en' ? storedLanguage : 'system'
   const themeMode: 'light' | 'dark' | 'system' =
     storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'system'
   const defaultType: 'video' | 'audio' = storedDefaultType === 'audio' ? 'audio' : 'video'
@@ -42,6 +49,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
   useEffect(() => {
     void hydrateSettings([
+      APP_LANGUAGE_KEY,
       APP_THEME_MODE_KEY,
       DOWNLOADS_DEFAULT_TYPE_KEY,
       DOWNLOADS_PLAYLIST_LIMIT_KEY
@@ -76,15 +84,15 @@ export default function SettingsScreen(): React.JSX.Element {
             </Box>
             <Box>
               <Typography variant="h5" fontWeight={800} lineHeight={1.1}>
-                설정
+                {t('header.title')}
               </Typography>
               <Typography variant="caption" color="text.disabled">
-                앱 환경을 맞춤 설정하세요
+                {t('header.description')}
               </Typography>
             </Box>
           </Stack>
 
-          {/* Downloads Section */}
+          {/* Appearance Section */}
           <Paper
             elevation={0}
             sx={{
@@ -113,87 +121,175 @@ export default function SettingsScreen(): React.JSX.Element {
                 color="text.secondary"
                 letterSpacing={1.5}
               >
-                화면
+                {t('appearance.section_title')}
               </Typography>
             </Stack>
 
             <Divider />
 
-            <Stack sx={{ px: 3, py: 2.5 }} spacing={2}>
-              <Stack spacing={0.4}>
-                <Typography variant="body2" fontWeight={700}>
-                  테마
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  시스템 설정 또는 라이트/다크 테마를 선택합니다
-                </Typography>
-              </Stack>
+            <Stack divider={<Divider />} sx={{ px: 3 }}>
+              <Stack sx={{ py: 2.5 }} spacing={2}>
+                <Stack spacing={0.4}>
+                  <Typography variant="body2" fontWeight={700}>
+                    {t('appearance.language.title')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('appearance.language.description')}
+                  </Typography>
+                </Stack>
 
-              <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={themeMode}
-                onChange={(_, next): void => {
-                  if (!next) return
-                  if (next !== 'system' && next !== 'light' && next !== 'dark') return
-                  void setSettingValue(APP_THEME_MODE_KEY, next)
-                }}
-                sx={{
-                  width: 'fit-content',
-                  bgcolor: 'action.hover',
-                  borderRadius: '10px',
-                  p: 0.5,
-                  border: '1px solid',
-                  borderColor: (theme) =>
-                    theme.palette.mode === 'light'
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.common.white, 0.06),
-                  gap: 0.5,
-                  '& .MuiToggleButtonGroup-grouped': {
-                    border: 'none !important',
-                    borderRadius: '8px !important',
-                    m: 0
-                  },
-                  '& .MuiToggleButton-root': {
-                    px: 2.25,
-                    py: 0.875,
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    color: 'text.secondary',
-                    transition: 'all 0.18s ease',
-                    '&.Mui-selected': {
-                      bgcolor: (theme) =>
-                        theme.palette.mode === 'light'
-                          ? alpha(theme.palette.primary.main, 0.1)
-                          : theme.palette.background.paper,
-                      color: 'text.primary',
-                      boxShadow: (theme) =>
-                        theme.palette.mode === 'light'
-                          ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
-                              theme.palette.common.black,
-                              0.08
-                            )}`
-                          : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
-                      '&:hover': {
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={language}
+                  onChange={(_, next): void => {
+                    if (next !== 'system' && next !== 'ko' && next !== 'en') return
+                    void setSettingValue(APP_LANGUAGE_KEY, next).then((savedLanguage) => {
+                      void window.api
+                        .resolveAppLanguage(savedLanguage)
+                        .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
+                    })
+                  }}
+                  sx={{
+                    width: 'fit-content',
+                    bgcolor: 'action.hover',
+                    borderRadius: '10px',
+                    p: 0.5,
+                    border: '1px solid',
+                    borderColor: (theme) =>
+                      theme.palette.mode === 'light'
+                        ? alpha(theme.palette.primary.main, 0.15)
+                        : alpha(theme.palette.common.white, 0.06),
+                    gap: 0.5,
+                    '& .MuiToggleButtonGroup-grouped': {
+                      border: 'none !important',
+                      borderRadius: '8px !important',
+                      m: 0
+                    },
+                    '& .MuiToggleButton-root': {
+                      px: 2.25,
+                      py: 0.875,
+                      fontWeight: 600,
+                      fontSize: '0.8rem',
+                      color: 'text.secondary',
+                      transition: 'all 0.18s ease',
+                      '&.Mui-selected': {
                         bgcolor: (theme) =>
                           theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.14)
-                            : theme.palette.background.paper
+                            ? alpha(theme.palette.primary.main, 0.1)
+                            : theme.palette.background.paper,
+                        color: 'text.primary',
+                        boxShadow: (theme) =>
+                          theme.palette.mode === 'light'
+                            ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
+                                theme.palette.common.black,
+                                0.08
+                              )}`
+                            : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
+                        '&:hover': {
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'light'
+                              ? alpha(theme.palette.primary.main, 0.14)
+                              : theme.palette.background.paper
+                        }
+                      },
+                      '&:hover:not(.Mui-selected)': {
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'light'
+                            ? alpha(theme.palette.primary.main, 0.06)
+                            : theme.palette.action.selected
                       }
-                    },
-                    '&:hover:not(.Mui-selected)': {
-                      bgcolor: (theme) =>
-                        theme.palette.mode === 'light'
-                          ? alpha(theme.palette.primary.main, 0.06)
-                          : theme.palette.action.selected
                     }
-                  }
-                }}
-              >
-                <ToggleButton value="system">시스템</ToggleButton>
-                <ToggleButton value="light">라이트</ToggleButton>
-                <ToggleButton value="dark">다크</ToggleButton>
-              </ToggleButtonGroup>
+                  }}
+                >
+                  <ToggleButton value="system">
+                    {t('appearance.language.options.system')}
+                  </ToggleButton>
+                  <ToggleButton value="ko">{t('appearance.language.options.ko')}</ToggleButton>
+                  <ToggleButton value="en">{t('appearance.language.options.en')}</ToggleButton>
+                </ToggleButtonGroup>
+              </Stack>
+
+              <Stack spacing={0.4}>
+                <Stack sx={{ py: 2.5 }} spacing={2}>
+                  <Stack spacing={0.4}>
+                    <Typography variant="body2" fontWeight={700}>
+                      {t('appearance.theme.title')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('appearance.theme.description')}
+                    </Typography>
+                  </Stack>
+
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={themeMode}
+                    onChange={(_, next): void => {
+                      if (!next) return
+                      if (next !== 'system' && next !== 'light' && next !== 'dark') return
+                      void setSettingValue(APP_THEME_MODE_KEY, next)
+                    }}
+                    sx={{
+                      width: 'fit-content',
+                      bgcolor: 'action.hover',
+                      borderRadius: '10px',
+                      p: 0.5,
+                      border: '1px solid',
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.15)
+                          : alpha(theme.palette.common.white, 0.06),
+                      gap: 0.5,
+                      '& .MuiToggleButtonGroup-grouped': {
+                        border: 'none !important',
+                        borderRadius: '8px !important',
+                        m: 0
+                      },
+                      '& .MuiToggleButton-root': {
+                        px: 2.25,
+                        py: 0.875,
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        color: 'text.secondary',
+                        transition: 'all 0.18s ease',
+                        '&.Mui-selected': {
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'light'
+                              ? alpha(theme.palette.primary.main, 0.1)
+                              : theme.palette.background.paper,
+                          color: 'text.primary',
+                          boxShadow: (theme) =>
+                            theme.palette.mode === 'light'
+                              ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
+                                  theme.palette.common.black,
+                                  0.08
+                                )}`
+                              : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
+                          '&:hover': {
+                            bgcolor: (theme) =>
+                              theme.palette.mode === 'light'
+                                ? alpha(theme.palette.primary.main, 0.14)
+                                : theme.palette.background.paper
+                          }
+                        },
+                        '&:hover:not(.Mui-selected)': {
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'light'
+                              ? alpha(theme.palette.primary.main, 0.06)
+                              : theme.palette.action.selected
+                        }
+                      }
+                    }}
+                  >
+                    <ToggleButton value="system">
+                      {t('appearance.theme.options.system')}
+                    </ToggleButton>
+                    <ToggleButton value="light">{t('appearance.theme.options.light')}</ToggleButton>
+                    <ToggleButton value="dark">{t('appearance.theme.options.dark')}</ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+              </Stack>
             </Stack>
           </Paper>
 
@@ -226,7 +322,7 @@ export default function SettingsScreen(): React.JSX.Element {
                 color="text.secondary"
                 letterSpacing={1.5}
               >
-                다운로드
+                {t('downloads.section_title')}
               </Typography>
             </Stack>
 
@@ -243,10 +339,10 @@ export default function SettingsScreen(): React.JSX.Element {
               >
                 <Stack spacing={0.4}>
                   <Typography variant="body2" fontWeight={700}>
-                    기본 다운로드 형식
+                    {t('downloads.default_type.title')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    링크를 추가할 때 기본으로 선택될 형식입니다
+                    {t('downloads.default_type.description')}
                   </Typography>
                 </Stack>
 
@@ -314,13 +410,13 @@ export default function SettingsScreen(): React.JSX.Element {
                   <ToggleButton value="video">
                     <Stack direction="row" spacing={0.75} alignItems="center">
                       <VideoLibraryIcon sx={{ fontSize: 15 }} />
-                      <span>비디오</span>
+                      <span>{t('media.video')}</span>
                     </Stack>
                   </ToggleButton>
                   <ToggleButton value="audio">
                     <Stack direction="row" spacing={0.75} alignItems="center">
                       <AudiotrackIcon sx={{ fontSize: 15 }} />
-                      <span>오디오</span>
+                      <span>{t('media.audio')}</span>
                     </Stack>
                   </ToggleButton>
                 </ToggleButtonGroup>
@@ -337,11 +433,11 @@ export default function SettingsScreen(): React.JSX.Element {
                 <Stack spacing={0.4}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Typography variant="body2" fontWeight={700}>
-                      플레이리스트 다운로드 개수
+                      {t('downloads.playlist_limit.title')}
                     </Typography>
                     <Chip
                       icon={<PlaylistPlayIcon sx={{ fontSize: '14px !important' }} />}
-                      label={`최대 ${playlistLimit}개`}
+                      label={t('downloads.playlist_limit.badge', { count: playlistLimit })}
                       size="small"
                       variant="outlined"
                       color="primary"
@@ -362,7 +458,7 @@ export default function SettingsScreen(): React.JSX.Element {
                     />
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    플레이리스트에서 한 번에 가져올 영상 수
+                    {t('downloads.playlist_limit.description')}
                   </Typography>
                 </Stack>
 
@@ -429,9 +525,9 @@ export default function SettingsScreen(): React.JSX.Element {
                     }
                   }}
                 >
-                  <ToggleButton value="10">10개</ToggleButton>
-                  <ToggleButton value="20">20개</ToggleButton>
-                  <ToggleButton value="40">40개</ToggleButton>
+                  <ToggleButton value="10">{t('downloads.playlist_limit.options.10')}</ToggleButton>
+                  <ToggleButton value="20">{t('downloads.playlist_limit.options.20')}</ToggleButton>
+                  <ToggleButton value="40">{t('downloads.playlist_limit.options.40')}</ToggleButton>
                 </ToggleButtonGroup>
               </Stack>
             </Stack>

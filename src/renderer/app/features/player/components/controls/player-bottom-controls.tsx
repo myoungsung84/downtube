@@ -1,6 +1,7 @@
 import { Box, Slider, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 import { formatSeconds } from '../../lib'
@@ -44,6 +45,7 @@ export function PlayerBottomControls({
   onToggleFullscreen,
   volSliderSx
 }: PlayerBottomControlsProps): React.JSX.Element {
+  const { t } = useI18n('player')
   return (
     <Box
       sx={{
@@ -61,7 +63,7 @@ export function PlayerBottomControls({
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2 }}>
         <Stack direction="row" alignItems="center">
           <Stack direction="row" alignItems="center" spacing={1}>
-            <PlayerButton onClick={onToggleMute} title="음소거 (M)" size="sm">
+            <PlayerButton onClick={onToggleMute} title={t('controls.bottom.mute')} size="sm">
               {muted || volume === 0 ? <IcVolumeMute /> : <IcVolumeHigh />}
             </PlayerButton>
             <Slider
@@ -105,7 +107,11 @@ export function PlayerBottomControls({
           </Typography>
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
-          <PlayerButton onClick={onToggleVisualizer} title="음성 시각화" size="sm">
+          <PlayerButton
+            onClick={onToggleVisualizer}
+            title={t('controls.bottom.visualizer')}
+            size="sm"
+          >
             <Box
               sx={{
                 display: 'flex',
@@ -115,7 +121,11 @@ export function PlayerBottomControls({
               <IcVisualizer />
             </Box>
           </PlayerButton>
-          <PlayerButton onClick={onToggleFullscreen} title="전체화면 (F)" size="sm">
+          <PlayerButton
+            onClick={onToggleFullscreen}
+            title={t('controls.bottom.fullscreen')}
+            size="sm"
+          >
             {isFullscreen ? <IcExitFullscreen /> : <IcFullscreen />}
           </PlayerButton>
         </Stack>

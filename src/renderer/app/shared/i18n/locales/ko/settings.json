@@ -1,0 +1,44 @@
+{
+  "appearance": {
+    "language": {
+      "description": "앱에서 표시할 언어를 선택합니다",
+      "options": {
+        "en": "English",
+        "ko": "한국어",
+        "system": "시스템"
+      },
+      "title": "언어"
+    },
+    "section_title": "화면",
+    "theme": {
+      "description": "시스템 설정 또는 라이트/다크 테마를 선택합니다",
+      "options": {
+        "dark": "다크",
+        "light": "라이트",
+        "system": "시스템"
+      },
+      "title": "테마"
+    }
+  },
+  "downloads": {
+    "default_type": {
+      "description": "링크를 추가할 때 기본으로 선택될 형식입니다",
+      "title": "기본 다운로드 형식"
+    },
+    "playlist_limit": {
+      "badge": "최대 {{count}}개",
+      "description": "플레이리스트에서 한 번에 가져올 영상 수",
+      "options": {
+        "10": "10개",
+        "20": "20개",
+        "40": "40개"
+      },
+      "title": "플레이리스트 다운로드 개수"
+    },
+    "section_title": "다운로드"
+  },
+  "header": {
+    "description": "앱 환경을 맞춤 설정하세요",
+    "title": "설정"
+  }
+}

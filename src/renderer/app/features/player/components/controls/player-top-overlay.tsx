@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 import { IcFolder } from '../visuals/player-icons'
@@ -27,6 +28,7 @@ export function PlayerTopOverlay({
   onOpenFolder,
   onChangePlaybackRate
 }: PlayerTopOverlayProps): React.JSX.Element {
+  const { t } = useI18n('player')
   return (
     <>
       <Box
@@ -74,7 +76,9 @@ export function PlayerTopOverlay({
                   lineHeight: 1.5
                 }}
               >
-                {isAudioFile ? `audio${fileExtension ? ` · ${fileExtension}` : ''}` : fileExtension}
+                {isAudioFile
+                  ? `${t('media.audio')}${fileExtension ? ` · ${fileExtension}` : ''}`
+                  : fileExtension}
               </Typography>
             </Box>
           )}
@@ -92,7 +96,7 @@ export function PlayerTopOverlay({
                 textShadow: (theme) => `0 1px 6px ${alpha(theme.palette.common.black, 0.8)}`
               }}
             >
-              {primaryText || '알 수 없는 파일'}
+              {primaryText || t('overlay.unknown_file')}
             </Typography>
             {secondaryText ? (
               <Typography
@@ -114,7 +118,7 @@ export function PlayerTopOverlay({
           <Box
             component="button"
             onClick={onOpenFolder}
-            title="폴더 열기"
+            title={t('overlay.actions.open_folder_title')}
             sx={{
               flexShrink: 0,
               display: 'flex',
@@ -139,7 +143,7 @@ export function PlayerTopOverlay({
             }}
           >
             <IcFolder />
-            폴더
+            {t('overlay.actions.open_folder_label')}
           </Box>
         </Box>
       </Box>

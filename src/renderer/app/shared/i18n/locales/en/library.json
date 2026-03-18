@@ -1,0 +1,42 @@
+{
+  "actions": {
+    "open_folder": "Open folder",
+    "refresh": "Refresh"
+  },
+  "dialog": {
+    "delete": {
+      "confirm": "Delete",
+      "message": "Delete '{{itemTitle}}' from the library?",
+      "title": "Confirm deletion"
+    }
+  },
+  "empty": {
+    "audio_title": "No audio yet",
+    "description": "Completed downloads will appear here.",
+    "video_title": "No videos yet"
+  },
+  "header": {
+    "description": "View completed items only.",
+    "title": "Library"
+  },
+  "item": {
+    "uploader_fallback": "Uploader unavailable"
+  },
+  "loading": "Loading…",
+  "menu": {
+    "delete": "Delete",
+    "open_file_location": "Open file location"
+  },
+  "tabs": {
+    "audio": "Audio",
+    "video": "Video"
+  },
+  "toast": {
+    "delete_failed": "Could not delete the item.",
+    "deleted": "Deleted.",
+    "load_failed": "Could not load the library.",
+    "open_downloads_folder_failed": "Could not open the downloads folder.",
+    "open_file_location_failed": "Could not open the file location.",
+    "open_player_failed": "Could not open the player."
+  }
+}

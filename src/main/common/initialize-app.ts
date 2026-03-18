@@ -7,6 +7,7 @@ import { chmodSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import path, { join } from 'path'
 
 import type { InitState } from '../../types/init.types'
+import { ensureSettingsLanguage } from '../settings/settings-store'
 
 const YTDLP_DOWNLOAD_URLS = {
   win32: 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe',
@@ -107,6 +108,7 @@ export async function initializeApp(reportProgress?: InitProgressReporter): Prom
 
   try {
     reportProgress?.({ status: 'running', step: 'setting-up', progress: 10 })
+    ensureSettingsLanguage()
 
     // Log file should be set early so we capture the rest
     setupLogdir()

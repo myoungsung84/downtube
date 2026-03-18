@@ -3,6 +3,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { JSX } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -37,6 +38,7 @@ const NAV_ICON_BTN_SX = {
 export default function NavigationBar(): JSX.Element {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useI18n('navigation')
   const isSettingsPage = location.pathname === '/settings'
   const isLibraryPage = location.pathname === '/library'
   const showBackButton = isSettingsPage || isLibraryPage
@@ -71,17 +73,17 @@ export default function NavigationBar(): JSX.Element {
         {/* Left actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
           {showBackButton && (
-            <Tooltip title="뒤로 가기" placement="bottom" arrow>
+            <Tooltip title={t('actions.back')} placement="bottom" arrow>
               <IconButton onClick={() => navigate('/')} sx={NAV_ICON_BTN_SX}>
                 <ArrowBackIosNewOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               </IconButton>
             </Tooltip>
           )}
 
-          <Tooltip title="라이브러리" placement="bottom" arrow>
+          <Tooltip title={t('items.library')} placement="bottom" arrow>
             <IconButton
               onClick={() => navigate('/library')}
-              aria-label="라이브러리"
+              aria-label={t('items.library')}
               sx={{
                 ...NAV_ICON_BTN_SX,
                 ...(isLibraryPage && {
@@ -140,7 +142,7 @@ export default function NavigationBar(): JSX.Element {
 
         {/* Right actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} justifyContent="flex-end">
-          <Tooltip title="설정" placement="bottom" arrow>
+          <Tooltip title={t('items.settings')} placement="bottom" arrow>
             <IconButton
               onClick={() => navigate('/settings')}
               sx={{

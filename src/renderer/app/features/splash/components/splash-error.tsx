@@ -1,5 +1,6 @@
 import { Button, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 type SplashErrorProps = {
@@ -8,6 +9,7 @@ type SplashErrorProps = {
 }
 
 export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.Element {
+  const { t } = useI18n('splash')
   return (
     <Stack alignItems="center" spacing={1.75}>
       <Typography
@@ -17,7 +19,7 @@ export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.E
           color: 'error.light'
         }}
       >
-        초기화 중 문제가 발생했어요
+        {t('error.title')}
       </Typography>
       <Typography
         sx={{
@@ -51,7 +53,7 @@ export function SplashError({ message, onRetry }: SplashErrorProps): React.JSX.E
           }
         }}
       >
-        다시 시도하기
+        {t('error.actions.retry')}
       </Button>
     </Stack>
   )

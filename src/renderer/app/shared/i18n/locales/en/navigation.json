@@ -1,0 +1,9 @@
+{
+  "actions": {
+    "back": "Go back"
+  },
+  "items": {
+    "library": "Library",
+    "settings": "Settings"
+  }
+}

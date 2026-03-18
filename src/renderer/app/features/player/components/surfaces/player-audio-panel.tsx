@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material'
 import { alpha, keyframes } from '@mui/material/styles'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 const pulseGlow = keyframes`
@@ -107,6 +108,7 @@ export function AudioPlayerPanel({
   upperFileExtension,
   onTogglePlay
 }: AudioPlayerPanelProps): React.JSX.Element {
+  const { t } = useI18n('player')
   return (
     <>
       <PlayerBackgroundLayer thumbnailSrc={thumbnailSrc} />
@@ -132,7 +134,7 @@ export function AudioPlayerPanel({
           }}
           role="button"
           tabIndex={0}
-          aria-label={paused ? '재생' : '일시정지'}
+          aria-label={paused ? t('audio_panel.aria.play') : t('audio_panel.aria.pause')}
           sx={{
             width: 'min(100%, 560px)',
             display: 'flex',

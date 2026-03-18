@@ -8,6 +8,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { Box, Button, Chip, Divider, Paper, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 export default function DownloadsQueuePanel(props: {
@@ -29,6 +30,7 @@ export default function DownloadsQueuePanel(props: {
   onStartQueue: () => void
   onPauseQueue: () => void
 }): React.JSX.Element {
+  const { t } = useI18n('downloads')
   const isActive = props.queueRunning && !props.queuePaused
 
   return (
@@ -65,11 +67,11 @@ export default function DownloadsQueuePanel(props: {
         <Stack direction="row" spacing={1.25} alignItems="center">
           <DownloadingIcon sx={{ fontSize: 20, color: 'primary.main' }} />
           <Typography variant="body1" fontWeight={700}>
-            다운로드 관리
+            {t('queue.title')}
           </Typography>
           <Chip
             size="small"
-            label={props.hydrating ? '불러오는 중…' : props.queueLabel}
+            label={props.hydrating ? t('queue.loading') : props.queueLabel}
             color={isActive ? 'primary' : 'default'}
             variant={isActive ? 'filled' : 'outlined'}
             icon={isActive ? <DownloadIcon sx={{ fontSize: '14px !important' }} /> : undefined}
@@ -86,7 +88,7 @@ export default function DownloadsQueuePanel(props: {
           />
         </Stack>
 
-        <AppTooltip title="폴더 열기">
+        <AppTooltip title={t('queue.actions.open_folder')}>
           <Button
             variant="text"
             size="small"
@@ -94,7 +96,7 @@ export default function DownloadsQueuePanel(props: {
             onClick={props.onOpenDir}
             sx={{ fontWeight: 600, fontSize: '0.8rem', borderRadius: 1.5, color: 'text.secondary' }}
           >
-            폴더 열기
+            {t('queue.actions.open_folder')}
           </Button>
         </AppTooltip>
       </Stack>
@@ -107,14 +109,14 @@ export default function DownloadsQueuePanel(props: {
           <Stack direction="row" spacing={1} flexWrap="wrap">
             <Chip
               size="small"
-              label={`전체 ${props.jobsTotal}`}
+              label={t('queue.stats.total', { count: props.jobsTotal })}
               variant="filled"
               sx={{ fontWeight: 600, fontSize: '0.75rem' }}
             />
             {props.queuedCount > 0 && (
               <Chip
                 size="small"
-                label={`대기 ${props.queuedCount}`}
+                label={t('queue.stats.queued', { count: props.queuedCount })}
                 variant="outlined"
                 sx={{ fontWeight: 600, fontSize: '0.75rem' }}
               />
@@ -123,7 +125,7 @@ export default function DownloadsQueuePanel(props: {
               <Chip
                 size="small"
                 icon={<DownloadingIcon sx={{ fontSize: '14px !important' }} />}
-                label={`진행중 ${props.runningCount}`}
+                label={t('queue.stats.running', { count: props.runningCount })}
                 color="info"
                 variant="filled"
                 sx={{ fontWeight: 600, fontSize: '0.75rem' }}
@@ -133,7 +135,7 @@ export default function DownloadsQueuePanel(props: {
               <Chip
                 size="small"
                 icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
-                label={`완료 ${props.completedCount}`}
+                label={t('queue.stats.completed', { count: props.completedCount })}
                 color="success"
                 variant="filled"
                 sx={{ fontWeight: 600, fontSize: '0.75rem' }}
@@ -143,7 +145,7 @@ export default function DownloadsQueuePanel(props: {
               <Chip
                 size="small"
                 icon={<ErrorIcon sx={{ fontSize: '14px !important' }} />}
-                label={`실패 ${props.failedCount}`}
+                label={t('queue.stats.failed', { count: props.failedCount })}
                 color="error"
                 variant="filled"
                 sx={{ fontWeight: 600, fontSize: '0.75rem' }}
@@ -159,10 +161,10 @@ export default function DownloadsQueuePanel(props: {
               fullWidth
               title={
                 !props.hasQueued
-                  ? '먼저 영상 주소를 추가해주세요'
+                  ? t('queue.tooltips.require_url')
                   : props.queuePaused
-                    ? '일시정지된 다운로드를 계속합니다'
-                    : '대기중인 다운로드를 시작합니다'
+                    ? t('queue.tooltips.resume')
+                    : t('queue.tooltips.start')
               }
             >
               <Button
@@ -180,13 +182,15 @@ export default function DownloadsQueuePanel(props: {
                   borderRadius: 2
                 }}
               >
-                {props.queuePaused && props.hasQueued ? '계속하기' : '다운로드 시작'}
+                {props.queuePaused && props.hasQueued
+                  ? t('queue.actions.resume')
+                  : t('queue.actions.start')}
               </Button>
             </AppTooltip>
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <AppTooltip fullWidth title="진행중인 다운로드를 일시정지합니다">
+            <AppTooltip fullWidth title={t('queue.tooltips.pause')}>
               <Button
                 size="large"
                 variant="outlined"
@@ -201,7 +205,7 @@ export default function DownloadsQueuePanel(props: {
                   borderRadius: 2
                 }}
               >
-                일시정지
+                {t('queue.actions.pause')}
               </Button>
             </AppTooltip>
           </Box>
