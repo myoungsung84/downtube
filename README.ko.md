@@ -198,36 +198,30 @@ pnpm release:win
 ## 프로젝트 구조
 
 ```text
-src/main
-  Electron main process 진입점, 창 생성, 프로토콜 등록, IPC 핸들러,
-  다운로드 실행, 보관함 스캔, 설정 검증/저장 담당.
-
-src/preload
-  renderer에 노출할 `window.api` 브릿지를 정의.
-
-src/renderer/app/features/downloads
-  URL 입력, 최근 기록, 큐 상태, 작업별 액션 UI.
-
-src/renderer/app/features/library
-  완료된 미디어 목록, 항목 액션, 삭제 흐름.
-
-src/renderer/app/features/player
-  로컬 미디어 재생, sidecar 메타데이터 로딩, 플레이어 컨트롤, 시각화.
-
-src/renderer/app/features/settings
-  테마, 언어, 기본 타입, 플레이리스트 제한 설정 UI.
-
-src/renderer/app/features/splash
-  초기화 진행 상태와 시작 오류 표시.
-
-src/renderer/app/shared
-  내비게이션, provider, hook, i18n, 공용 UI, 유틸리티.
-
-src/types
-  main, preload, renderer가 함께 쓰는 공용 타입.
+src
+├── main
+│   ├── common
+│   ├── downloads
+│   ├── ipc-handlers
+│   ├── library
+│   └── settings
+├── preload
+├── renderer
+│   └── app
+│       ├── features
+│       │   ├── downloads
+│       │   ├── library
+│       │   ├── player
+│       │   ├── settings
+│       │   └── splash
+│       ├── pages
+│       ├── shared
+│       ├── styles
+│       └── theme
+└── types
 
 bin
-  `yt-dlp`, `ffmpeg`, `ffprobe` 같은 런타임 도구 번들 경로.
+└── yt-dlp, ffmpeg, ffprobe 같은 런타임 도구 번들 경로
 ```
 
 ## 주요 IPC 채널

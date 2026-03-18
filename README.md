@@ -50,16 +50,16 @@ The current app combines a downloads screen, a completed-items library, a built-
 
 ## Tech Stack
 
-| Category | Technology |
-| --- | --- |
-| Desktop runtime | Electron, electron-vite |
-| Renderer | React 19, React Router, TypeScript |
-| UI | MUI, Emotion |
-| State | Zustand |
-| Localization | i18next, react-i18next |
-| Media tools | yt-dlp, FFmpeg, ffprobe, fluent-ffmpeg |
-| Storage | electron-store |
-| Build | electron-builder |
+| Category        | Technology                             |
+| --------------- | -------------------------------------- |
+| Desktop runtime | Electron, electron-vite                |
+| Renderer        | React 19, React Router, TypeScript     |
+| UI              | MUI, Emotion                           |
+| State           | Zustand                                |
+| Localization    | i18next, react-i18next                 |
+| Media tools     | yt-dlp, FFmpeg, ffprobe, fluent-ffmpeg |
+| Storage         | electron-store                         |
+| Build           | electron-builder                       |
 
 ## Requirements
 
@@ -198,67 +198,58 @@ Theme flow:
 ## Project Structure
 
 ```text
-src/main
-  Electron main process entry, window creation, protocol registration, IPC handlers,
-  download execution, library scanning, and settings validation/storage.
-
-src/preload
-  The preload bridge that exposes approved `window.api` methods to the renderer.
-
-src/renderer/app/features/downloads
-  URL input, recent history, queue controls, and per-job actions.
-
-src/renderer/app/features/library
-  Completed media list, item actions, and delete flow.
-
-src/renderer/app/features/player
-  Local media playback, sidecar metadata loading, controls, and visualizer.
-
-src/renderer/app/features/settings
-  Theme, language, default type, and playlist-limit settings UI.
-
-src/renderer/app/features/splash
-  Initialization progress and startup error handling.
-
-src/renderer/app/shared
-  Navigation, providers, hooks, i18n setup, shared UI, and helper utilities.
-
-src/types
-  Shared types used across main, preload, and renderer.
-
-bin
-  Bundled runtime tools such as `yt-dlp`, `ffmpeg`, and `ffprobe`.
+src
+├── main
+│   ├── common
+│   ├── downloads
+│   ├── ipc-handlers
+│   ├── library
+│   └── settings
+├── preload
+├── renderer
+│   └── app
+│       ├── features
+│       │   ├── downloads
+│       │   ├── library
+│       │   ├── player
+│       │   ├── settings
+│       │   └── splash
+│       ├── pages
+│       ├── shared
+│       ├── styles
+│       └── theme
+└── types
 ```
 
 ## Main IPC Channels
 
 The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the source of truth. The table below lists the main channels currently exposed by the app.
 
-| Area | Channel | Direction | Purpose |
-| --- | --- | --- | --- |
-| app | `app:init` | renderer -> main | Run startup initialization and report progress |
-| settings | `settings:get` | renderer -> main | Read a single persisted setting |
-| settings | `settings:get-many` | renderer -> main | Read multiple settings at once |
-| settings | `settings:set` | renderer -> main | Save a setting after validation |
-| settings | `settings:resolve-language` | renderer -> main | Resolve `system`, `ko`, or `en` to the effective app language |
-| downloads | `download-video` | renderer -> main | Add a video job |
-| downloads | `download-audio` | renderer -> main | Add an audio job |
-| downloads | `download-playlist` | renderer -> main | Parse a playlist and enqueue items |
-| downloads | `download-set-type` | renderer -> main | Change the type of a queued job |
-| downloads | `download-stop` | renderer -> main | Stop a queued or running job |
-| downloads | `download-remove` | renderer -> main | Remove a non-running job |
-| downloads | `downloads-list` | renderer -> main | Fetch current jobs |
-| downloads | `downloads-start` | renderer -> main | Start or resume the queue |
-| downloads | `downloads-pause` | renderer -> main | Pause the queue and stop the current job |
-| downloads | `downloads:event` | main -> renderer | Push queue and job updates |
-| library | `library-list` | renderer -> main | Scan completed media under the app download directory |
-| library | `library-delete` | renderer -> main | Delete a media file and related sidecars |
-| player/files | `download-player` | renderer -> main | Open the player window for a completed job |
-| player/files | `download-player-file` | renderer -> main | Open the player window for a file path |
-| player/files | `download-dir-open` | renderer -> main | Open the app download directory |
-| player/files | `downloads-root-open` | renderer -> main | Open the system downloads root |
-| player/files | `download-item-open` | renderer -> main | Reveal or open a downloaded item path |
-| player/files | `media-sidecar-read` | renderer -> main | Read sidecar metadata for the player |
+| Area         | Channel                     | Direction        | Purpose                                                       |
+| ------------ | --------------------------- | ---------------- | ------------------------------------------------------------- |
+| app          | `app:init`                  | renderer -> main | Run startup initialization and report progress                |
+| settings     | `settings:get`              | renderer -> main | Read a single persisted setting                               |
+| settings     | `settings:get-many`         | renderer -> main | Read multiple settings at once                                |
+| settings     | `settings:set`              | renderer -> main | Save a setting after validation                               |
+| settings     | `settings:resolve-language` | renderer -> main | Resolve `system`, `ko`, or `en` to the effective app language |
+| downloads    | `download-video`            | renderer -> main | Add a video job                                               |
+| downloads    | `download-audio`            | renderer -> main | Add an audio job                                              |
+| downloads    | `download-playlist`         | renderer -> main | Parse a playlist and enqueue items                            |
+| downloads    | `download-set-type`         | renderer -> main | Change the type of a queued job                               |
+| downloads    | `download-stop`             | renderer -> main | Stop a queued or running job                                  |
+| downloads    | `download-remove`           | renderer -> main | Remove a non-running job                                      |
+| downloads    | `downloads-list`            | renderer -> main | Fetch current jobs                                            |
+| downloads    | `downloads-start`           | renderer -> main | Start or resume the queue                                     |
+| downloads    | `downloads-pause`           | renderer -> main | Pause the queue and stop the current job                      |
+| downloads    | `downloads:event`           | main -> renderer | Push queue and job updates                                    |
+| library      | `library-list`              | renderer -> main | Scan completed media under the app download directory         |
+| library      | `library-delete`            | renderer -> main | Delete a media file and related sidecars                      |
+| player/files | `download-player`           | renderer -> main | Open the player window for a completed job                    |
+| player/files | `download-player-file`      | renderer -> main | Open the player window for a file path                        |
+| player/files | `download-dir-open`         | renderer -> main | Open the app download directory                               |
+| player/files | `downloads-root-open`       | renderer -> main | Open the system downloads root                                |
+| player/files | `download-item-open`        | renderer -> main | Reveal or open a downloaded item path                         |
+| player/files | `media-sidecar-read`        | renderer -> main | Read sidecar metadata for the player                          |
 
 ## Security Notes
 
@@ -283,11 +274,11 @@ The project source code is distributed under the [MIT License](./LICENSE).
 
 External tools included in or used with the app follow their own licenses.
 
-| Tool | License | Link |
-| --- | --- | --- |
-| yt-dlp | Unlicense | [GitHub](https://github.com/yt-dlp/yt-dlp) |
-| FFmpeg | LGPL-2.1-or-later, depending on the distributed build | [ffmpeg.org](https://ffmpeg.org) |
-| ffprobe | Distributed under FFmpeg terms | [ffmpeg.org](https://ffmpeg.org) |
+| Tool    | License                                               | Link                                       |
+| ------- | ----------------------------------------------------- | ------------------------------------------ |
+| yt-dlp  | Unlicense                                             | [GitHub](https://github.com/yt-dlp/yt-dlp) |
+| FFmpeg  | LGPL-2.1-or-later, depending on the distributed build | [ffmpeg.org](https://ffmpeg.org)           |
+| ffprobe | Distributed under FFmpeg terms                        | [ffmpeg.org](https://ffmpeg.org)           |
 
 ## Usage and Distribution Notice
 
