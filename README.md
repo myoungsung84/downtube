@@ -8,17 +8,14 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform" />
   <img src="https://img.shields.io/badge/electron-35-47848F?logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white" alt="React" />
 </p>
 
-An Electron-based desktop app for media downloading and local playback.  
-It supports download queue management, video/audio selection, playlist batch add, a built-in player, and theme settings in one app.
+Downtube is a personal Electron desktop app for queue-based media downloads and local playback.
+The current app combines a downloads screen, a completed-items library, a built-in player, localized UI, and persisted app settings.
 
-> This project is intended for use with publicly licensed media, content you own, or content you are authorized to use.
-
----
+> Use this project only for media you own, media with a public license, or media you are authorized to use.
 
 ## Table of Contents
 
@@ -26,51 +23,56 @@ It supports download queue management, video/audio selection, playlist batch add
 - [Tech Stack](#tech-stack)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
-- [Build](#build)
+- [Build and Packaging](#build-and-packaging)
+- [Settings and Localization](#settings-and-localization)
 - [Project Structure](#project-structure)
 - [Main IPC Channels](#main-ipc-channels)
 - [Security Notes](#security-notes)
 - [Development Notes](#development-notes)
 - [License](#license)
 - [Usage and Distribution Notice](#usage-and-distribution-notice)
-
----
+- [Contributing](#contributing)
 
 ## Key Features
 
-- 🎬 Best-quality video download
-- 🎵 Audio-only download
-- 📋 Playlist item batch add
-- ⏱️ Queue-based start, pause, stop, and retry
-- 📊 Download progress and status display
-- 🎞️ Built-in player playback
-- 🌗 Light, dark, and system theme support
-- 🔄 yt-dlp update check and management
-
----
+- Queue-based downloads for video and audio items
+- Playlist parsing and batch enqueue with a configurable playlist limit
+- Queue controls for start, pause, stop, remove, and retry
+- Per-job type switching while a job is still queued
+- Recent URL history stored in settings
+- Library view for completed downloads under the app download directory
+- Built-in player for local video and audio playback
+- Playback controls for seek, volume, mute, playback rate, fullscreen, and audio visualizer
+- Settings for theme, language, default download type, and playlist limit
+- Korean and English UI, plus a `system` language preference resolved in the main process
+- Resolved language applied before the first React render, including the splash screen
+- Startup checks for bundled binaries and runtime fallback download for `yt-dlp` on Windows and macOS when needed
 
 ## Tech Stack
 
-| Category         | Technology                         |
-| ---------------- | ---------------------------------- |
-| Frontend         | React 19, TypeScript, React Router |
-| Desktop          | Electron 35, electron-vite         |
-| Media Processing | yt-dlp, FFmpeg, ffprobe            |
-| UI               | MUI, Emotion                       |
-| State            | Zustand                            |
-| Build            | electron-builder                   |
-
----
+| Category | Technology |
+| --- | --- |
+| Desktop runtime | Electron, electron-vite |
+| Renderer | React 19, React Router, TypeScript |
+| UI | MUI, Emotion |
+| State | Zustand |
+| Localization | i18next, react-i18next |
+| Media tools | yt-dlp, FFmpeg, ffprobe, fluent-ffmpeg |
+| Storage | electron-store |
+| Build | electron-builder |
 
 ## Requirements
 
-- **Node.js** 18 or later
-- **pnpm**
-- **OS**: One of Windows 64-bit, macOS, or Linux
-- **yt-dlp**: Depending on the runtime environment, the bundled binary or a user-specified path can be used
-- **FFmpeg / ffprobe**: Depending on the runtime environment, the bundled binary or a user-specified path can be used
+- Node.js
+- pnpm
+- Windows or macOS for the maintained packaging scripts
+- `powershell.exe` if you run `pnpm build:win` from an environment such as WSL
+- `gh` CLI only if you use `pnpm release:win`
 
----
+Notes:
+
+- The app currently validates YouTube video and playlist URLs in the renderer.
+- Bundled binary preparation scripts target Windows and macOS. Linux packaging is not configured in `package.json`.
 
 ## Getting Started
 
@@ -87,174 +89,217 @@ cd downtube
 pnpm install
 ```
 
-### 3. Run in development mode
+### 3. Run the app in development mode
 
 ```bash
 pnpm dev
 ```
 
-In development mode, Electron DevTools opens automatically so you can inspect the UI and IPC flow.
-
-### 4. Type check
+### 4. Useful development commands
 
 ```bash
-# all
 pnpm typecheck
-
-# main process only
-pnpm typecheck:node
-
-# renderer process only
-pnpm typecheck:web
-```
-
-### 5. Lint and format
-
-```bash
 pnpm lint
 pnpm format
+pnpm clean
 ```
 
----
+### 5. Refresh bundled tools when needed
 
-## Build
+```bash
+pnpm tools:ensure
+```
 
-### Bundle build
+`tools:ensure` copies `ffmpeg` and `ffprobe` into `bin/` and downloads `yt-dlp` for supported platforms if it is missing.
+
+## Build and Packaging
+
+### App build
 
 ```bash
 pnpm build
 ```
 
-### Platform packaging
+This runs:
+
+1. `scripts/build-tools/ensure-tools.sh`
+2. `pnpm typecheck`
+3. `electron-vite build`
+
+### Windows package
 
 ```bash
-# Windows
 pnpm build:win
+```
 
-# macOS
+Current behavior:
+
+- cleans `dist/` and `out/`
+- reinstalls dependencies with `--frozen-lockfile`
+- builds the app
+- creates a Windows unpacked build
+- zips `dist/win-unpacked` into `releases/`
+
+### macOS package
+
+```bash
 pnpm build:mac
 ```
 
-Running scripts directly under `scripts/build-tools/` is also supported.
+Current behavior:
 
-> **Note**: The Linux packaging script (`build:linux`) is not currently defined in `package.json`.  
-> If you need a Linux build, modify the scripts under `scripts/build-tools/` directly or open an issue.
+- cleans `dist/` and `out/`
+- reinstalls dependencies with `--frozen-lockfile`
+- builds the app
+- packages a macOS arm64 app bundle
+- applies ad-hoc signing for local execution
 
----
+### Windows release draft
+
+```bash
+pnpm release:win
+```
+
+This script assumes:
+
+- a clean git working tree
+- the current branch is pushed
+- `gh` CLI is installed and authenticated
+
+It builds the Windows artifact and creates or updates a draft GitHub release.
+
+## Settings and Localization
+
+Persisted settings are stored through `electron-store` and validated in the main process.
+
+Current settings include:
+
+- app language: `system`, `ko`, `en`
+- app theme: `system`, `light`, `dark`
+- player volume
+- player muted state
+- player audio visualizer visibility
+- default download type: `video` or `audio`
+- playlist limit
+- recent URL history
+
+Language flow:
+
+- The stored value is a language preference.
+- The effective app language is resolved in the main process.
+- If the preference is `system`, the app resolves the OS language to `ko` or `en`.
+- The resolved language is applied before React renders, so the splash screen and the main UI start in the same language.
+
+Theme flow:
+
+- The theme preference is stored in settings.
+- `system` theme follows `prefers-color-scheme` in the renderer.
 
 ## Project Structure
 
 ```text
-src/
-├── main/                          # Electron main process
-│   ├── common/                    # App initialization, protocol registration
-│   ├── downloads/                 # Download domain logic
-│   │   ├── adapters/              # yt-dlp, ffmpeg, fs integration
-│   │   ├── application/           # Queue execution, stop, orchestration
-│   │   ├── shared/                # Shared download utilities
-│   │   ├── index.ts
-│   │   └── types.ts
-│   ├── ipc-handlers/              # IPC handler registration
-│   ├── settings/                  # Settings storage and validation
-│   └── index.ts
-├── preload/                       # Safe bridge API exposure
-├── renderer/
-│   ├── app/
-│   │   ├── features/
-│   │   │   ├── downloads/         # Downloads screen and components
-│   │   │   ├── player/            # Player screen and controls
-│   │   │   ├── settings/          # Settings screen and state
-│   │   │   └── splash/            # Initial loading screen
-│   │   ├── pages/                 # Route-level pages
-│   │   ├── shared/                # Shared UI, provider, hook
-│   │   ├── styles/                # Global styles
-│   │   ├── theme/                 # App theme
-│   │   ├── router.tsx
-│   │   └── app.tsx
-│   ├── assets/
-│   └── index.html
-├── types/                         # Shared types
-└── libs/                          # Shared utilities
-```
+src/main
+  Electron main process entry, window creation, protocol registration, IPC handlers,
+  download execution, library scanning, and settings validation/storage.
 
----
+src/preload
+  The preload bridge that exposes approved `window.api` methods to the renderer.
+
+src/renderer/app/features/downloads
+  URL input, recent history, queue controls, and per-job actions.
+
+src/renderer/app/features/library
+  Completed media list, item actions, and delete flow.
+
+src/renderer/app/features/player
+  Local media playback, sidecar metadata loading, controls, and visualizer.
+
+src/renderer/app/features/settings
+  Theme, language, default type, and playlist-limit settings UI.
+
+src/renderer/app/features/splash
+  Initialization progress and startup error handling.
+
+src/renderer/app/shared
+  Navigation, providers, hooks, i18n setup, shared UI, and helper utilities.
+
+src/types
+  Shared types used across main, preload, and renderer.
+
+bin
+  Bundled runtime tools such as `yt-dlp`, `ffmpeg`, and `ffprobe`.
+```
 
 ## Main IPC Channels
 
-| Channel             | Direction       | Description                            |
-| ------------------- | --------------- | -------------------------------------- |
-| `download-video`    | renderer → main | Add a video download job               |
-| `download-audio`    | renderer → main | Add an audio download job              |
-| `download-playlist` | renderer → main | Add playlist items to the queue        |
-| `download-set-type` | renderer → main | Change download type of a queued job   |
-| `download-stop`     | renderer → main | Stop a running or queued job           |
-| `download-remove`   | renderer → main | Remove a job from the queue            |
-| `downloads-list`    | renderer → main | Fetch the current download list        |
-| `downloads-start`   | renderer → main | Start or resume the download queue     |
-| `downloads-pause`   | renderer → main | Pause the download queue               |
-| `downloads:event`   | main → renderer | Subscribe to the download event stream |
-| `download-player`   | renderer → main | Open the player window                 |
-| `download-dir-open` | renderer → main | Open the download folder               |
+The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the source of truth. The table below lists the main channels currently exposed by the app.
 
----
+| Area | Channel | Direction | Purpose |
+| --- | --- | --- | --- |
+| app | `app:init` | renderer -> main | Run startup initialization and report progress |
+| settings | `settings:get` | renderer -> main | Read a single persisted setting |
+| settings | `settings:get-many` | renderer -> main | Read multiple settings at once |
+| settings | `settings:set` | renderer -> main | Save a setting after validation |
+| settings | `settings:resolve-language` | renderer -> main | Resolve `system | ko | en` to the effective app language |
+| downloads | `download-video` | renderer -> main | Add a video job |
+| downloads | `download-audio` | renderer -> main | Add an audio job |
+| downloads | `download-playlist` | renderer -> main | Parse a playlist and enqueue items |
+| downloads | `download-set-type` | renderer -> main | Change the type of a queued job |
+| downloads | `download-stop` | renderer -> main | Stop a queued or running job |
+| downloads | `download-remove` | renderer -> main | Remove a non-running job |
+| downloads | `downloads-list` | renderer -> main | Fetch current jobs |
+| downloads | `downloads-start` | renderer -> main | Start or resume the queue |
+| downloads | `downloads-pause` | renderer -> main | Pause the queue and stop the current job |
+| downloads | `downloads:event` | main -> renderer | Push queue and job updates |
+| library | `library-list` | renderer -> main | Scan completed media under the app download directory |
+| library | `library-delete` | renderer -> main | Delete a media file and related sidecars |
+| player/files | `download-player` | renderer -> main | Open the player window for a completed job |
+| player/files | `download-player-file` | renderer -> main | Open the player window for a file path |
+| player/files | `download-dir-open` | renderer -> main | Open the app download directory |
+| player/files | `downloads-root-open` | renderer -> main | Open the system downloads root |
+| player/files | `download-item-open` | renderer -> main | Reveal or open a downloaded item path |
+| player/files | `media-sidecar-read` | renderer -> main | Read sidecar metadata for the player |
 
 ## Security Notes
 
-- **Sandbox enabled**: The renderer process cannot access Node.js APIs directly
-- **Context Isolation**: Separates the main world and isolated world to prevent issues such as prototype pollution
-- **Restricted IPC**: Only approved channels exposed through the preload bridge (`window.api`) are used
-- **External link isolation**: External links in the app open in the system default browser
-- **No secrets included**: The app bundle does not contain API keys or sensitive values
-
----
+- The main browser window runs with `sandbox: true` and `contextIsolation: true`.
+- The renderer does not access Electron or Node APIs directly; it goes through `window.api`.
+- IPC is restricted to the handlers registered in `src/main/ipc-handlers/ipc.ts`.
+- External windows are denied and opened through the system browser with `shell.openExternal`.
+- The custom `downtube-media://` protocol only serves files inside the system downloads directory and supports range requests for playback.
+- File operations such as player open, sidecar read, and library delete validate that paths stay inside the allowed directory.
 
 ## Development Notes
 
-### Directory roles
-
-| Path                    | Role                                                          |
-| ----------------------- | ------------------------------------------------------------- |
-| `src/main`              | Electron main process entry and app init                      |
-| `src/main/downloads`    | Download queue, execution flow, yt-dlp and ffmpeg integration |
-| `src/main/ipc-handlers` | IPC registration layer connected to preload API               |
-| `src/preload`           | Provides a safe renderer bridge as `window.api`               |
-| `src/renderer/app`      | UI routing, screens, shared UI, and state management          |
-
----
+- The app uses a hash router and boots through `/splash`.
+- The splash screen reflects the same resolved language as the rest of the app from the first render.
+- Initialization sets up the log file under `Downloads/DownTube/down-tube.log`.
+- In development, the main window and the player window open DevTools automatically.
+- The app bundles media sidecars (`.json`) and thumbnail images next to downloaded files and reuses them in the library and player.
 
 ## License
 
-The source code of this project is distributed under the [MIT License](./LICENSE).
+The project source code is distributed under the [MIT License](./LICENSE).
 
-External tools included in or used with the app are subject to their own licenses.
+External tools included in or used with the app follow their own licenses.
 
-### Included or used external tools
-
-| Tool    | License                                                                   | Link                                       |
-| ------- | ------------------------------------------------------------------------- | ------------------------------------------ |
-| yt-dlp  | Unlicense                                                                 | [GitHub](https://github.com/yt-dlp/yt-dlp) |
-| FFmpeg  | LGPL-2.1-or-later (GPL family may apply depending on build configuration) | [ffmpeg.org](https://ffmpeg.org)           |
-| ffprobe | FFmpeg project component, subject to FFmpeg distribution terms            | [ffmpeg.org](https://ffmpeg.org)           |
-
----
+| Tool | License | Link |
+| --- | --- | --- |
+| yt-dlp | Unlicense | [GitHub](https://github.com/yt-dlp/yt-dlp) |
+| FFmpeg | LGPL-2.1-or-later, depending on the distributed build | [ffmpeg.org](https://ffmpeg.org) |
+| ffprobe | Distributed under FFmpeg terms | [ffmpeg.org](https://ffmpeg.org) |
 
 ## Usage and Distribution Notice
 
-Downtube provides media download and local playback features, but users must directly verify the following.
+Downtube provides download and local playback features, but you are responsible for checking:
 
-- Whether they own the copyright to the content or have permission to use it
-- The terms of service of the platform being used
-- The copyright laws and related regulations of the relevant country or region
+- whether you own the content or have permission to use it
+- the terms of service of the source platform
+- the copyright law and related regulations in your jurisdiction
 
-In particular, when downloading content from platforms such as YouTube, **copyright issues** and **platform terms violations** must be reviewed separately.
-
-The example images and descriptions in this README are intended only to introduce the app UI and do not imply that downloading or redistributing content from any specific platform is freely allowed.
-
-The user bears full responsibility for copyright infringement, service terms violations, redistribution disputes, and commercial use issues arising from use of this project. The project author does not assume legal responsibility for individual use.
-
----
+The screenshots and descriptions in this repository are provided only to explain the app itself. They do not imply that content from any particular platform may be downloaded or redistributed freely.
 
 ## Contributing
 
-Issues and pull requests are always welcome.  
-Bug reports, feature suggestions, and code contributions are all appreciated.
+Issues and pull requests are welcome.
+Please keep changes aligned with the current Electron main / preload / renderer separation and the existing feature boundaries.
