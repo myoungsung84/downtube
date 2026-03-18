@@ -151,7 +151,6 @@ export function PlayerControls({
       <PlayerBottomControls
         uiVisible={uiVisible}
         visualizerVisible={visualizerVisible}
-        allowFullscreen={!isAudioFile}
         muted={muted}
         volume={volume}
         currentSeekVal={currentSeekVal}

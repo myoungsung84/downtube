@@ -350,13 +350,13 @@ export default function PlayerScreen(): React.JSX.Element {
       }
       if (e.code === 'ArrowLeft') skip(-10)
       if (e.code === 'ArrowRight') skip(10)
-      if (e.code === 'KeyF' && !isAudioFile) toggleFullscreen()
+      if (e.code === 'KeyF') toggleFullscreen()
       if (e.code === 'KeyM') toggleMute()
     }
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isAudioFile, togglePlay, skip, toggleFullscreen, toggleMute, showUi])
+  }, [togglePlay, skip, toggleFullscreen, toggleMute, showUi])
 
   useEffect(() => {
     if (!paused) scheduleHide()
@@ -418,9 +418,7 @@ export default function PlayerScreen(): React.JSX.Element {
             }}
             onTimeUpdate={syncVideoMeta}
             onClick={togglePlay}
-            onDoubleClick={() => {
-              if (!isAudioFile) toggleFullscreen()
-            }}
+            onDoubleClick={toggleFullscreen}
             autoPlay
             preload="metadata"
             sx={{
@@ -602,9 +600,7 @@ export default function PlayerScreen(): React.JSX.Element {
               setVisualizerVisible(nextVisible)
               void setSettingValue(PLAYER_VISUALIZER_KEY, nextVisible)
             }}
-            onToggleFullscreen={() => {
-              if (!isAudioFile) toggleFullscreen()
-            }}
+            onToggleFullscreen={toggleFullscreen}
           />
         </>
       ) : (
