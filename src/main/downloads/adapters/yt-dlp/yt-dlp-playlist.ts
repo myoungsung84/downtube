@@ -1,4 +1,5 @@
 import fs from 'fs'
+import maxBy from 'lodash/maxBy'
 import treeKill from 'tree-kill'
 
 import type { DownloadInfo } from '../../types'
@@ -39,8 +40,7 @@ function pickBestThumbnail(
   thumbnails?: Array<{ url?: string; width?: number; height?: number }>
 ): string | undefined {
   if (!thumbnails?.length) return undefined
-  const sorted = [...thumbnails].sort((a, b) => (b.width ?? 0) - (a.width ?? 0))
-  return sorted[0]?.url
+  return maxBy(thumbnails, (thumbnail) => thumbnail.width ?? 0)?.url
 }
 
 function normalizePlaylistUrl(input: string): string {

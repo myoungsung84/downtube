@@ -23,6 +23,7 @@ import {
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
+import clamp from 'lodash/clamp'
 import React from 'react'
 
 import {
@@ -72,7 +73,7 @@ export default function DownloadsJobRow(props: {
   const canDelete = job.status !== 'running'
   const canPlay = job.status === 'completed' && Boolean(job.finalFilePath)
 
-  const percent = Math.max(0, Math.min(100, job.progress?.percent ?? 0))
+  const percent = clamp(job.progress?.percent ?? 0, 0, 100)
   const errorInfo = job.error ? getErrorMessage(job.error) : null
 
   const statusMeta = resolveDownloadStatus(job.status)

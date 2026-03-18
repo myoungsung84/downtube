@@ -1,3 +1,5 @@
+import isNil from 'lodash/isNil'
+
 import type { SettingKey, SettingValueMap } from '../../types/settings.types'
 
 function assertNever(key: never): never {
@@ -65,7 +67,7 @@ export function validateSettingValue<K extends SettingKey>(
         !value.every(
           (item) =>
             typeof item === 'object' &&
-            item != null &&
+            !isNil(item) &&
             typeof item.url === 'string' &&
             typeof item.title === 'string' &&
             (item.kind === 'single' || item.kind === 'playlist')

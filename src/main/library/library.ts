@@ -1,5 +1,7 @@
 import { createHash } from 'crypto'
+import dayjs from 'dayjs'
 import fs from 'fs'
+import orderBy from 'lodash/orderBy'
 import path from 'path'
 
 import type { LibraryItem, LibraryItemType } from '../../types/library.types'
@@ -82,7 +84,7 @@ async function readSidecarInfo(jsonPath?: string): Promise<SidecarInfo | undefin
 }
 
 function getSortTime(item: LibraryItem): number {
-  const downloadedAt = item.downloadedAt ? Date.parse(item.downloadedAt) : NaN
+  const downloadedAt = item.downloadedAt ? dayjs(item.downloadedAt).valueOf() : NaN
   return Number.isFinite(downloadedAt) ? downloadedAt : item.createdAt
 }
 
@@ -136,7 +138,7 @@ export async function listLibraryItems(rootDir: string): Promise<LibraryItem[]> 
     })
   )
 
-  return items.sort((a, b) => getSortTime(b) - getSortTime(a))
+  return orderBy(items, [getSortTime], ['desc'])
 }
 
 function isPathInsideRoot(rootDir: string, targetPath: string): boolean {

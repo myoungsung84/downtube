@@ -1,4 +1,5 @@
 import type { ChildProcessWithoutNullStreams } from 'child_process'
+import dayjs from 'dayjs'
 import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
@@ -127,7 +128,7 @@ function buildSidecarMetadata(job: DownloadJob, outputFile: string): MediaSideca
     filename: job.filename,
     outputFile: path.basename(outputFile),
     outputPath: outputFile,
-    downloadedAt: new Date().toISOString(),
+    downloadedAt: dayjs().toISOString(),
     info: job.info ?? null
   }
 }

@@ -1,3 +1,5 @@
+import 'dayjs/locale/ko'
+
 import AudioFileRoundedIcon from '@mui/icons-material/AudioFileRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded'
@@ -25,6 +27,7 @@ import { useDialog } from '@renderer/shared/hooks/use-dialog'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
+import dayjs from 'dayjs'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -42,14 +45,9 @@ function formatFileSize(fileSize: number): string {
 }
 
 function formatDate(item: LibraryItem): string {
-  const timestamp = item.downloadedAt ? Date.parse(item.downloadedAt) : item.createdAt
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(Number.isFinite(timestamp) ? timestamp : item.createdAt)
+  const downloadedAt = item.downloadedAt ? dayjs(item.downloadedAt) : null
+  const timestamp = downloadedAt?.isValid() ? downloadedAt : dayjs(item.createdAt)
+  return timestamp.locale('ko').format('YYYY. MM. DD. A hh:mm')
 }
 
 // ─── types ────────────────────────────────────────────────────────────────────

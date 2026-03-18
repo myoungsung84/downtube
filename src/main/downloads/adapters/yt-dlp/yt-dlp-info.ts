@@ -1,4 +1,5 @@
 import log from 'electron-log'
+import maxBy from 'lodash/maxBy'
 
 import type { DownloadInfo } from '../../types'
 import { locateYtDlp, spawnYtDlp } from './yt-dlp'
@@ -23,7 +24,7 @@ function pickBestThumbnail(
   thumbnails?: Array<{ url?: string; width?: number; height?: number }>
 ): string | undefined {
   if (!thumbnails?.length) return undefined
-  return [...thumbnails].sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]?.url
+  return maxBy(thumbnails, (thumbnail) => thumbnail.width ?? 0)?.url
 }
 
 function safeParseJson(text: string): unknown {
