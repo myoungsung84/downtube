@@ -1,13 +1,8 @@
 import type { MediaInfo, MediaKind } from '../types/player.types'
 
-export const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
+export { toMediaUrl } from '@renderer/shared/lib/media-url'
 
-export function toMediaUrl(filePath?: string): string | undefined {
-  if (!filePath) return undefined
-  const url = new URL('downtube-media://media')
-  url.searchParams.set('path', filePath)
-  return url.toString()
-}
+export const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
 
 export function isFiniteDuration(value: number): boolean {
   return Number.isFinite(value) && value >= 0

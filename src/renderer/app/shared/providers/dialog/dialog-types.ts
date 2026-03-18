@@ -1,4 +1,4 @@
-export type DialogVariant = 'default' | 'danger'
+export type DialogVariant = 'default' | 'danger' | 'success'
 
 export type BaseDialogOptions = {
   title: string

@@ -51,12 +51,11 @@ function isIntermediateFile(filePath: string): boolean {
   return baseName.endsWith('_video') || baseName.endsWith('_audio')
 }
 
-function readSidecarInfo(jsonPath?: string): SidecarInfo | undefined {
+async function readSidecarInfo(jsonPath?: string): Promise<SidecarInfo | undefined> {
   if (!jsonPath) return undefined
 
   try {
-    const raw = fs.readFileSync(jsonPath, 'utf-8')
-    const parsed = JSON.parse(raw) as {
+    const parsed = JSON.parse(await fs.promises.readFile(jsonPath, 'utf-8')) as {
       downloadedAt?: unknown
       type?: unknown
       info?: {
@@ -92,40 +91,50 @@ export async function listLibraryItems(rootDir: string): Promise<LibraryItem[]> 
 
   const files = await collectFiles(rootDir)
   const fileMap = new Map(files.map((entry) => [entry.absolutePath, entry.dirent] as const))
-  const items: LibraryItem[] = []
 
-  for (const file of files) {
-    const extension = path.extname(file.absolutePath).toLowerCase()
-    const fallbackType = inferItemType(extension)
+  const validFiles = files
+    .map((file) => {
+      const extension = path.extname(file.absolutePath).toLowerCase()
+      const fallbackType = inferItemType(extension)
+      if (!fallbackType) return null
+      if (isIntermediateFile(file.absolutePath)) return null
 
-    if (!fallbackType) continue
-    if (isIntermediateFile(file.absolutePath)) continue
+      const sidecarBasePath = file.absolutePath.slice(0, -extension.length)
+      const jsonPath = fileMap.has(`${sidecarBasePath}.json`)
+        ? `${sidecarBasePath}.json`
+        : undefined
+      const thumbnailPath = THUMBNAIL_EXTENSIONS.map((ext) => `${sidecarBasePath}${ext}`).find(
+        (candidate) => fileMap.has(candidate)
+      )
 
-    const sidecarBasePath = file.absolutePath.slice(0, -extension.length)
-    const jsonPath = fileMap.has(`${sidecarBasePath}.json`) ? `${sidecarBasePath}.json` : undefined
-    const thumbnailPath = THUMBNAIL_EXTENSIONS.map((ext) => `${sidecarBasePath}${ext}`).find(
-      (candidate) => fileMap.has(candidate)
-    )
-
-    const sidecarInfo = readSidecarInfo(jsonPath)
-    const stat = await fs.promises.stat(file.absolutePath)
-    const fileName = path.basename(file.absolutePath)
-
-    items.push({
-      id: createHash('sha1').update(file.absolutePath).digest('hex'),
-      type: sidecarInfo?.type ?? fallbackType,
-      fileName,
-      filePath: file.absolutePath,
-      fileSize: stat.size,
-      createdAt: stat.birthtimeMs || stat.ctimeMs || stat.mtimeMs,
-      downloadedAt: sidecarInfo?.downloadedAt,
-      title: sidecarInfo?.title?.trim() || path.basename(fileName, extension),
-      uploader: sidecarInfo?.uploader?.trim() || undefined,
-      thumbnailPath,
-      jsonPath,
-      extension: extension.replace('.', '').toLowerCase()
+      return { file, extension, fallbackType, jsonPath, thumbnailPath }
     })
-  }
+    .filter((c): c is NonNullable<typeof c> => c !== null)
+
+  const items = await Promise.all(
+    validFiles.map(async ({ file, extension, fallbackType, jsonPath, thumbnailPath }) => {
+      const [sidecarInfo, stat] = await Promise.all([
+        readSidecarInfo(jsonPath),
+        fs.promises.stat(file.absolutePath)
+      ])
+      const fileName = path.basename(file.absolutePath)
+
+      return {
+        id: createHash('sha1').update(file.absolutePath).digest('hex'),
+        type: sidecarInfo?.type ?? fallbackType,
+        fileName,
+        filePath: file.absolutePath,
+        fileSize: stat.size,
+        createdAt: stat.birthtimeMs || stat.ctimeMs || stat.mtimeMs,
+        downloadedAt: sidecarInfo?.downloadedAt,
+        title: sidecarInfo?.title?.trim() || path.basename(fileName, extension),
+        uploader: sidecarInfo?.uploader?.trim() || undefined,
+        thumbnailPath,
+        jsonPath,
+        extension: extension.replace('.', '').toLowerCase()
+      } satisfies LibraryItem
+    })
+  )
 
   return items.sort((a, b) => getSortTime(b) - getSortTime(a))
 }

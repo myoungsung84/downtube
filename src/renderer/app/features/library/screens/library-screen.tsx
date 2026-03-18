@@ -22,18 +22,12 @@ import {
 import { alpha } from '@mui/material/styles'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
+import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-function toMediaUrl(filePath?: string): string | undefined {
-  if (!filePath) return undefined
-  const url = new URL('downtube-media://media')
-  url.searchParams.set('path', filePath)
-  return url.toString()
-}
 
 function formatFileSize(fileSize: number): string {
   if (!Number.isFinite(fileSize) || fileSize <= 0) return '0 B'

@@ -12,7 +12,7 @@ import {
   useTheme
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DialogContext } from './dialog-context'
 import type {
@@ -85,25 +85,27 @@ export default function DialogProvider({
     resolver?.(result)
   }
 
-  function alert(options: AlertDialogOptions): Promise<void> {
+  const alert = useCallback((options: AlertDialogOptions): Promise<void> => {
     return new Promise<void>((resolve) => {
+      resolverRef.current?.()
       resolverRef.current = () => resolve()
       setDialog({ open: true, type: 'alert', options })
     })
-  }
+  }, [])
 
-  function confirm(options: ConfirmDialogOptions): Promise<boolean> {
+  const confirm = useCallback((options: ConfirmDialogOptions): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
+      resolverRef.current?.(false)
       resolverRef.current = (result) => resolve(result ?? false)
       setDialog({ open: true, type: 'confirm', options })
     })
-  }
+  }, [])
 
   function handleClose(): void {
     closeDialog(dialog.type === 'confirm' ? false : undefined)
   }
 
-  const value = useMemo<DialogContextValue>(() => ({ alert, confirm }), [])
+  const value = useMemo<DialogContextValue>(() => ({ alert, confirm }), [alert, confirm])
 
   const isDanger = dialog.options?.variant === 'danger'
   const confirmButtonColor = isDanger ? 'error' : 'primary'
