@@ -24,6 +24,7 @@ import {
 import { alpha } from '@mui/material/styles'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
@@ -44,10 +45,10 @@ function formatFileSize(fileSize: number): string {
   return `${value >= 100 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`
 }
 
-function formatDate(item: LibraryItem): string {
+function formatDate(item: LibraryItem, language: 'ko' | 'en'): string {
   const downloadedAt = item.downloadedAt ? dayjs(item.downloadedAt) : null
   const timestamp = downloadedAt?.isValid() ? downloadedAt : dayjs(item.createdAt)
-  return timestamp.locale('ko').format('YYYY. MM. DD. A hh:mm')
+  return timestamp.locale(language).format('YYYY. MM. DD. A hh:mm')
 }
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -62,20 +63,24 @@ interface SegmentedControlProps {
   onChange: (value: LibraryItemType) => void
   videoCnt: number
   audioCnt: number
+  videoLabel: string
+  audioLabel: string
 }
 
 function SegmentedControl({
   value,
   onChange,
   videoCnt,
-  audioCnt
+  audioCnt,
+  videoLabel,
+  audioLabel
 }: SegmentedControlProps): React.JSX.Element {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
 
   const segments: { key: LibraryItemType; label: string; count: number }[] = [
-    { key: 'video', label: '비디오', count: videoCnt },
-    { key: 'audio', label: '오디오', count: audioCnt }
+    { key: 'video', label: videoLabel, count: videoCnt },
+    { key: 'audio', label: audioLabel, count: audioCnt }
   ]
 
   return (
@@ -175,6 +180,7 @@ function SegmentedControl({
 
 export default function LibraryScreen(): React.JSX.Element {
   const theme = useTheme()
+  const { t, language } = useI18n('library')
   const { showToast } = useToast()
   const { confirm } = useDialog()
   const isDark = theme.palette.mode === 'dark'
@@ -198,13 +204,13 @@ export default function LibraryScreen(): React.JSX.Element {
       try {
         setItems(await window.api.listLibraryItems())
       } catch {
-        showToast('라이브러리를 불러오지 못했습니다.', 'error')
+        showToast(t('toast.load_failed'), 'error')
       } finally {
         if (mode === 'refresh') setRefreshing(false)
         else setLoading(false)
       }
     },
-    [showToast]
+    [showToast, t]
   )
 
   useEffect(() => {
@@ -215,16 +221,16 @@ export default function LibraryScreen(): React.JSX.Element {
     try {
       const result = await window.api.openDownloadDir()
       if (result && 'success' in result && !result.success) {
-        showToast(result.message ?? '다운로드 폴더를 열지 못했습니다.', 'error')
+        showToast(result.message ?? t('toast.open_downloads_folder_failed'), 'error')
       }
     } catch {
-      showToast('다운로드 폴더를 열지 못했습니다.', 'error')
+      showToast(t('toast.open_downloads_folder_failed'), 'error')
     }
   }
 
   const handleOpenFileLocation = async (item: LibraryItem): Promise<void> => {
     const result = await window.api.openDownloadItem(item.filePath)
-    if (!result.success) showToast(result.message ?? '파일 위치를 열지 못했습니다.', 'error')
+    if (!result.success) showToast(result.message ?? t('toast.open_file_location_failed'), 'error')
   }
 
   const closeMenu = useCallback((): void => {
@@ -239,10 +245,10 @@ export default function LibraryScreen(): React.JSX.Element {
 
   const handleDelete = async (item: LibraryItem): Promise<void> => {
     const ok = await confirm({
-      title: '삭제 확인',
-      message: `'${item.title ?? item.fileName}' 항목을 라이브러리에서 삭제할까요?`,
-      confirmText: '삭제',
-      cancelText: '취소',
+      title: t('dialog.delete.title'),
+      message: t('dialog.delete.message', { itemTitle: item.title ?? item.fileName }),
+      confirmText: t('dialog.delete.confirm'),
+      cancelText: t('actions.cancel'),
       variant: 'danger'
     })
 
@@ -253,14 +259,14 @@ export default function LibraryScreen(): React.JSX.Element {
     try {
       const result = await window.api.deleteLibraryItem(item.filePath)
       if (!result.success) {
-        showToast(result.message ?? '삭제하지 못했습니다.', 'error')
+        showToast(result.message ?? t('toast.delete_failed'), 'error')
         return
       }
 
       setItems((prev) => prev.filter((currentItem) => currentItem.filePath !== item.filePath))
-      showToast('삭제했습니다.', 'success')
+      showToast(t('toast.deleted'), 'success')
     } catch {
-      showToast('삭제하지 못했습니다.', 'error')
+      showToast(t('toast.delete_failed'), 'error')
     } finally {
       setDeletingId(null)
     }
@@ -277,7 +283,7 @@ export default function LibraryScreen(): React.JSX.Element {
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
     const result = await window.api.openPlayerFile(item.filePath)
-    if (!result.success) showToast(result.message ?? '플레이어를 열지 못했습니다.', 'error')
+    if (!result.success) showToast(result.message ?? t('toast.open_player_failed'), 'error')
   }
 
   const isMenuOpen = menuState.phase === 'open'
@@ -310,10 +316,10 @@ export default function LibraryScreen(): React.JSX.Element {
             <Stack direction="row" alignItems="center" spacing={2}>
               <Stack spacing={0.2}>
                 <Typography variant="h5" fontWeight={900} letterSpacing="-0.03em" lineHeight={1.2}>
-                  라이브러리
+                  {t('header.title')}
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
-                  완료된 항목만 모아 봅니다.
+                  {t('header.description')}
                 </Typography>
               </Stack>
 
@@ -332,6 +338,8 @@ export default function LibraryScreen(): React.JSX.Element {
                 onChange={setTab}
                 videoCnt={videoItems.length}
                 audioCnt={audioItems.length}
+                videoLabel={t('tabs.video')}
+                audioLabel={t('tabs.audio')}
               />
             </Stack>
 
@@ -340,7 +348,7 @@ export default function LibraryScreen(): React.JSX.Element {
                 size="small"
                 disabled={loading || refreshing}
                 onClick={() => void loadItems('refresh')}
-                title="새로고침"
+                title={t('actions.refresh')}
                 sx={{
                   width: 30,
                   height: 30,
@@ -370,7 +378,7 @@ export default function LibraryScreen(): React.JSX.Element {
                   '&:hover': { color: 'text.primary', borderColor: 'text.secondary' }
                 }}
               >
-                폴더 열기
+                {t('actions.open_folder')}
               </Button>
             </Stack>
           </Stack>
@@ -392,7 +400,7 @@ export default function LibraryScreen(): React.JSX.Element {
               <Stack alignItems="center" spacing={1.5}>
                 <CircularProgress size={26} />
                 <Typography variant="body2" color="text.secondary">
-                  불러오는 중…
+                  {t('loading')}
                 </Typography>
               </Stack>
             </Box>
@@ -422,10 +430,10 @@ export default function LibraryScreen(): React.JSX.Element {
                 </Box>
                 <Stack alignItems="center" spacing={0.4}>
                   <Typography fontWeight={700} fontSize="0.9rem">
-                    {tab === 'video' ? '아직 비디오가 없습니다' : '아직 오디오가 없습니다'}
+                    {tab === 'video' ? t('empty.video_title') : t('empty.audio_title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    다운로드가 완료되면 여기에 표시됩니다.
+                    {t('empty.description')}
                   </Typography>
                 </Stack>
               </Stack>
@@ -572,7 +580,7 @@ export default function LibraryScreen(): React.JSX.Element {
                                 fontSize: '0.72rem'
                               }}
                             >
-                              {item.uploader ?? '업로더 정보 없음'}
+                              {item.uploader ?? t('item.uploader_fallback')}
                             </Typography>
                           </Stack>
 
@@ -617,7 +625,7 @@ export default function LibraryScreen(): React.JSX.Element {
                                 : theme.palette.text.disabled
                             }}
                           >
-                            {formatDate(item)}
+                            {formatDate(item, language)}
                           </Typography>
 
                           <Box
@@ -705,7 +713,7 @@ export default function LibraryScreen(): React.JSX.Element {
           }}
         >
           <FolderOpenRoundedIcon sx={{ mr: 1.25, fontSize: 16, color: 'text.secondary' }} />
-          <Typography variant="body2">파일 위치 열기</Typography>
+          <Typography variant="body2">{t('menu.open_file_location')}</Typography>
         </MenuItem>
 
         <Divider sx={{ my: 0.5 }} />
@@ -720,7 +728,7 @@ export default function LibraryScreen(): React.JSX.Element {
         >
           <DeleteOutlineRoundedIcon sx={{ mr: 1.25, fontSize: 16 }} />
           <Typography variant="body2" color="error">
-            삭제
+            {t('menu.delete')}
           </Typography>
         </MenuItem>
       </Menu>

@@ -11,7 +11,7 @@
     "running": "{{stepText}} · Starting up reliably"
   },
   "running": {
-    "label": "initialization"
+    "label": "Initializing"
   },
   "status": {
     "waiting": "Please wait a moment"

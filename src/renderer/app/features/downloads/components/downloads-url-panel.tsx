@@ -18,6 +18,7 @@ import {
   TextField,
   Typography
 } from '@mui/material'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import React from 'react'
 
@@ -32,6 +33,7 @@ export default function DownloadsUrlPanel(props: {
   onSelectRecentUrl: (item: RecentUrlHistoryItem) => void
   onSubmit: () => void
 }): React.JSX.Element {
+  const { t } = useI18n('downloads')
   const {
     inputRef,
     inputValue,
@@ -77,7 +79,7 @@ export default function DownloadsUrlPanel(props: {
                 <Stack direction="row" alignItems="center" spacing={0.75}>
                   <HistoryIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
                   <Typography variant="caption" fontWeight={600} color="text.secondary">
-                    최근 기록
+                    {t('form.recent.title')}
                   </Typography>
                 </Stack>
                 <Button
@@ -95,7 +97,7 @@ export default function DownloadsUrlPanel(props: {
                     '&:hover': { color: 'error.main' }
                   }}
                 >
-                  전체 삭제
+                  {t('form.recent.clear_all')}
                 </Button>
               </Stack>
               <Divider />
@@ -105,7 +107,7 @@ export default function DownloadsUrlPanel(props: {
         </Paper>
       )
     },
-    [recentUrls.length, onClearRecentUrls]
+    [onClearRecentUrls, recentUrls.length, t]
   )
 
   return (
@@ -127,7 +129,7 @@ export default function DownloadsUrlPanel(props: {
     >
       <Stack spacing={2}>
         <Typography variant="body2" fontWeight={700} color="text.secondary">
-          주소 입력
+          {t('form.title')}
         </Typography>
 
         <Autocomplete
@@ -160,7 +162,7 @@ export default function DownloadsUrlPanel(props: {
             <TextField
               {...params}
               inputRef={inputRef}
-              placeholder="영상 주소 또는 재생목록 주소를 붙여넣으세요"
+              placeholder={t('form.placeholder')}
               variant="outlined"
               onKeyDown={(e): void => {
                 if (e.key === 'Enter') onSubmit()
@@ -210,7 +212,7 @@ export default function DownloadsUrlPanel(props: {
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          {submitting ? '처리 중…' : '추가'}
+                          {submitting ? t('form.actions.processing') : t('form.actions.add')}
                         </Button>
                       </InputAdornment>
                       {params.InputProps.endAdornment}
@@ -266,7 +268,12 @@ export default function DownloadsUrlPanel(props: {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {option.kind === 'playlist' ? '재생목록 주소' : '영상 주소'} · {option.url}
+                      {t(
+                        option.kind === 'playlist'
+                          ? 'form.recent.option.playlist_url'
+                          : 'form.recent.option.video_url'
+                      )}{' '}
+                      · {option.url}
                     </Typography>
                   </Box>
                   <IconButton
@@ -315,8 +322,8 @@ export default function DownloadsUrlPanel(props: {
             >
               <Typography variant="body2" fontWeight={600}>
                 {submitting.kind === 'playlist'
-                  ? '재생목록 정보를 확인하고 있어요… 잠시만 기다려주세요 ⏳'
-                  : '주소 정보를 확인하고 있어요… 곧 완료됩니다 🔍'}
+                  ? t('form.submitting.playlist')
+                  : t('form.submitting.single')}
               </Typography>
             </Alert>
           </Fade>

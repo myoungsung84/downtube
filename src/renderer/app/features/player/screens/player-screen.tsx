@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import clamp from 'lodash/clamp'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -81,6 +82,7 @@ const PLAYER_VOLUME_KEY = 'player.volume' as const
 const PLAYER_MUTED_KEY = 'player.muted' as const
 const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
 export default function PlayerScreen(): React.JSX.Element {
+  const { t } = useI18n('player')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -135,8 +137,8 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const thumbnailSrc = useMemo(() => toMediaUrl(mediaMeta.thumbnailPath), [mediaMeta.thumbnailPath])
   const primaryText = useMemo(
-    () => mediaMeta.title?.trim() || fileNameWithoutExt || fileName || '알 수 없는 파일',
-    [fileName, fileNameWithoutExt, mediaMeta.title]
+    () => mediaMeta.title?.trim() || fileNameWithoutExt || fileName || t('fallback.unknown_file'),
+    [fileName, fileNameWithoutExt, mediaMeta.title, t]
   )
   const secondaryText = useMemo(() => {
     if (!mediaMeta.title) return undefined

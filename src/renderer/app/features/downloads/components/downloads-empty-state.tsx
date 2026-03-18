@@ -3,6 +3,7 @@ import LinkIcon from '@mui/icons-material/Link'
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import { alpha, Box, Fade, keyframes, Paper, Stack, Typography } from '@mui/material'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 const slideUp = keyframes`
@@ -10,25 +11,26 @@ const slideUp = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `
 
-const steps = [
-  {
-    icon: <LinkIcon sx={{ fontSize: 18 }} />,
-    label: '주소 붙여넣기',
-    desc: '영상 주소를 위 입력창에 붙여넣으세요'
-  },
-  {
-    icon: <PlaylistAddIcon sx={{ fontSize: 18 }} />,
-    label: '목록에 추가',
-    desc: '여러 영상을 원하는 만큼 추가하세요'
-  },
-  {
-    icon: <RocketLaunchIcon sx={{ fontSize: 18 }} />,
-    label: '한 번에 다운로드',
-    desc: '다운로드 시작 버튼으로 일괄 처리해요'
-  }
-]
-
 export default function DownloadsEmptyState(): React.JSX.Element {
+  const { t } = useI18n('downloads')
+  const steps = [
+    {
+      icon: <LinkIcon sx={{ fontSize: 18 }} />,
+      label: t('empty.steps.paste_url.title'),
+      desc: t('empty.steps.paste_url.description')
+    },
+    {
+      icon: <PlaylistAddIcon sx={{ fontSize: 18 }} />,
+      label: t('empty.steps.add_to_list.title'),
+      desc: t('empty.steps.add_to_list.description')
+    },
+    {
+      icon: <RocketLaunchIcon sx={{ fontSize: 18 }} />,
+      label: t('empty.steps.download_all.title'),
+      desc: t('empty.steps.download_all.description')
+    }
+  ]
+
   return (
     <Fade in timeout={400}>
       <Paper
@@ -78,7 +80,7 @@ export default function DownloadsEmptyState(): React.JSX.Element {
           {/* Text */}
           <Stack spacing={0.5} alignItems="center">
             <Typography variant="h5" fontWeight={700}>
-              다운로드할 영상을 추가해보세요! 🎬
+              {t('empty.title')}
             </Typography>
             <Typography
               variant="body1"
@@ -90,9 +92,9 @@ export default function DownloadsEmptyState(): React.JSX.Element {
                   alpha(theme.palette.text.secondary, theme.palette.mode === 'light' ? 0.92 : 1)
               }}
             >
-              위 입력창에 영상 주소를 붙여넣으면 자동으로 목록에 추가됩니다.
+              {t('empty.description.primary')}
               <br />
-              여러 개를 추가한 후 <strong>다운로드 시작</strong> 버튼을 눌러 한번에 다운로드하세요!
+              {t('empty.description.secondary', { action: t('queue.actions.start') })}
             </Typography>
           </Stack>
 

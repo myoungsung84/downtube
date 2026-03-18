@@ -18,7 +18,7 @@
     }
   },
   "empty": {
-    "description": "The player window needs to be connected so that src is passed when it opens.",
+    "description": "Could not load the file to play. Please open it again from the list.",
     "title": "No file to play."
   },
   "fallback": {

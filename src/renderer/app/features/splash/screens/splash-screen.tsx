@@ -1,4 +1,5 @@
 import { Box, Stack } from '@mui/material'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { InitState } from '@src/types/init.types'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -6,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { SplashBrand } from '../components/splash-brand'
 import { SplashError } from '../components/splash-error'
 import { SplashRunning } from '../components/splash-running'
-import { mapStepToDetail, mapStepToProgress, mapStepToText } from '../lib/splash-step'
+import { mapStepToDetailKey, mapStepToProgress, mapStepToTextKey } from '../lib/splash-step'
 
 const STYLES = `
   @keyframes fadeUp {
@@ -18,6 +19,7 @@ const STYLES = `
 const defaultRunningState: InitState = { status: 'running' }
 
 export default function SplashScreen(): React.JSX.Element {
+  const { t } = useI18n('splash')
   const navigate = useNavigate()
   const [state, setState] = React.useState(defaultRunningState)
 
@@ -40,18 +42,20 @@ export default function SplashScreen(): React.JSX.Element {
 
   const isError = state.status === 'error'
   const isRunning = state.status === 'running'
-  const stepText = isRunning ? mapStepToText(state.step) : '잠시만 기다려 주세요'
-  const stepDetail = isRunning ? mapStepToDetail(state.step) : ''
+  const currentStep = isRunning ? state.step : undefined
+  const stepText = isRunning ? t(mapStepToTextKey(currentStep) as never) : t('status.waiting')
+  const detailKey = mapStepToDetailKey(currentStep)
+  const stepDetail = isRunning && detailKey ? t(detailKey as never) : ''
   const progressValue = Math.min(
     100,
-    Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(state.step)) : 0)
+    Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(currentStep)) : 0)
   )
-  const isDownloading = isRunning && state.step === 'downloading-binaries'
+  const isDownloading = isRunning && currentStep === 'downloading-binaries'
   const logText = isDownloading
-    ? '필수 파일이 없으면 자동 다운로드를 진행해요'
+    ? t('log.auto_download_notice')
     : isRunning
-      ? `${stepText} · 안정적으로 시작하는 중이에요`
-      : '문제가 해결되면 다시 시도해 주세요'
+      ? t('log.running', { stepText })
+      : t('log.error_retry')
 
   return (
     <>

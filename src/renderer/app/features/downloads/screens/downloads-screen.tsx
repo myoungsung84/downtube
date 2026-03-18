@@ -1,5 +1,6 @@
 import { Box, Stack } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
@@ -29,6 +30,7 @@ const DOWNLOADS_RECENT_URLS_KEY = 'downloads.recentUrls' as const
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
 
+  const { t } = useI18n('downloads')
   const { showToast } = useToast()
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
   const setSettingValue = useSettingsStore((state) => state.setValue)
@@ -63,9 +65,11 @@ export default function DownloadsScreen(): React.JSX.Element {
   const recentUrls = useMemo(
     () =>
       Array.isArray(storedRecentUrls)
-        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl)
+        ? normalizeRecentUrlHistory(storedRecentUrls, isPlaylistUrl, (kind) =>
+            t(kind === 'playlist' ? 'history.kind.playlist' : 'history.kind.video')
+          )
         : [],
-    [storedRecentUrls]
+    [storedRecentUrls, t]
   )
 
   const queuedCount = useMemo(() => jobs.filter((j) => j.status === 'queued').length, [jobs])
@@ -75,12 +79,12 @@ export default function DownloadsScreen(): React.JSX.Element {
   const failedCount = useMemo(() => jobs.filter((j) => j.status === 'failed').length, [jobs])
 
   const queueLabel = useMemo(() => {
-    if (queueRunning && queuePaused) return '일시정지 처리중...'
-    if (queueRunning) return '다운로드 진행중'
-    if (queuePaused && hasQueued) return '일시정지됨'
-    if (hasQueued) return '대기중'
-    return '준비됨'
-  }, [queueRunning, queuePaused, hasQueued])
+    if (queueRunning && queuePaused) return t('queue.status.pausing')
+    if (queueRunning) return t('queue.status.running')
+    if (queuePaused && hasQueued) return t('queue.status.paused')
+    if (hasQueued) return t('queue.status.queued')
+    return t('queue.status.ready')
+  }, [hasQueued, queuePaused, queueRunning, t])
 
   const canStart = hasQueued && (!queueRunning || queuePaused)
   const canPause = queueRunning && !queuePaused
@@ -102,7 +106,9 @@ export default function DownloadsScreen(): React.JSX.Element {
   }, [hydrateSettings])
 
   const persistRecentUrl = (item: RecentUrlHistoryItem): void => {
-    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item)
+    const nextRecentUrls = updateRecentUrlHistory(recentUrlsRef.current, item, (kind) =>
+      t(kind === 'playlist' ? 'history.kind.playlist' : 'history.kind.video')
+    )
     void setSettingValue(DOWNLOADS_RECENT_URLS_KEY, nextRecentUrls)
   }
 
@@ -134,11 +140,11 @@ export default function DownloadsScreen(): React.JSX.Element {
   const handleDownloadInfo = async (inputUrl: string): Promise<void> => {
     const url = inputUrl.trim()
     if (!url) {
-      showToast('주소를 입력해주세요', 'warning')
+      showToast(t('toast.validation.enter_url'), 'warning')
       return
     }
     if (!isYoutubeUrl(url)) {
-      showToast('올바른 영상 주소만 추가할 수 있어요', 'warning')
+      showToast(t('toast.validation.invalid_url'), 'warning')
       return
     }
 
@@ -147,7 +153,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     persistRecentUrl({
       url,
       kind,
-      title: kind === 'playlist' ? '재생목록' : '영상'
+      title: t(kind === 'playlist' ? 'history.kind.playlist' : 'history.kind.video')
     })
 
     try {
@@ -158,20 +164,17 @@ export default function DownloadsScreen(): React.JSX.Element {
           type: defaultType,
           playlistLimit: clampedLimit
         })
-        showToast(
-          `플레이리스트 ${clampedLimit}개 항목을 추가했어요! 아래 "시작" 버튼을 눌러보세요 🚀`,
-          'success'
-        )
+        showToast(t('toast.submit.playlist_added', { count: clampedLimit }), 'success')
       } else {
         if (defaultType === 'audio') await window.api.downloadAudio(url)
         else await window.api.download(url)
 
-        showToast('다운로드 목록에 추가했어요! 아래 "시작" 버튼을 눌러보세요 🎉', 'success')
+        showToast(t('toast.submit.single_added'), 'success')
       }
 
       setInputValue('')
     } catch {
-      showToast('주소를 추가하지 못했어요. 입력한 주소를 확인해주세요 😢', 'error')
+      showToast(t('toast.submit.failed'), 'error')
     } finally {
       setSubmitting(null)
     }
@@ -179,19 +182,24 @@ export default function DownloadsScreen(): React.JSX.Element {
 
   const handleToggleType = async (jobId: string, type: 'video' | 'audio'): Promise<void> => {
     await window.api.setDownloadType({ id: jobId, type })
-    showToast(`${type === 'audio' ? '오디오' : '비디오'}로 변경했어요`, 'info')
+    showToast(
+      t('toast.actions.type_changed', {
+        type: t(type === 'audio' ? 'media.audio' : 'media.video')
+      }),
+      'info'
+    )
   }
 
   const handleStop = async (job: DownloadJob): Promise<void> => {
     await window.api.stopDownload(job.url)
-    showToast('다운로드를 중단했어요', 'info')
+    showToast(t('toast.actions.stopped'), 'info')
   }
 
   const handleRetry = async (job: DownloadJob): Promise<void> => {
     if (job.status === 'cancelled') await window.api.removeDownload(job.id)
 
     if (!isYoutubeUrl(job.url)) {
-      showToast('정확한 주소를 입력해 주세요', 'warning')
+      showToast(t('toast.retry.invalid_url'), 'warning')
       return
     }
 
@@ -211,9 +219,9 @@ export default function DownloadsScreen(): React.JSX.Element {
         await window.api.download(job.url)
       }
 
-      showToast('다시 시도합니다! 💪', 'info')
+      showToast(t('toast.retry.started'), 'info')
     } catch {
-      showToast('재시도에 실패했어요', 'error')
+      showToast(t('toast.retry.failed'), 'error')
     } finally {
       setSubmitting(null)
     }
@@ -222,25 +230,25 @@ export default function DownloadsScreen(): React.JSX.Element {
   const handleDelete = async (job: DownloadJob): Promise<void> => {
     if (job.status === 'running') return
     await window.api.removeDownload(job.id)
-    showToast('목록에서 삭제했어요', 'info')
+    showToast(t('toast.actions.deleted'), 'info')
   }
 
   const handlePlay = async (job: DownloadJob): Promise<void> => {
     const res = await window.api.openPlayer({ id: job.id })
     if (!res.success) {
       console.error('Failed to open player:', res.message)
-      showToast(res.message ?? '재생할 수 없는 항목입니다', 'error')
+      showToast(res.message ?? t('toast.player.unavailable'), 'error')
     }
   }
 
   const handleStartQueue = async (): Promise<void> => {
     await window.api.downloadsStart()
-    showToast('다운로드를 시작합니다! 🎬', 'success')
+    showToast(t('toast.queue.started'), 'success')
   }
 
   const handlePauseQueue = async (): Promise<void> => {
     await window.api.downloadsPause()
-    showToast('다운로드를 일시정지했어요 ⏸️', 'info')
+    showToast(t('toast.queue.paused'), 'info')
   }
 
   useEffect(() => {
@@ -273,11 +281,11 @@ export default function DownloadsScreen(): React.JSX.Element {
         setJobs((prev) => sortJobs(prev.map((j) => (j.id !== ev.job.id ? j : ev.job))))
 
         if (oldJob?.status !== 'completed' && ev.job.status === 'completed') {
-          showToast(`✨ "${inferTitle(ev.job)}" 다운로드 완료!`, 'success')
+          showToast(t('toast.job.completed', { title: inferTitle(ev.job) }), 'success')
         }
         if (oldJob?.status !== 'failed' && ev.job.status === 'failed') {
           const errorInfo = getErrorMessage(ev.job.error)
-          showToast(`❌ ${errorInfo.title}`, 'error')
+          showToast(`❌ ${t(errorInfo.titleKey as never)}`, 'error')
         }
 
         return
@@ -298,7 +306,7 @@ export default function DownloadsScreen(): React.JSX.Element {
     return (): void => {
       off?.()
     }
-  }, [setSettingValue, showToast])
+  }, [setSettingValue, showToast, t])
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>

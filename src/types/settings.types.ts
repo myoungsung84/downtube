@@ -4,7 +4,10 @@ export type RecentUrlHistoryItem = {
   kind: 'single' | 'playlist'
 }
 
+export type AppLanguage = 'ko' | 'en'
+
 export const settingKeys = [
+  'app.language',
   'app.themeMode',
   'player.volume',
   'player.muted',
@@ -17,6 +20,7 @@ export const settingKeys = [
 export type SettingKey = (typeof settingKeys)[number]
 
 export type SettingValueMap = {
+  'app.language': AppLanguage
   'app.themeMode': 'light' | 'dark' | 'system'
   'player.volume': number
   'player.muted': boolean

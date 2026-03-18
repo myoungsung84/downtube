@@ -2,7 +2,7 @@
   "empty": {
     "description": {
       "primary": "Paste a video URL into the input above and it will be added to the list automatically.",
-      "secondary": "Add multiple items, then click Start Download to download them all at once!"
+      "secondary": "Add multiple items, then click {{action}} to download them all at once."
     },
     "steps": {
       "add_to_list": {
@@ -128,8 +128,8 @@
       "unavailable": "This item cannot be played"
     },
     "queue": {
-      "paused": "Downloads paused ⏸️",
-      "started": "Starting downloads! 🎬"
+      "paused": "Downloads paused",
+      "started": "Downloads started"
     },
     "retry": {
       "failed": "Retry failed",
@@ -138,8 +138,8 @@
     },
     "submit": {
       "failed": "Could not add the URL. Please check the URL you entered 😢",
-      "playlist_added": "Added {{count}} playlist items! Click the \"Start\" button below 🚀",
-      "single_added": "Added to the download list! Click the \"Start\" button below 🎉"
+      "playlist_added": "Added {{count}} playlist items to the list. Start them below.",
+      "single_added": "Added to the download list. Start it below."
     },
     "validation": {
       "enter_url": "Please enter a URL",

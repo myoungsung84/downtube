@@ -11,6 +11,13 @@ export function validateSettingValue<K extends SettingKey>(
   value: unknown
 ): asserts value is SettingValueMap[K] {
   switch (key) {
+    case 'app.language': {
+      if (value !== 'ko' && value !== 'en') {
+        throw new Error(`[settings] ${key} must be "ko" or "en"`)
+      }
+      return
+    }
+
     case 'app.themeMode': {
       if (value !== 'light' && value !== 'dark' && value !== 'system') {
         throw new Error(`[settings] ${key} must be "light", "dark", or "system"`)

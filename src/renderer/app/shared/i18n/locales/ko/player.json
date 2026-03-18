@@ -18,7 +18,7 @@
     }
   },
   "empty": {
-    "description": "player window를 열 때 src를 전달하도록 연결이 필요합니다.",
+    "description": "재생할 파일 정보를 불러오지 못했습니다. 목록에서 다시 열어 주세요.",
     "title": "재생할 파일이 없습니다."
   },
   "fallback": {

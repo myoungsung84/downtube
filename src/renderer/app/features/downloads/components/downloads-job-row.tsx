@@ -22,6 +22,7 @@ import {
 } from '@mui/material'
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
 import clamp from 'lodash/clamp'
 import React from 'react'
@@ -58,6 +59,7 @@ export default function DownloadsJobRow(props: {
 }): React.JSX.Element {
   const { job } = props
   const theme = useTheme()
+  const { t } = useI18n('downloads')
   const tone = statusTone(job.status)
 
   const info: DownloadInfo | undefined = job.info
@@ -157,7 +159,7 @@ export default function DownloadsJobRow(props: {
                   <VideoLibraryIcon sx={{ fontSize: 11 }} />
                 )}
                 <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, lineHeight: 1 }}>
-                  {job.type}
+                  {t(job.type === 'audio' ? 'media.audio' : 'media.video')}
                 </Typography>
               </Box>
             </Box>
@@ -206,7 +208,13 @@ export default function DownloadsJobRow(props: {
               </Stack>
 
               <Stack direction="row" alignItems="center" spacing={0.25} flexShrink={0}>
-                <AppTooltip title={canToggle ? '형식 변경' : '변경 불가'}>
+                <AppTooltip
+                  title={
+                    canToggle
+                      ? t('job.tooltips.change_type')
+                      : t('job.tooltips.change_type_disabled')
+                  }
+                >
                   <ToggleButtonGroup
                     size="small"
                     exclusive
@@ -252,16 +260,16 @@ export default function DownloadsJobRow(props: {
                 <Box sx={{ width: 1, height: 14, bgcolor: 'divider', mx: 0.75 }} />
 
                 <Box sx={{ width: 32, height: 32, flexShrink: 0 }}>
-                  {canPlay && (
-                    <AppTooltip title="재생">
+                  {canPlay ? (
+                    <AppTooltip title={t('job.tooltips.play')}>
                       <IconButton size="small" onClick={() => props.onPlay(job)} sx={actionBtnSx}>
                         <PlayArrowIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </AppTooltip>
-                  )}
+                  ) : null}
                 </Box>
 
-                <AppTooltip title="다시 시도">
+                <AppTooltip title={t('job.tooltips.retry')}>
                   <IconButton
                     size="small"
                     disabled={!canRetry}
@@ -272,7 +280,7 @@ export default function DownloadsJobRow(props: {
                   </IconButton>
                 </AppTooltip>
 
-                <AppTooltip title="중단">
+                <AppTooltip title={t('job.tooltips.stop')}>
                   <IconButton
                     size="small"
                     disabled={!canStop}
@@ -283,7 +291,7 @@ export default function DownloadsJobRow(props: {
                   </IconButton>
                 </AppTooltip>
 
-                <AppTooltip title="삭제">
+                <AppTooltip title={t('job.tooltips.delete')}>
                   <IconButton
                     size="small"
                     disabled={!canDelete}
@@ -316,9 +324,13 @@ export default function DownloadsJobRow(props: {
                       variant="caption"
                       noWrap
                       fontWeight={600}
-                      title={errorInfo.description}
+                      title={
+                        errorInfo.descriptionKey
+                          ? t(errorInfo.descriptionKey as never)
+                          : errorInfo.descriptionFallback
+                      }
                     >
-                      {errorInfo.title}
+                      {t(errorInfo.titleKey as never)}
                     </Typography>
                   </Stack>
                 ) : (
@@ -342,8 +354,8 @@ export default function DownloadsJobRow(props: {
                     />
                     <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.75rem' }}>
                       {job.status === 'running'
-                        ? (job.progress?.current ?? statusMeta.label)
-                        : statusMeta.label}
+                        ? (job.progress?.current ?? t(statusMeta.labelKey as never))
+                        : t(statusMeta.labelKey as never)}
                     </Typography>
                   </Stack>
                 )}

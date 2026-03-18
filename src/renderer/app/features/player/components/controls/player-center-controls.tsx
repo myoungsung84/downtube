@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 import { IcForward10, IcPause, IcPlay, IcReplay10 } from '../visuals/player-icons'
@@ -20,6 +21,7 @@ export function PlayerCenterControls({
   onTogglePlay,
   onForward10
 }: PlayerCenterControlsProps): React.JSX.Element {
+  const { t } = useI18n('player')
   return (
     <Box
       sx={{
@@ -38,7 +40,7 @@ export function PlayerCenterControls({
     >
       <PlayerButton
         onClick={onReplay10}
-        title="10초 뒤로 (←)"
+        title={t('controls.center.replay_10')}
         sx={{
           p: 0,
           width: 52,
@@ -58,7 +60,7 @@ export function PlayerCenterControls({
 
       <PlayerButton
         onClick={onTogglePlay}
-        title="재생/일시정지 (Space)"
+        title={t('controls.center.toggle_play')}
         sx={{
           p: 0,
           width: 66,
@@ -80,7 +82,7 @@ export function PlayerCenterControls({
 
       <PlayerButton
         onClick={onForward10}
-        title="10초 앞으로 (→)"
+        title={t('controls.center.forward_10')}
         sx={{
           p: 0,
           width: 52,
