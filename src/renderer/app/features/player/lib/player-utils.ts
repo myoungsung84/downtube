@@ -1,3 +1,5 @@
+import clamp from 'lodash/clamp'
+
 import type { MediaInfo, MediaKind } from '../types/player.types'
 
 export { toMediaUrl } from '@renderer/shared/lib/media-url'
@@ -15,7 +17,7 @@ export function sanitizePlaybackTime(value: number): number {
 export function clampSeekTime(value: number, duration: number): number {
   const safeValue = sanitizePlaybackTime(value)
   if (!isFiniteDuration(duration)) return safeValue
-  return Math.max(0, Math.min(duration, safeValue))
+  return clamp(safeValue, 0, duration)
 }
 
 export function resolveInitialMediaKind(extension: string): MediaKind {

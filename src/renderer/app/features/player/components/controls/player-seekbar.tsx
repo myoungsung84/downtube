@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
+import clamp from 'lodash/clamp'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatSeconds } from '../../lib'
@@ -45,9 +46,9 @@ export function PlayerSeekbar({
       const rect = trackRef.current.getBoundingClientRect()
       if (rect.width <= 0) return null
       const trackDuration = duration || 100
-      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+      const x = clamp(e.clientX - rect.left, 0, rect.width)
       const raw = (x / rect.width) * trackDuration
-      return Math.min(Math.max(raw, 0), trackDuration)
+      return clamp(raw, 0, trackDuration)
     },
     [duration]
   )
@@ -223,7 +224,7 @@ export function PlayerSeekbar({
                 position: 'absolute',
                 top: '50%',
                 left: 0,
-                width: `${Math.min(progress + 12, 100)}%`,
+                width: `${clamp(progress + 12, 0, 100)}%`,
                 transform: 'translateY(-50%)',
                 height: 'inherit',
                 borderRadius: '999px',

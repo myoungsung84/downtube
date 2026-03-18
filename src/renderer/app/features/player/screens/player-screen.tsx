@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
+import clamp from 'lodash/clamp'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSettingsStore } from '../../settings/store/use-settings-store'
@@ -367,7 +368,7 @@ export default function PlayerScreen(): React.JSX.Element {
   const handleSeekbarMouseMove = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
-      const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+      const ratio = clamp((event.clientX - rect.left) / rect.width, 0, 1)
       if (isFiniteDuration(mediaInfo.duration) && mediaInfo.duration > 0) {
         setHoverTime(ratio * mediaInfo.duration)
         setHoverX(event.clientX - rect.left)
