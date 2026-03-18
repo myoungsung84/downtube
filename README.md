@@ -65,7 +65,7 @@ The current app combines a downloads screen, a completed-items library, a built-
 
 - Node.js
 - pnpm
-- Windows or macOS for the maintained packaging scripts
+- Windows or macOS if you plan to use the maintained packaging scripts
 - `powershell.exe` if you run `pnpm build:win` from an environment such as WSL
 - `gh` CLI only if you use `pnpm release:win`
 
@@ -240,7 +240,7 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 | settings | `settings:get` | renderer -> main | Read a single persisted setting |
 | settings | `settings:get-many` | renderer -> main | Read multiple settings at once |
 | settings | `settings:set` | renderer -> main | Save a setting after validation |
-| settings | `settings:resolve-language` | renderer -> main | Resolve `system | ko | en` to the effective app language |
+| settings | `settings:resolve-language` | renderer -> main | Resolve `system`, `ko`, or `en` to the effective app language |
 | downloads | `download-video` | renderer -> main | Add a video job |
 | downloads | `download-audio` | renderer -> main | Add an audio job |
 | downloads | `download-playlist` | renderer -> main | Parse a playlist and enqueue items |
