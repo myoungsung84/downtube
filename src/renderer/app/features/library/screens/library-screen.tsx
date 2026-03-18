@@ -22,8 +22,8 @@ import {
 import { alpha } from '@mui/material/styles'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
-import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import { useToast } from '@renderer/shared/hooks/use-toast'
+import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
