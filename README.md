@@ -33,6 +33,8 @@ The current app combines a downloads screen, a completed-items library, a built-
 - [Usage and Distribution Notice](#usage-and-distribution-notice)
 - [Contributing](#contributing)
 
+---
+
 ## Key Features
 
 - Queue-based downloads for video and audio items
@@ -48,6 +50,8 @@ The current app combines a downloads screen, a completed-items library, a built-
 - Resolved language applied before the first React render, including the splash screen
 - Startup checks for bundled binaries and runtime fallback download for `yt-dlp` on Windows and macOS when needed
 
+---
+
 ## Tech Stack
 
 | Category        | Technology                             |
@@ -60,6 +64,8 @@ The current app combines a downloads screen, a completed-items library, a built-
 | Media tools     | yt-dlp, FFmpeg, ffprobe, fluent-ffmpeg |
 | Storage         | electron-store                         |
 | Build           | electron-builder                       |
+
+---
 
 ## Requirements
 
@@ -74,43 +80,33 @@ Notes:
 - The app currently validates YouTube video and playlist URLs in the renderer.
 - Bundled binary preparation scripts target Windows and macOS. Linux packaging is not configured in `package.json`.
 
+---
+
 ## Getting Started
 
-### 1. Clone the repository
-
 ```bash
+# 1. Clone the repository
 git clone <your-repository-url>
 cd downtube
-```
 
-### 2. Install dependencies
-
-```bash
+# 2. Install dependencies
 pnpm install
-```
 
-### 3. Run the app in development mode
-
-```bash
+# 3. Run the app in development mode
 pnpm dev
 ```
 
-### 4. Useful development commands
+**Useful development commands**
 
 ```bash
-pnpm typecheck
-pnpm lint
-pnpm format
-pnpm clean
+pnpm typecheck    # type checking
+pnpm lint         # lint
+pnpm format       # format
+pnpm clean        # clean build artifacts
+pnpm tools:ensure # copy ffmpeg/ffprobe to bin/ and download yt-dlp if missing
 ```
 
-### 5. Refresh bundled tools when needed
-
-```bash
-pnpm tools:ensure
-```
-
-`tools:ensure` copies `ffmpeg` and `ffprobe` into `bin/` and downloads `yt-dlp` for supported platforms if it is missing.
+---
 
 ## Build and Packaging
 
@@ -120,11 +116,7 @@ pnpm tools:ensure
 pnpm build
 ```
 
-This runs:
-
-1. `scripts/build-tools/ensure-tools.sh`
-2. `pnpm typecheck`
-3. `electron-vite build`
+Runs in order: `ensure-tools.sh` → `pnpm typecheck` → `electron-vite build`
 
 ### Windows package
 
@@ -132,13 +124,7 @@ This runs:
 pnpm build:win
 ```
 
-Current behavior:
-
-- cleans `dist/` and `out/`
-- reinstalls dependencies with `--frozen-lockfile`
-- builds the app
-- creates a Windows unpacked build
-- zips `dist/win-unpacked` into `releases/`
+Cleans `dist/` and `out/` → reinstalls dependencies (`--frozen-lockfile`) → builds the app → creates a Windows unpacked build → zips `dist/win-unpacked` into `releases/`
 
 ### macOS package
 
@@ -146,13 +132,7 @@ Current behavior:
 pnpm build:mac
 ```
 
-Current behavior:
-
-- cleans `dist/` and `out/`
-- reinstalls dependencies with `--frozen-lockfile`
-- builds the app
-- packages a macOS arm64 app bundle
-- applies ad-hoc signing for local execution
+Cleans `dist/` and `out/` → reinstalls dependencies (`--frozen-lockfile`) → builds the app → packages a macOS arm64 app bundle → applies ad-hoc signing for local execution
 
 ### Windows release draft
 
@@ -168,32 +148,36 @@ This script assumes:
 
 It builds the Windows artifact and creates or updates a draft GitHub release.
 
+---
+
 ## Settings and Localization
 
 Persisted settings are stored through `electron-store` and validated in the main process.
 
-Current settings include:
+| Setting                     | Values                    |
+| --------------------------- | ------------------------- |
+| App language                | `system`, `ko`, `en`      |
+| App theme                   | `system`, `light`, `dark` |
+| Player volume               | —                         |
+| Player muted state          | —                         |
+| Audio visualizer visibility | —                         |
+| Default download type       | `video`, `audio`          |
+| Playlist limit              | —                         |
+| Recent URL history          | —                         |
 
-- app language: `system`, `ko`, `en`
-- app theme: `system`, `light`, `dark`
-- player volume
-- player muted state
-- player audio visualizer visibility
-- default download type: `video` or `audio`
-- playlist limit
-- recent URL history
-
-Language flow:
+**Language flow**
 
 - The stored value is a language preference.
 - The effective app language is resolved in the main process.
 - If the preference is `system`, the app resolves the OS language to `ko` or `en`.
 - The resolved language is applied before React renders, so the splash screen and the main UI start in the same language.
 
-Theme flow:
+**Theme flow**
 
 - The theme preference is stored in settings.
 - `system` theme follows `prefers-color-scheme` in the renderer.
+
+---
 
 ## Project Structure
 
@@ -220,6 +204,8 @@ src
 │       └── theme
 └── types
 ```
+
+---
 
 ## Main IPC Channels
 
@@ -251,6 +237,8 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 | player/files | `download-item-open`        | renderer -> main | Reveal or open a downloaded item path                         |
 | player/files | `media-sidecar-read`        | renderer -> main | Read sidecar metadata for the player                          |
 
+---
+
 ## Security Notes
 
 - The main browser window runs with `sandbox: true` and `contextIsolation: true`.
@@ -260,6 +248,8 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 - The custom `downtube-media://` protocol only serves files inside the system downloads directory and supports range requests for playback.
 - File operations such as player open, sidecar read, and library delete validate that paths stay inside the allowed directory.
 
+---
+
 ## Development Notes
 
 - The app uses a hash router and boots through `/splash`.
@@ -267,6 +257,8 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 - Initialization sets up the log file under `Downloads/DownTube/down-tube.log`.
 - In development, the main window and the player window open DevTools automatically.
 - The app bundles media sidecars (`.json`) and thumbnail images next to downloaded files and reuses them in the library and player.
+
+---
 
 ## License
 
@@ -280,6 +272,8 @@ External tools included in or used with the app follow their own licenses.
 | FFmpeg  | LGPL-2.1-or-later, depending on the distributed build | [ffmpeg.org](https://ffmpeg.org)           |
 | ffprobe | Distributed under FFmpeg terms                        | [ffmpeg.org](https://ffmpeg.org)           |
 
+---
+
 ## Usage and Distribution Notice
 
 Downtube provides download and local playback features, but you are responsible for checking:
@@ -289,6 +283,8 @@ Downtube provides download and local playback features, but you are responsible 
 - the copyright law and related regulations in your jurisdiction
 
 The screenshots and descriptions in this repository are provided only to explain the app itself. They do not imply that content from any particular platform may be downloaded or redistributed freely.
+
+---
 
 ## Contributing
 
