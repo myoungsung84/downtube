@@ -22,6 +22,18 @@ import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import React from 'react'
 
+const HISTORY_KIND_KEY = {
+  playlist: 'history.kind.playlist',
+  single: 'history.kind.video'
+} as const satisfies Record<RecentUrlHistoryItem['kind'], string>
+
+function getRecentItemDisplayTitle(
+  item: RecentUrlHistoryItem,
+  t: ReturnType<typeof useI18n>['t']
+): string {
+  return item.title || t(HISTORY_KIND_KEY[item.kind])
+}
+
 export default function DownloadsUrlPanel(props: {
   inputRef: React.RefObject<HTMLInputElement | null>
   inputValue: string
@@ -142,8 +154,9 @@ export default function DownloadsUrlPanel(props: {
             if (!keyword) return options
 
             return options.filter((option) => {
+              const displayTitle = getRecentItemDisplayTitle(option, t)
               return (
-                option.title.toLowerCase().includes(keyword) ||
+                displayTitle.toLowerCase().includes(keyword) ||
                 option.url.toLowerCase().includes(keyword)
               )
             })
@@ -257,7 +270,7 @@ export default function DownloadsUrlPanel(props: {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {option.title}
+                      {getRecentItemDisplayTitle(option, t)}
                     </Typography>
                     <Typography
                       variant="caption"

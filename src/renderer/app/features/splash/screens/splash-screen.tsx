@@ -43,9 +43,9 @@ export default function SplashScreen(): React.JSX.Element {
   const isError = state.status === 'error'
   const isRunning = state.status === 'running'
   const currentStep = isRunning ? state.step : undefined
-  const stepText = isRunning ? t(mapStepToTextKey(currentStep) as never) : t('status.waiting')
+  const stepText = isRunning ? t(mapStepToTextKey(currentStep)) : t('status.waiting')
   const detailKey = mapStepToDetailKey(currentStep)
-  const stepDetail = isRunning && detailKey ? t(detailKey as never) : ''
+  const stepDetail = isRunning && detailKey ? t(detailKey) : ''
   const progressValue = Math.min(
     100,
     Math.max(0, isRunning ? (state.progress ?? mapStepToProgress(currentStep)) : 0)
