@@ -1,6 +1,6 @@
+import type { AppLanguage } from '@src/types/settings.types'
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import type { AppLanguage } from '@src/types/settings.types'
 
 import commonEn from './locales/en/common.json'
 import downloadsEn from './locales/en/downloads.json'
