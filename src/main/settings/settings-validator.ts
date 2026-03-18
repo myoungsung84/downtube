@@ -53,8 +53,8 @@ export function validateSettingValue<K extends SettingKey>(
       if (!Number.isFinite(value)) {
         throw new Error(`[settings] ${key} must be a finite number`)
       }
-      if (!Number.isInteger(value) || value < 1) {
-        throw new Error(`[settings] ${key} must be an integer greater than or equal to 1`)
+      if (!Number.isInteger(value) || value < 1 || value > 500) {
+        throw new Error(`[settings] ${key} must be an integer between 1 and 500`)
       }
       return
     }

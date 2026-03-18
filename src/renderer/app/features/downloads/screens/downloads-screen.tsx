@@ -152,13 +152,14 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     try {
       if (kind === 'playlist') {
+        const clampedLimit = clamp(playlistLimit, 1, 500)
         await window.api.downloadPlaylist({
           url,
           type: defaultType,
-          playlistLimit: clamp(playlistLimit, 1, 500)
+          playlistLimit: clampedLimit
         })
         showToast(
-          `플레이리스트 ${playlistLimit}개 항목을 추가했어요! 아래 "시작" 버튼을 눌러보세요 🚀`,
+          `플레이리스트 ${clampedLimit}개 항목을 추가했어요! 아래 "시작" 버튼을 눌러보세요 🚀`,
           'success'
         )
       } else {
