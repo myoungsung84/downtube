@@ -1,0 +1,35 @@
+{
+  "appearance": {
+    "section_title": "Display",
+    "theme": {
+      "description": "Choose the system setting or a light/dark theme",
+      "options": {
+        "dark": "Dark",
+        "light": "Light",
+        "system": "System"
+      },
+      "title": "Theme"
+    }
+  },
+  "downloads": {
+    "default_type": {
+      "description": "The format selected by default when adding a link",
+      "title": "Default download format"
+    },
+    "playlist_limit": {
+      "badge": "Up to {{count}}",
+      "description": "Number of videos to fetch from a playlist at once",
+      "options": {
+        "10": "10",
+        "20": "20",
+        "40": "40"
+      },
+      "title": "Playlist download count"
+    },
+    "section_title": "Downloads"
+  },
+  "header": {
+    "description": "Customize the app environment",
+    "title": "Settings"
+  }
+}

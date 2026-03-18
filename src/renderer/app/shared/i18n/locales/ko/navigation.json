@@ -1,0 +1,9 @@
+{
+  "actions": {
+    "back": "뒤로 가기"
+  },
+  "items": {
+    "library": "라이브러리",
+    "settings": "설정"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "media": {
+    "audio": "Audio",
+    "video": "Video"
+  }
+}

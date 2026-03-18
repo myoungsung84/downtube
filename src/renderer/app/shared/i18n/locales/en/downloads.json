@@ -1,0 +1,149 @@
+{
+  "empty": {
+    "description": {
+      "primary": "Paste a video URL into the input above and it will be added to the list automatically.",
+      "secondary": "Add multiple items, then click Start Download to download them all at once!"
+    },
+    "steps": {
+      "add_to_list": {
+        "description": "Add as many videos as you want",
+        "title": "Add to list"
+      },
+      "download_all": {
+        "description": "Process everything at once with the Start Download button",
+        "title": "Download all at once"
+      },
+      "paste_url": {
+        "description": "Paste a video URL into the input above",
+        "title": "Paste URL"
+      }
+    },
+    "title": "Add videos to download! 🎬"
+  },
+  "errors": {
+    "download_failed": {
+      "title": "Download failed"
+    },
+    "network": {
+      "description": "Check your internet connection and try again.",
+      "title": "Internet connection issue"
+    },
+    "not_found": {
+      "description": "It may have been deleted or made private.",
+      "title": "Video not found"
+    },
+    "unavailable": {
+      "description": "This video is private or region-restricted.",
+      "title": "Video unavailable"
+    },
+    "unknown": {
+      "description": "Please try again.",
+      "title": "Unknown error"
+    }
+  },
+  "form": {
+    "actions": {
+      "add": "Add",
+      "processing": "Processing…"
+    },
+    "placeholder": "Paste a video or playlist URL",
+    "recent": {
+      "clear_all": "Clear all",
+      "option": {
+        "playlist_url": "Playlist URL",
+        "video_url": "Video URL"
+      },
+      "title": "Recent history"
+    },
+    "submitting": {
+      "playlist": "Checking playlist information… Please wait ⏳",
+      "single": "Checking URL information… Almost done 🔍"
+    },
+    "title": "Enter URL"
+  },
+  "history": {
+    "kind": {
+      "playlist": "Playlist",
+      "video": "Video"
+    }
+  },
+  "job": {
+    "status": {
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "failed": "Failed",
+      "queued": "Queued",
+      "running": "Downloading"
+    },
+    "tooltips": {
+      "change_type": "Change format",
+      "change_type_disabled": "Cannot change",
+      "delete": "Delete",
+      "play": "Play",
+      "retry": "Retry",
+      "stop": "Stop"
+    }
+  },
+  "queue": {
+    "actions": {
+      "open_folder": "Open folder",
+      "pause": "Pause",
+      "resume": "Resume",
+      "start": "Start download"
+    },
+    "loading": "Loading…",
+    "stats": {
+      "completed": "Completed {{count}}",
+      "failed": "Failed {{count}}",
+      "queued": "Queued {{count}}",
+      "running": "Running {{count}}",
+      "total": "Total {{count}}"
+    },
+    "status": {
+      "paused": "Paused",
+      "pausing": "Pausing...",
+      "queued": "Queued",
+      "ready": "Ready",
+      "running": "Downloading"
+    },
+    "title": "Download Manager",
+    "tooltips": {
+      "pause": "Pause the current downloads",
+      "require_url": "Add a video URL first",
+      "resume": "Resume paused downloads",
+      "start": "Start queued downloads"
+    }
+  },
+  "toast": {
+    "actions": {
+      "deleted": "Removed from the list",
+      "stopped": "Download stopped",
+      "type_changed": "Changed to {{type}}"
+    },
+    "job": {
+      "completed": "✨ \"{{title}}\" download completed!",
+      "failed": "❌ {{title}}"
+    },
+    "player": {
+      "unavailable": "This item cannot be played"
+    },
+    "queue": {
+      "paused": "Downloads paused ⏸️",
+      "started": "Starting downloads! 🎬"
+    },
+    "retry": {
+      "failed": "Retry failed",
+      "invalid_url": "Please enter a valid URL",
+      "started": "Retrying! 💪"
+    },
+    "submit": {
+      "failed": "Could not add the URL. Please check the URL you entered 😢",
+      "playlist_added": "Added {{count}} playlist items! Click the \"Start\" button below 🚀",
+      "single_added": "Added to the download list! Click the \"Start\" button below 🎉"
+    },
+    "validation": {
+      "enter_url": "Please enter a URL",
+      "invalid_url": "Only valid video URLs can be added"
+    }
+  }
+}

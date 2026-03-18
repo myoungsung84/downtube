@@ -1,0 +1,11 @@
+{
+  "actions": {
+    "cancel": "취소",
+    "close": "닫기",
+    "confirm": "확인"
+  },
+  "media": {
+    "audio": "오디오",
+    "video": "비디오"
+  }
+}
