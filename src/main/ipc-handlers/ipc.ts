@@ -43,7 +43,8 @@ function isPathInsideDownloadDir(filePath: string): boolean {
   const normalizedRoot = process.platform === 'win32' ? resolvedRoot.toLowerCase() : resolvedRoot
   const normalizedTarget =
     process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget
-  return normalizedTarget.startsWith(`${normalizedRoot}${path.sep}`)
+  const rel = path.relative(normalizedRoot, normalizedTarget)
+  return !rel.startsWith('..') && !path.isAbsolute(rel)
 }
 
 async function openPlayerWindow(

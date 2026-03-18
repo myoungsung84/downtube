@@ -1,7 +1,6 @@
 import type { MediaInfo, MediaKind } from '../types/player.types'
-import { toMediaUrl } from '@renderer/shared/lib/media-url'
 
-export { toMediaUrl }
+export { toMediaUrl } from '@renderer/shared/lib/media-url'
 
 export const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
 

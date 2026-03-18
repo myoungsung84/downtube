@@ -92,7 +92,7 @@ export async function listLibraryItems(rootDir: string): Promise<LibraryItem[]> 
   const files = await collectFiles(rootDir)
   const fileMap = new Map(files.map((entry) => [entry.absolutePath, entry.dirent] as const))
 
-  const candidates = files
+  const validFiles = files
     .map((file) => {
       const extension = path.extname(file.absolutePath).toLowerCase()
       const fallbackType = inferItemType(extension)
@@ -112,7 +112,7 @@ export async function listLibraryItems(rootDir: string): Promise<LibraryItem[]> 
     .filter((c): c is NonNullable<typeof c> => c !== null)
 
   const items = await Promise.all(
-    candidates.map(async ({ file, extension, fallbackType, jsonPath, thumbnailPath }) => {
+    validFiles.map(async ({ file, extension, fallbackType, jsonPath, thumbnailPath }) => {
       const [sidecarInfo, stat] = await Promise.all([
         readSidecarInfo(jsonPath),
         fs.promises.stat(file.absolutePath)
