@@ -61,6 +61,7 @@ function formatDate(item: LibraryItem): string {
 // ─── types ────────────────────────────────────────────────────────────────────
 
 type MenuState = { phase: 'idle' } | { phase: 'open'; anchorEl: HTMLElement; item: LibraryItem }
+const PLAYABLE_ITEM_TYPES: readonly LibraryItemType[] = ['video', 'audio']
 
 // ─── SegmentedControl ─────────────────────────────────────────────────────────
 
@@ -283,7 +284,6 @@ export default function LibraryScreen(): React.JSX.Element {
   )
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
-    if (item.type !== 'video') return
     const result = await window.api.openPlayerFile(item.filePath)
     if (!result.success) showToast(result.message ?? '플레이어를 열지 못했습니다.', 'error')
   }
@@ -455,23 +455,23 @@ export default function LibraryScreen(): React.JSX.Element {
                 const thumbnailUrl = toMediaUrl(item.thumbnailPath)
                 const hasThumbnail = Boolean(thumbnailUrl)
                 const isDeleting = deletingId === item.id
+                const canOpenPlayer = PLAYABLE_ITEM_TYPES.includes(item.type) && !isDeleting
 
                 return (
                   <Box
                     key={item.id}
-                    onClick={isVideo && !isDeleting ? () => void handleOpenPlayer(item) : undefined}
+                    onClick={canOpenPlayer ? () => void handleOpenPlayer(item) : undefined}
                     sx={{
-                      cursor: isVideo && !isDeleting ? 'pointer' : 'default',
+                      cursor: canOpenPlayer ? 'pointer' : 'default',
                       opacity: isDeleting ? 0.4 : 1,
                       transition: 'opacity 180ms ease, background-color 120ms ease',
-                      '&:hover':
-                        isVideo && !isDeleting
-                          ? {
-                              bgcolor: isDark
-                                ? alpha(theme.palette.primary.main, 0.06)
-                                : alpha(theme.palette.primary.main, 0.025)
-                            }
-                          : undefined
+                      '&:hover': canOpenPlayer
+                        ? {
+                            bgcolor: isDark
+                              ? alpha(theme.palette.primary.main, 0.06)
+                              : alpha(theme.palette.primary.main, 0.025)
+                          }
+                        : undefined
                     }}
                   >
                     <Stack direction="row" sx={{ minHeight: 92 }}>
@@ -525,7 +525,7 @@ export default function LibraryScreen(): React.JSX.Element {
                             </Box>
                           )}
 
-                          {isVideo && (
+                          {canOpenPlayer && (
                             <Box
                               sx={{
                                 position: 'absolute',
@@ -673,23 +673,6 @@ export default function LibraryScreen(): React.JSX.Element {
                                 : theme.palette.text.secondary
                             }}
                           />
-
-                          {!isVideo && (
-                            <Chip
-                              size="small"
-                              label="재생 미지원"
-                              sx={{
-                                height: 18,
-                                fontSize: '0.66rem',
-                                borderRadius: 0.75,
-                                bgcolor: alpha(theme.palette.warning.main, isDark ? 0.12 : 0.08),
-                                color: isDark
-                                  ? theme.palette.warning.light
-                                  : theme.palette.warning.dark,
-                                border: 'none'
-                              }}
-                            />
-                          )}
                         </Stack>
                       </Stack>
                     </Stack>
