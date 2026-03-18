@@ -3,7 +3,7 @@
 # Downtube
 
 <p align="center">
-  <img src="./assets/screenshot-main.png" alt="Downtube main screen" width="680" />
+  <img src="./assets/screenshot-main-en.png" alt="Downtube main screen" width="680" />
 </p>
 
 <p align="center">
