@@ -3,6 +3,7 @@ import { useSettingsStore } from '@renderer/features/settings/store/use-settings
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
+import clamp from 'lodash/clamp'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import DownloadsEmptyState from '../components/downloads-empty-state'
@@ -151,13 +152,14 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     try {
       if (kind === 'playlist') {
+        const clampedLimit = clamp(playlistLimit, 1, 500)
         await window.api.downloadPlaylist({
           url,
           type: defaultType,
-          playlistLimit: Math.max(1, Math.min(500, playlistLimit))
+          playlistLimit: clampedLimit
         })
         showToast(
-          `플레이리스트 ${playlistLimit}개 항목을 추가했어요! 아래 "시작" 버튼을 눌러보세요 🚀`,
+          `플레이리스트 ${clampedLimit}개 항목을 추가했어요! 아래 "시작" 버튼을 눌러보세요 🚀`,
           'success'
         )
       } else {
@@ -201,7 +203,7 @@ export default function DownloadsScreen(): React.JSX.Element {
         await window.api.downloadPlaylist({
           url: job.url,
           type: job.type,
-          playlistLimit: Math.max(1, Math.min(500, playlistLimit))
+          playlistLimit: clamp(playlistLimit, 1, 500)
         })
       } else if (job.type === 'audio') {
         await window.api.downloadAudio(job.url)

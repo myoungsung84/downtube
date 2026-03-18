@@ -1,3 +1,5 @@
+import isNil from 'lodash/isNil'
+
 export function youtubeIdFromUrl(url: string): string | '' {
   const regex = /(?:youtube\.com\/(?:.*v=|.*\/shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
   const match = url.match(regex)
@@ -30,12 +32,12 @@ export function secondToTime(seconds?: number): string {
 }
 
 export function numberToFormat(num?: number | null): string {
-  if (num === undefined || num === null || isNaN(num)) return '0'
+  if (isNil(num) || Number.isNaN(num)) return '0'
   return num.toLocaleString('ko-KR')
 }
 
 export function formatCompactNumber(count?: number | null): string {
-  if (count === undefined || count === null || isNaN(count)) return '0'
+  if (isNil(count) || Number.isNaN(count)) return '0'
 
   const abs = Math.abs(count)
 

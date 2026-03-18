@@ -1,3 +1,5 @@
+import isNil from 'lodash/isNil'
+
 import type { SettingKey, SettingValueMap } from '../../types/settings.types'
 
 function assertNever(key: never): never {
@@ -51,8 +53,8 @@ export function validateSettingValue<K extends SettingKey>(
       if (!Number.isFinite(value)) {
         throw new Error(`[settings] ${key} must be a finite number`)
       }
-      if (!Number.isInteger(value) || value < 1) {
-        throw new Error(`[settings] ${key} must be an integer greater than or equal to 1`)
+      if (!Number.isInteger(value) || value < 1 || value > 500) {
+        throw new Error(`[settings] ${key} must be an integer between 1 and 500`)
       }
       return
     }
@@ -65,7 +67,7 @@ export function validateSettingValue<K extends SettingKey>(
         !value.every(
           (item) =>
             typeof item === 'object' &&
-            item != null &&
+            !isNil(item) &&
             typeof item.url === 'string' &&
             typeof item.title === 'string' &&
             (item.kind === 'single' || item.kind === 'playlist')

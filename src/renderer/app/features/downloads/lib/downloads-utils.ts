@@ -6,6 +6,10 @@ import ErrorIcon from '@mui/icons-material/Error'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import type { DownloadJob } from '@src/types/download.types'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
+import clamp from 'lodash/clamp'
+import isNil from 'lodash/isNil'
+import orderBy from 'lodash/orderBy'
+import uniqBy from 'lodash/uniqBy'
 
 export function isPlaylistUrl(input: string): boolean {
   try {
@@ -113,8 +117,8 @@ export function resolveDownloadStatus(status: DownloadJob['status']): {
 }
 
 export function formatPercent(p: number | undefined): string {
-  if (p == null || Number.isNaN(p)) return '0%'
-  const v = Math.max(0, Math.min(100, p))
+  if (isNil(p) || Number.isNaN(p)) return '0%'
+  const v = clamp(p, 0, 100)
   return `${v.toFixed(1)}%`
 }
 
@@ -123,7 +127,7 @@ export function inferTitle(job: DownloadJob): string {
 }
 
 export function sortJobs(jobs: DownloadJob[]): DownloadJob[] {
-  return [...jobs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))
+  return orderBy(jobs, [(job) => job.createdAt ?? 0], ['asc'])
 }
 
 function buildRecentFallbackTitle(kind: RecentUrlHistoryItem['kind']): string {
@@ -145,7 +149,7 @@ export function normalizeRecentUrlHistory(
       return [{ url, kind, title: buildRecentFallbackTitle(kind) }]
     }
 
-    if (typeof item !== 'object' || item == null) return []
+    if (typeof item !== 'object' || isNil(item)) return []
     if (typeof item.url !== 'string' || typeof item.title !== 'string') return []
     if (item.kind !== 'single' && item.kind !== 'playlist') return []
 
@@ -173,12 +177,17 @@ export function updateRecentUrlHistory(
   if (!url) return prev
 
   return [
-    {
-      url,
-      title: title || buildRecentFallbackTitle(nextItem.kind),
-      kind: nextItem.kind
-    },
-    ...prev.filter((item) => item.url !== url)
+    ...uniqBy(
+      [
+        {
+          url,
+          title: title || buildRecentFallbackTitle(nextItem.kind),
+          kind: nextItem.kind
+        },
+        ...prev
+      ],
+      'url'
+    )
   ].slice(0, limit)
 }
 
@@ -203,7 +212,7 @@ export function updateRecentUrlHistoryTitle(
 }
 
 export function formatDuration(durationSec: number | undefined): string | undefined {
-  if (durationSec == null || !Number.isFinite(durationSec) || durationSec < 0) return undefined
+  if (isNil(durationSec) || !Number.isFinite(durationSec) || durationSec < 0) return undefined
   const m = Math.floor(durationSec / 60)
   const s = Math.floor(durationSec % 60)
   return `${m}:${String(s).padStart(2, '0')}`
