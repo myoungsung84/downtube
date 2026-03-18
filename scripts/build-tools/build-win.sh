@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BIN_DIR="./bin"
 RELEASE_DIR="./releases"
 WIN_UNPACKED_DIR="./dist/win-unpacked"
 
@@ -15,18 +14,9 @@ ZIP_PATH="${RELEASE_DIR}/${ZIP_NAME}"
 command -v powershell.exe >/dev/null 2>&1 || { echo "Error: powershell.exe not found." >&2; exit 1; }
 
 bash "scripts/build-tools/build-clean.sh"
-mkdir -p "$BIN_DIR" "$RELEASE_DIR"
+mkdir -p "$RELEASE_DIR"
 
 pnpm install --frozen-lockfile
-
-FFMPEG_SRC="$(node -p "require('ffmpeg-static')")"
-FFMPEG_FILENAME="$(basename "$FFMPEG_SRC")"
-
-FFPROBE_SRC="$(node -p "require('ffprobe-static').path")"
-FFPROBE_FILENAME="$(basename "$FFPROBE_SRC")"
-
-cp "$FFMPEG_SRC" "$BIN_DIR/$FFMPEG_FILENAME"
-cp "$FFPROBE_SRC" "$BIN_DIR/$FFPROBE_FILENAME"
 
 bash scripts/build-tools/build.sh
 

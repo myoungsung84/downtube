@@ -8,12 +8,10 @@ import path, { join } from 'path'
 
 import type { InitState } from '../../types/init.types'
 
-const YTDLP_RELEASE_URL = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest'
-
-interface GitHubAsset {
-  name: string
-  browser_download_url: string
-}
+const YTDLP_DOWNLOAD_URLS = {
+  win32: 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe',
+  darwin: 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos'
+} as const
 
 function getBinDir(): string {
   // dev: <repo>/bin
@@ -23,13 +21,6 @@ function getBinDir(): string {
 
 function getYtDlpPath(binDir: string): string {
   return join(binDir, process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp')
-}
-
-function getAssetNameForPlatform(): string {
-  if (process.platform === 'win32') return 'yt-dlp.exe'
-  if (process.platform === 'darwin') return 'yt-dlp_macos'
-  // If you want Linux support later, switch this to 'yt-dlp_linux' explicitly.
-  return 'yt-dlp'
 }
 
 function ensureDir(dirPath: string): void {
@@ -71,34 +62,29 @@ async function updateYtDlp(reportProgress?: InitProgressReporter): Promise<void>
   const binDir = getBinDir()
   const ytdlpPath = getYtDlpPath(binDir)
   const localVersion = tryGetLocalYtDlpVersion(ytdlpPath)
+  const downloadUrl = YTDLP_DOWNLOAD_URLS[process.platform as keyof typeof YTDLP_DOWNLOAD_URLS]
+
+  if (localVersion !== 'none' && localVersion !== 'unknown') {
+    assertMacBinary(ytdlpPath)
+    console.log(`[yt-dlp] Using bundled binary (${localVersion})`)
+    return
+  }
 
   try {
-    const { data } = await axios.get(YTDLP_RELEASE_URL, {
-      headers: {
-        // GitHub API can be picky about User-Agent
-        'User-Agent': 'Downtube'
-      }
-    })
-
-    const latestVersion: string = String(data.tag_name).replace(/^v/, '')
-    const assetName = getAssetNameForPlatform()
-
-    const asset = (data.assets as GitHubAsset[]).find((a) => a.name === assetName)
-    const downloadUrl: string | undefined = asset?.browser_download_url
     if (!downloadUrl) {
-      throw new Error(`[yt-dlp] Download URL not found for asset: ${assetName}`)
+      throw new Error(`[yt-dlp] Unsupported platform: ${process.platform}`)
     }
 
-    if (localVersion === latestVersion) {
-      console.log(`[yt-dlp] Already up to date (${localVersion})`)
-      return
-    }
-
-    console.log(`[yt-dlp] Updating: ${localVersion} -> ${latestVersion} (${assetName})`)
+    console.log('[yt-dlp] Bundled binary not available. Running fallback download.')
 
     reportProgress?.({ status: 'running', step: 'downloading-binaries', progress: 60 })
 
-    const res = await axios.get(downloadUrl, { responseType: 'arraybuffer' })
+    const res = await axios.get(downloadUrl, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Downtube'
+      }
+    })
 
     ensureDir(binDir)
     writeFileSync(ytdlpPath, res.data)
@@ -125,7 +111,7 @@ export async function initializeApp(reportProgress?: InitProgressReporter): Prom
     // Log file should be set early so we capture the rest
     setupLogdir()
 
-    // Update yt-dlp before downloads start
+    // Build-time binary prepare is the primary path. Runtime only fills the gap when missing.
     await updateYtDlp(reportProgress)
 
     reportProgress?.({ status: 'running', step: 'starting-services', progress: 100 })

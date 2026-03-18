@@ -1,14 +1,10 @@
 import ArrowBackIosNewOutlinedIcon from '@mui/icons-material/ArrowBackIosNewOutlined'
-import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { JSX } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-
-type NavigationBarProps = {
-  onDirectory?: () => void
-}
 
 const NAV_ICON_BTN_SX = {
   p: 0.875,
@@ -38,10 +34,12 @@ const NAV_ICON_BTN_SX = {
   }
 }
 
-export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.Element {
+export default function NavigationBar(): JSX.Element {
   const navigate = useNavigate()
   const location = useLocation()
   const isSettingsPage = location.pathname === '/settings'
+  const isLibraryPage = location.pathname === '/library'
+  const showBackButton = isSettingsPage || isLibraryPage
 
   return (
     <Box
@@ -64,15 +62,15 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
         direction="row"
         alignItems="center"
         sx={{
-          px: 2.5,
+          px: 3,
           py: 1.5,
-          maxWidth: 1280,
+          maxWidth: 1400,
           width: '100%'
         }}
       >
         {/* Left actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
-          {isSettingsPage && (
+          {showBackButton && (
             <Tooltip title="뒤로 가기" placement="bottom" arrow>
               <IconButton onClick={() => navigate('/')} sx={NAV_ICON_BTN_SX}>
                 <ArrowBackIosNewOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -80,9 +78,24 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
             </Tooltip>
           )}
 
-          <Tooltip title="저장 폴더 열기" placement="bottom" arrow>
-            <IconButton onClick={onDirectory} sx={NAV_ICON_BTN_SX}>
-              <FolderOpenOutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
+          <Tooltip title="라이브러리" placement="bottom" arrow>
+            <IconButton
+              onClick={() => navigate('/library')}
+              aria-label="라이브러리"
+              sx={{
+                ...NAV_ICON_BTN_SX,
+                ...(isLibraryPage && {
+                  backgroundColor: 'primary.main',
+                  borderColor: 'primary.main',
+                  '& svg': { color: 'primary.contrastText' },
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                    borderColor: 'primary.dark'
+                  }
+                })
+              }}
+            >
+              <Inventory2OutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -126,7 +139,7 @@ export default function NavigationBar({ onDirectory }: NavigationBarProps): JSX.
         </Stack>
 
         {/* Right actions */}
-        <Stack direction="row" sx={{ flex: 1 }} justifyContent="flex-end">
+        <Stack direction="row" spacing={1} sx={{ flex: 1 }} justifyContent="flex-end">
           <Tooltip title="설정" placement="bottom" arrow>
             <IconButton
               onClick={() => navigate('/settings')}

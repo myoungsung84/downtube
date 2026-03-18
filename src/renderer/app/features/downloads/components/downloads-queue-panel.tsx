@@ -86,7 +86,7 @@ export default function DownloadsQueuePanel(props: {
           />
         </Stack>
 
-        <AppTooltip title="다운로드 폴더 열기">
+        <AppTooltip title="폴더 열기">
           <Button
             variant="text"
             size="small"

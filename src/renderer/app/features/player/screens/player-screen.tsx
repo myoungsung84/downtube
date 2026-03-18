@@ -1,19 +1,30 @@
-import { Box, Typography } from '@mui/material'
+import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSettingsStore } from '../../settings/store/use-settings-store'
-import PlayerAudioVisualizerOverlay from '../components/player-audio-visualizer-overlay'
-import { PlayerControls } from '../components/player-controls'
+import { PlayerControls } from '../components/controls/player-controls'
+import { AudioPlayerPanel } from '../components/surfaces/player-audio-panel'
+import { PlayerEmptyState } from '../components/surfaces/player-empty-state'
+import { PlayerVideoSurface } from '../components/surfaces/player-video-surface'
+import PlayerAudioVisualizerOverlay from '../components/visuals/player-audio-visualizer-overlay'
 import {
+  AUDIO_EXTENSIONS,
+  buildInitialMediaInfo,
+  clampSeekTime,
   getDecodedVideoSrc,
   getFileExtension,
   getFileNameFromVideoSrc,
   getFileNameWithoutExtension,
   getMediaPathFromVideoSrc,
-  getPlayerSearchParamsFromHash
-} from '../lib/player-query'
+  getPlayerSearchParamsFromHash,
+  isFiniteDuration,
+  resolveInitialMediaKind,
+  sanitizePlaybackTime,
+  toMediaUrl
+} from '../lib'
+import type { MediaInfo, MediaKind, SidecarMediaMeta } from '../types/player.types'
 
 const seekSliderSx: SxProps<Theme> = {
   color: 'error.main',
@@ -68,26 +79,39 @@ const volSliderSx: SxProps<Theme> = {
 const PLAYER_VOLUME_KEY = 'player.volume' as const
 const PLAYER_MUTED_KEY = 'player.muted' as const
 const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
-
 export default function PlayerScreen(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seekbarRef = useRef<HTMLDivElement | null>(null)
+  const mediaMetaRequestIdRef = useRef(0)
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
   const setSettingValue = useSettingsStore((state) => state.setValue)
   const storedVolume = useSettingsStore((state) => state.values[PLAYER_VOLUME_KEY])
   const storedMuted = useSettingsStore((state) => state.values[PLAYER_MUTED_KEY])
   const storedVisualizerVisible = useSettingsStore((state) => state.values[PLAYER_VISUALIZER_KEY])
 
-  const [meta, setMeta] = useState<{
-    fileName: string
-    duration: number
-    width: number
-    height: number
-    currentTime: number
-  }>({ fileName: '', duration: 0, width: 0, height: 0, currentTime: 0 })
+  const hash = window.location.hash
+  const searchParams = useMemo(() => getPlayerSearchParamsFromHash(hash), [hash])
+  const rawVideoSrc = useMemo(() => searchParams.get('src') ?? '', [searchParams])
+  const videoSrc = useMemo(() => getDecodedVideoSrc(rawVideoSrc), [rawVideoSrc])
+  const fileName = useMemo(() => getFileNameFromVideoSrc(videoSrc), [videoSrc])
+  const mediaPath = useMemo(() => getMediaPathFromVideoSrc(videoSrc), [videoSrc])
+  const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
+  const fileNameWithoutExt = useMemo(() => getFileNameWithoutExtension(fileName), [fileName])
+  const lowerFileExtension = useMemo(() => fileExtension.toLowerCase(), [fileExtension])
+  const upperFileExtension = useMemo(() => fileExtension.toUpperCase(), [fileExtension])
+  const knownAudioExtension = useMemo(
+    () => AUDIO_EXTENSIONS.has(lowerFileExtension),
+    [lowerFileExtension]
+  )
 
+  const [mediaInfo, setMediaInfo] = useState<MediaInfo>(() => buildInitialMediaInfo(fileName))
+  const [currentTime, setCurrentTime] = useState(0)
+  const [mediaKind, setMediaKind] = useState<MediaKind>(() =>
+    resolveInitialMediaKind(lowerFileExtension)
+  )
+  const [hasLoadedMetadata, setHasLoadedMetadata] = useState(false)
   const [paused, setPaused] = useState(false)
   const [volume, setVolume] = useState(1)
   const [muted, setMuted] = useState(false)
@@ -99,60 +123,159 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
-  const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
+  const [mediaMeta, setMediaMeta] = useState<SidecarMediaMeta>({})
 
-  const hash = window.location.hash
+  const isAudioFile = useMemo(() => {
+    if (knownAudioExtension) return true
+    if (lowerFileExtension !== 'webm') return false
+    if (!hasLoadedMetadata) return false
+    return mediaKind === 'audio'
+  }, [hasLoadedMetadata, knownAudioExtension, lowerFileExtension, mediaKind])
 
-  const searchParams = useMemo(() => getPlayerSearchParamsFromHash(hash), [hash])
-  const rawVideoSrc = useMemo(() => searchParams.get('src') ?? '', [searchParams])
-  const videoSrc = useMemo(() => getDecodedVideoSrc(rawVideoSrc), [rawVideoSrc])
-  const fileName = useMemo(() => getFileNameFromVideoSrc(videoSrc), [videoSrc])
-  const mediaPath = useMemo(() => getMediaPathFromVideoSrc(videoSrc), [videoSrc])
-  const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
-  const fileNameWithoutExt = useMemo(() => getFileNameWithoutExtension(fileName), [fileName])
-
-  const displayFileName = useMemo(() => {
-    if (mediaMeta.title && mediaMeta.artist) return `${mediaMeta.title} - ${mediaMeta.artist}`
-    if (mediaMeta.title) return mediaMeta.title
-    if (mediaMeta.artist) return mediaMeta.artist
-    return fileNameWithoutExt
-  }, [fileNameWithoutExt, mediaMeta.artist, mediaMeta.title])
-
+  const thumbnailSrc = useMemo(() => toMediaUrl(mediaMeta.thumbnailPath), [mediaMeta.thumbnailPath])
+  const primaryText = useMemo(
+    () => mediaMeta.title?.trim() || fileNameWithoutExt || fileName || '알 수 없는 파일',
+    [fileName, fileNameWithoutExt, mediaMeta.title]
+  )
+  const secondaryText = useMemo(() => {
+    if (!mediaMeta.title) return undefined
+    return mediaMeta.artist?.trim() || undefined
+  }, [mediaMeta.artist, mediaMeta.title])
   const videoObjectFit = useMemo(() => {
-    if (meta.width <= 0 || meta.height <= 0) return 'contain'
-    return meta.width >= meta.height ? 'cover' : 'contain'
-  }, [meta.height, meta.width])
+    if (isAudioFile) return 'contain'
+    if (mediaInfo.width <= 0 || mediaInfo.height <= 0) return 'contain'
+    return mediaInfo.width >= mediaInfo.height ? 'cover' : 'contain'
+  }, [isAudioFile, mediaInfo.height, mediaInfo.width])
 
-  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement>): void => {
-    console.error('[player] media load error', { src: videoSrc, error: event.currentTarget.error })
-  }
+  const clearHideTimer = useCallback(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current)
+      hideTimer.current = null
+    }
+  }, [])
 
-  const syncVideoMeta = (): void => {
+  const applyPlaybackRateToElement = useCallback(() => {
     const video = videoRef.current
     if (!video) return
-    setMeta((prev) => ({
-      ...prev,
-      fileName,
-      duration: Number.isFinite(video.duration) ? video.duration : 0,
-      width: video.videoWidth,
-      height: video.videoHeight,
-      currentTime: video.currentTime
-    }))
-    setPaused(video.paused)
-    if (!seeking) setSeekValue(video.currentTime)
-  }
+    if (video.playbackRate !== playbackRate) {
+      video.playbackRate = playbackRate
+    }
+  }, [playbackRate])
 
-  const handleOpenFolder = async (): Promise<void> => {
+  const syncStaticMediaMeta = useCallback(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const nextInfo: MediaInfo = {
+      fileName,
+      duration: isFiniteDuration(video.duration) ? video.duration : 0,
+      width: video.videoWidth,
+      height: video.videoHeight
+    }
+
+    setMediaInfo((prev) =>
+      prev.fileName === nextInfo.fileName &&
+      prev.duration === nextInfo.duration &&
+      prev.width === nextInfo.width &&
+      prev.height === nextInfo.height
+        ? prev
+        : nextInfo
+    )
+  }, [fileName])
+
+  const syncCurrentTime = useCallback(() => {
+    const video = videoRef.current
+    if (!video) return
+    const nextTime = sanitizePlaybackTime(video.currentTime)
+    setCurrentTime((prev) => (prev === nextTime ? prev : nextTime))
+    if (!seeking) {
+      setSeekValue((prev) => (prev === nextTime ? prev : nextTime))
+    }
+  }, [seeking])
+
+  const resolveWebmMediaKind = useCallback(() => {
+    if (lowerFileExtension !== 'webm') return
+    const video = videoRef.current
+    if (!video) return
+
+    const nextKind: MediaKind = video.videoWidth > 0 || video.videoHeight > 0 ? 'video' : 'audio'
+    setMediaKind((prev) => (prev === nextKind ? prev : nextKind))
+  }, [lowerFileExtension])
+
+  const syncMediaReadyState = useCallback(() => {
+    setHasLoadedMetadata(true)
+    syncStaticMediaMeta()
+    syncCurrentTime()
+    resolveWebmMediaKind()
+    applyPlaybackRateToElement()
+  }, [applyPlaybackRateToElement, resolveWebmMediaKind, syncCurrentTime, syncStaticMediaMeta])
+
+  const resetPlayerStateForSource = useCallback(() => {
+    clearHideTimer()
+    setMediaInfo(buildInitialMediaInfo(fileName))
+    setCurrentTime(0)
+    setSeekValue(0)
+    setSeeking(false)
+    setHoverTime(null)
+    setPaused(false)
+    setUiVisible(true)
+    setHasLoadedMetadata(false)
+    setMediaKind(resolveInitialMediaKind(lowerFileExtension))
+  }, [clearHideTimer, fileName, lowerFileExtension])
+
+  const applyStoredVolumeAndMuted = useCallback(() => {
+    const video = videoRef.current
+
+    if (typeof storedVolume === 'number') {
+      setVolume((prev) => (prev === storedVolume ? prev : storedVolume))
+      if (video && video.volume !== storedVolume) {
+        video.volume = storedVolume
+      }
+    }
+
+    if (typeof storedMuted === 'boolean') {
+      setMuted((prev) => (prev === storedMuted ? prev : storedMuted))
+      if (video && video.muted !== storedMuted) {
+        video.muted = storedMuted
+      }
+    }
+
+    if (typeof storedVisualizerVisible === 'boolean') {
+      setVisualizerVisible((prev) =>
+        prev === storedVisualizerVisible ? prev : storedVisualizerVisible
+      )
+    }
+  }, [storedMuted, storedVisualizerVisible, storedVolume])
+
+  const maybeScheduleHideUi = useCallback(() => {
+    clearHideTimer()
+    hideTimer.current = setTimeout(() => {
+      const video = videoRef.current
+      if (video && !video.paused) {
+        setUiVisible(false)
+      }
+    }, 3000)
+  }, [clearHideTimer])
+
+  const showUi = useCallback(() => {
+    setUiVisible(true)
+    maybeScheduleHideUi()
+  }, [maybeScheduleHideUi])
+
+  const handleVideoError = useCallback(
+    (event: React.SyntheticEvent<HTMLVideoElement>): void => {
+      console.error('[player] media load error', {
+        src: videoSrc,
+        error: event.currentTarget.error
+      })
+    },
+    [videoSrc]
+  )
+
+  const handleOpenFolder = useCallback(async (): Promise<void> => {
     if (!mediaPath) return
     await window.api.openDownloadItem(mediaPath)
-  }
-
-  const logVideoState = (label: string): void => {
-    if (!import.meta.env.DEV) return
-    const video = videoRef.current
-    if (!video) return
-    console.log(`[player] ${label}`, { currentTime: video.currentTime, paused: video.paused })
-  }
+  }, [mediaPath])
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current
@@ -160,21 +283,32 @@ export default function PlayerScreen(): React.JSX.Element {
     video.paused ? void video.play() : video.pause()
   }, [])
 
-  const skip = useCallback((sec: number) => {
-    const video = videoRef.current
-    if (!video) return
-    video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + sec))
-  }, [])
+  const skip = useCallback(
+    (seconds: number) => {
+      const video = videoRef.current
+      if (!video) return
+      const nextTime = isFiniteDuration(video.duration)
+        ? clampSeekTime(video.currentTime + seconds, video.duration)
+        : Math.max(0, sanitizePlaybackTime(video.currentTime) + seconds)
+      video.currentTime = nextTime
+      setCurrentTime((prev) => (prev === nextTime ? prev : nextTime))
+      if (!seeking) {
+        setSeekValue((prev) => (prev === nextTime ? prev : nextTime))
+      }
+    },
+    [seeking]
+  )
 
   const handleVolumeChange = useCallback((_: Event, val: number | number[]) => {
     const nextVolume = Array.isArray(val) ? val[0] : val
     const video = videoRef.current
     if (!video) return
+
     const nextMuted = nextVolume === 0
     video.volume = nextVolume
     video.muted = nextMuted
-    setVolume(nextVolume)
-    setMuted(nextMuted)
+    setVolume((prev) => (prev === nextVolume ? prev : nextVolume))
+    setMuted((prev) => (prev === nextMuted ? prev : nextMuted))
   }, [])
 
   const handleVolumeCommit = useCallback(
@@ -192,29 +326,36 @@ export default function PlayerScreen(): React.JSX.Element {
     if (!video) return
     const nextMuted = !video.muted
     video.muted = nextMuted
-    setMuted(nextMuted)
+    setMuted((prev) => (prev === nextMuted ? prev : nextMuted))
     void setSettingValue(PLAYER_MUTED_KEY, nextMuted)
   }, [setSettingValue])
 
-  const handleSeekChange = useCallback((_: Event, val: number | number[]) => {
-    const v = Array.isArray(val) ? val[0] : val
-    setSeekValue(v)
-    setSeeking(true)
-  }, [])
+  const handleSeekChange = useCallback(
+    (_: Event, val: number | number[]) => {
+      const nextValue = Array.isArray(val) ? val[0] : val
+      const clampedValue = clampSeekTime(nextValue, mediaInfo.duration)
+      setSeekValue((prev) => (prev === clampedValue ? prev : clampedValue))
+      setSeeking(true)
+    },
+    [mediaInfo.duration]
+  )
 
   const handleSeekCommit = useCallback(
     (_: React.SyntheticEvent | Event, val: number | number[]) => {
-      const v = Array.isArray(val) ? val[0] : val
       const video = videoRef.current
-      setSeekValue(v)
-      if (!video) {
-        setSeeking(false)
-        return
+      const nextValue = Array.isArray(val) ? val[0] : val
+      const duration = video?.duration ?? mediaInfo.duration
+      const clampedValue = clampSeekTime(nextValue, duration)
+      setSeekValue((prev) => (prev === clampedValue ? prev : clampedValue))
+
+      if (video) {
+        video.currentTime = clampedValue
       }
-      video.currentTime = v
+
+      setCurrentTime((prev) => (prev === clampedValue ? prev : clampedValue))
       setSeeking(false)
     },
-    []
+    [mediaInfo.duration]
   )
 
   const toggleFullscreen = useCallback(() => {
@@ -223,86 +364,57 @@ export default function PlayerScreen(): React.JSX.Element {
     document.fullscreenElement ? void document.exitFullscreen() : void el.requestFullscreen()
   }, [])
 
-  const scheduleHide = useCallback(() => {
-    if (hideTimer.current) clearTimeout(hideTimer.current)
-    hideTimer.current = setTimeout(() => {
-      const video = videoRef.current
-      if (video && !video.paused) setUiVisible(false)
-    }, 3000)
-  }, [])
-
-  const showUi = useCallback(() => {
-    setUiVisible(true)
-    scheduleHide()
-  }, [scheduleHide])
-
-  const handleSeekbarMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    const video = videoRef.current
-    if (video && video.duration > 0) {
-      setHoverTime(ratio * video.duration)
-      setHoverX(e.clientX - rect.left)
-    }
-  }, [])
+  const handleSeekbarMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+      if (isFiniteDuration(mediaInfo.duration) && mediaInfo.duration > 0) {
+        setHoverTime(ratio * mediaInfo.duration)
+        setHoverX(event.clientX - rect.left)
+      }
+    },
+    [mediaInfo.duration]
+  )
 
   const handleSeekbarMouseLeave = useCallback(() => setHoverTime(null), [])
 
   useEffect(() => {
-    setMeta({ fileName, duration: 0, width: 0, height: 0, currentTime: 0 })
-    setSeekValue(0)
-  }, [fileName, videoSrc])
+    resetPlayerStateForSource()
+  }, [resetPlayerStateForSource])
 
   useEffect(() => {
     void hydrateSettings([PLAYER_VOLUME_KEY, PLAYER_MUTED_KEY, PLAYER_VISUALIZER_KEY])
   }, [hydrateSettings])
 
   useEffect(() => {
-    const video = videoRef.current
-
-    if (typeof storedVolume === 'number') {
-      setVolume(storedVolume)
-      if (video) {
-        video.volume = storedVolume
-      }
-    }
-
-    if (typeof storedMuted === 'boolean') {
-      setMuted(storedMuted)
-      if (video) {
-        video.muted = storedMuted
-      }
-    }
-
-    if (typeof storedVisualizerVisible === 'boolean') {
-      setVisualizerVisible(storedVisualizerVisible)
-    }
-  }, [storedMuted, storedVisualizerVisible, storedVolume])
+    applyStoredVolumeAndMuted()
+  }, [applyStoredVolumeAndMuted])
 
   useEffect(() => {
-    let mounted = true
+    applyPlaybackRateToElement()
+  }, [applyPlaybackRateToElement, videoSrc])
 
-    const loadMediaMeta = async (): Promise<void> => {
-      if (!mediaPath) {
-        if (mounted) setMediaMeta({})
-        return
-      }
+  useEffect(() => {
+    const requestId = ++mediaMetaRequestIdRef.current
+    setMediaMeta({})
 
-      const result = await window.api.readMediaMeta(mediaPath)
-      if (!mounted) return
+    if (!mediaPath) return
+
+    void (async () => {
+      const result = await window.api.readMediaSidecar(mediaPath)
+      if (mediaMetaRequestIdRef.current !== requestId) return
+
       if (!result.success) {
         setMediaMeta({})
         return
       }
 
-      setMediaMeta({ title: result.title, artist: result.artist })
-    }
-
-    void loadMediaMeta()
-
-    return () => {
-      mounted = false
-    }
+      setMediaMeta({
+        title: result.title,
+        artist: result.artist,
+        thumbnailPath: result.thumbnailPath
+      })
+    })()
   }, [mediaPath])
 
   useEffect(() => {
@@ -312,46 +424,50 @@ export default function PlayerScreen(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.target instanceof HTMLInputElement) return
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.target instanceof HTMLInputElement) return
       showUi()
-      if (e.code === 'Space') {
-        e.preventDefault()
+      if (event.code === 'Space') {
+        event.preventDefault()
         togglePlay()
       }
-      if (e.code === 'ArrowLeft') skip(-10)
-      if (e.code === 'ArrowRight') skip(10)
-      if (e.code === 'KeyF') toggleFullscreen()
-      if (e.code === 'KeyM') toggleMute()
+      if (event.code === 'ArrowLeft') skip(-10)
+      if (event.code === 'ArrowRight') skip(10)
+      if (event.code === 'KeyF') toggleFullscreen()
+      if (event.code === 'KeyM') toggleMute()
     }
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [togglePlay, skip, toggleFullscreen, toggleMute, showUi])
+  }, [showUi, skip, toggleFullscreen, toggleMute, togglePlay])
 
   useEffect(() => {
-    if (!paused) scheduleHide()
-    else {
-      if (hideTimer.current) clearTimeout(hideTimer.current)
-      setUiVisible(true)
+    if (!paused) {
+      maybeScheduleHideUi()
+      return
     }
-  }, [paused, scheduleHide])
+
+    clearHideTimer()
+    setUiVisible(true)
+  }, [clearHideTimer, maybeScheduleHideUi, paused])
 
   useEffect(
     () => () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current)
+      clearHideTimer()
     },
-    []
+    [clearHideTimer]
   )
 
-  const currentSeekVal = seeking ? seekValue : meta.currentTime
+  const currentSeekVal = seeking ? seekValue : currentTime
 
   return (
     <Box
       ref={containerRef}
       onMouseMove={showUi}
       onMouseLeave={() => {
-        if (!paused) setUiVisible(false)
+        if (!paused) {
+          setUiVisible(false)
+        }
       }}
       sx={{
         width: '100vw',
@@ -366,46 +482,37 @@ export default function PlayerScreen(): React.JSX.Element {
     >
       {videoSrc ? (
         <>
-          <Box
-            component="video"
-            ref={videoRef}
+          <PlayerVideoSurface
+            videoRef={videoRef}
             src={videoSrc}
+            isAudioFile={isAudioFile}
+            videoObjectFit={videoObjectFit}
             onError={handleVideoError}
-            onLoadedMetadata={() => {
-              syncVideoMeta()
-              logVideoState('loadedmetadata')
-            }}
-            onCanPlay={() => {
-              syncVideoMeta()
-              logVideoState('canplay')
-            }}
+            onLoadedMetadata={syncMediaReadyState}
+            onCanPlay={syncMediaReadyState}
             onPlay={() => setPaused(false)}
             onPause={() => setPaused(true)}
-            onSeeking={() => logVideoState('seeking')}
             onSeeked={() => {
-              syncVideoMeta()
-              logVideoState('seeked')
+              syncStaticMediaMeta()
+              syncCurrentTime()
               setSeeking(false)
             }}
-            onTimeUpdate={syncVideoMeta}
+            onTimeUpdate={syncCurrentTime}
             onClick={togglePlay}
             onDoubleClick={toggleFullscreen}
-            autoPlay
-            preload="metadata"
-            sx={{
-              display: 'block',
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: videoObjectFit,
-              objectPosition: 'center',
-              backgroundColor: 'common.black',
-              WebkitAppRegion: 'no-drag',
-              cursor: 'inherit',
-              '&::-webkit-media-controls': { display: 'none !important' }
-            }}
           />
+
+          {isAudioFile ? (
+            <AudioPlayerPanel
+              paused={paused}
+              visualizerVisible={visualizerVisible}
+              thumbnailSrc={thumbnailSrc}
+              primaryText={primaryText}
+              secondaryText={secondaryText}
+              upperFileExtension={upperFileExtension}
+              onTogglePlay={togglePlay}
+            />
+          ) : null}
 
           <PlayerAudioVisualizerOverlay
             videoRef={videoRef}
@@ -418,9 +525,15 @@ export default function PlayerScreen(): React.JSX.Element {
             visualizerVisible={visualizerVisible}
             paused={paused}
             playbackRate={playbackRate}
-            meta={{ width: meta.width, height: meta.height, duration: meta.duration }}
+            isAudioFile={isAudioFile}
+            meta={{
+              width: mediaInfo.width,
+              height: mediaInfo.height,
+              duration: mediaInfo.duration
+            }}
             fileExtension={fileExtension}
-            displayFileName={displayFileName}
+            primaryText={primaryText}
+            secondaryText={secondaryText}
             hoverTime={hoverTime}
             hoverX={hoverX}
             currentSeekVal={currentSeekVal}
@@ -433,8 +546,10 @@ export default function PlayerScreen(): React.JSX.Element {
             onOpenFolder={handleOpenFolder}
             onChangePlaybackRate={(rate) => {
               const video = videoRef.current
-              if (video) video.playbackRate = rate
-              setPlaybackRate(rate)
+              if (video) {
+                video.playbackRate = rate
+              }
+              setPlaybackRate((prev) => (prev === rate ? prev : rate))
             }}
             onReplay10={() => skip(-10)}
             onTogglePlay={togglePlay}
@@ -455,28 +570,7 @@ export default function PlayerScreen(): React.JSX.Element {
           />
         </>
       ) : (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-            color: 'common.white',
-            textAlign: 'center',
-            px: 3,
-            width: '100%',
-            height: '100%'
-          }}
-        >
-          <Typography variant="h6">재생할 파일이 없습니다.</Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: (theme) => alpha(theme.palette.common.white, 0.5) }}
-          >
-            player window를 열 때 src를 전달하도록 연결이 필요합니다.
-          </Typography>
-        </Box>
+        <PlayerEmptyState />
       )}
     </Box>
   )

@@ -25,6 +25,9 @@ function guessMimeType(filePath: string): string {
   if (ext === '.webm') return 'video/webm'
   if (ext === '.mp3') return 'audio/mpeg'
   if (ext === '.m4a') return 'audio/mp4'
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
+  if (ext === '.png') return 'image/png'
+  if (ext === '.webp') return 'image/webp'
   return 'application/octet-stream'
 }
 

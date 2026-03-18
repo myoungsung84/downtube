@@ -1,3 +1,4 @@
+import LibraryPage from '@renderer/pages/library-page'
 import MainPage from '@renderer/pages/main-page'
 import PlayerPage from '@renderer/pages/player-page'
 import SettingsPage from '@renderer/pages/settings-page'
@@ -13,6 +14,10 @@ export const router = createHashRouter(
     {
       path: '/',
       element: <MainPage />
+    },
+    {
+      path: '/library',
+      element: <LibraryPage />
     },
     {
       path: '/player',

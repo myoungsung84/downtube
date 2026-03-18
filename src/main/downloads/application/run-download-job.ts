@@ -3,8 +3,13 @@ import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
 
+import type { MediaSidecarData } from '../../../types/media-sidecar.types'
 import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/ffmpeg/ffmpeg'
-import { removeFileIfExists, removeFilesIfExistsSync, removeFilesSync } from '../adapters/fs/cleanup'
+import {
+  removeFileIfExists,
+  removeFilesIfExistsSync,
+  removeFilesSync
+} from '../adapters/fs/cleanup'
 import { findRealDownloadedFile, resolveByPrefixInDir } from '../adapters/fs/resolver'
 import { locateYtDlp, parseYtDlpPercent, spawnYtDlp } from '../adapters/yt-dlp/yt-dlp'
 import { ctx, logYtDlpArgs, logYtDlpStdout, step } from '../shared/download-helpers'
@@ -114,7 +119,7 @@ function getSidecarBasePath(outputFile: string): string {
   return ext ? outputFile.slice(0, -ext.length) : outputFile
 }
 
-function buildSidecarMetadata(job: DownloadJob, outputFile: string): Record<string, unknown> {
+function buildSidecarMetadata(job: DownloadJob, outputFile: string): MediaSidecarData {
   return {
     id: job.id,
     url: job.url,

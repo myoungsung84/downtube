@@ -4,7 +4,7 @@ import React from 'react'
 
 export default function SettingsPage(): React.JSX.Element {
   return (
-    <AppLayout onDirectory={() => window.api.openDownloadDir()}>
+    <AppLayout>
       <SettingsScreen />
     </AppLayout>
   )
