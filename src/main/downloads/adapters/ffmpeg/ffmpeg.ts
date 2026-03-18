@@ -2,17 +2,32 @@ import { app } from 'electron'
 import ffmpegStatic from 'ffmpeg-static'
 import ffprobeStatic from 'ffprobe-static'
 import ffmpeg from 'fluent-ffmpeg'
+import fs from 'fs'
 import path from 'path'
 
 const isWindows = process.platform === 'win32'
 
 function locateBinary(name: 'ffmpeg' | 'ffprobe'): string {
   const binaryName = isWindows ? `${name}.exe` : name
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'bin', binaryName)
-    : name === 'ffmpeg'
-      ? (ffmpegStatic as string) // ffmpeg-static exports path as default string
-      : ffprobeStatic.path // ffprobe-static exports { path: string }
+
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'bin', binaryName)
+  }
+
+  const candidates = [
+    path.resolve(app.getAppPath(), 'bin', binaryName),
+    path.resolve(app.getAppPath(), '..', 'bin', binaryName),
+    path.resolve(app.getAppPath(), '../..', 'bin', binaryName),
+    path.resolve(process.cwd(), 'bin', binaryName),
+    path.resolve(process.cwd(), '..', 'bin', binaryName),
+    path.resolve(process.cwd(), '../..', 'bin', binaryName)
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate
+  }
+
+  return name === 'ffmpeg' ? (ffmpegStatic as string) : ffprobeStatic.path
 }
 
 export function locateFfmpeg(): string {
