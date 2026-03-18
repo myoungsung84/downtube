@@ -37,11 +37,23 @@ function getDownloadsRootDir(): string {
   return app.getPath('downloads')
 }
 
+function isPathInsideDownloadDir(filePath: string): boolean {
+  const resolvedRoot = path.resolve(getDownloadDir())
+  const resolvedTarget = path.resolve(filePath)
+  const normalizedRoot = process.platform === 'win32' ? resolvedRoot.toLowerCase() : resolvedRoot
+  const normalizedTarget =
+    process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget
+  return normalizedTarget.startsWith(`${normalizedRoot}${path.sep}`)
+}
+
 async function openPlayerWindow(
   mainWindow: BrowserWindow,
   filePath: string
 ): Promise<{ success: boolean; message?: string }> {
   if (!filePath) return { success: false, message: 'Output file path not found' }
+  if (!isPathInsideDownloadDir(filePath)) {
+    return { success: false, message: 'Access denied: path is outside download directory' }
+  }
   if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
 
   const mediaUrl = new URL('downtube-media://media')
@@ -98,9 +110,13 @@ function resolveSidecarThumbnailPath(filePath: string): string | undefined {
   )
 }
 
-function readMediaSidecar(filePath: string): ReadMediaSidecarResult {
+async function readMediaSidecar(filePath: string): Promise<ReadMediaSidecarResult> {
   if (typeof filePath !== 'string' || filePath.trim().length === 0) {
     return { success: false, message: 'Invalid path' }
+  }
+
+  if (!isPathInsideDownloadDir(filePath)) {
+    return { success: false, message: 'Access denied: path is outside download directory' }
   }
 
   if (!fs.existsSync(filePath)) {
@@ -113,7 +129,9 @@ function readMediaSidecar(filePath: string): ReadMediaSidecarResult {
   }
 
   try {
-    const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as Partial<MediaSidecarData>
+    const raw = JSON.parse(
+      await fs.promises.readFile(jsonPath, 'utf-8')
+    ) as Partial<MediaSidecarData>
     const title =
       typeof raw.info?.title === 'string' ? raw.info.title.trim() || undefined : undefined
     const artist =

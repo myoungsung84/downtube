@@ -124,7 +124,14 @@ export function AudioPlayerPanel({
       >
         <Box
           onClick={onTogglePlay}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onTogglePlay()
+            }
+          }}
           role="button"
+          tabIndex={0}
           aria-label={paused ? '재생' : '일시정지'}
           sx={{
             width: 'min(100%, 560px)',
