@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
+import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSettingsStore } from '../../settings/store/use-settings-store'
@@ -68,6 +69,14 @@ const volSliderSx: SxProps<Theme> = {
 const PLAYER_VOLUME_KEY = 'player.volume' as const
 const PLAYER_MUTED_KEY = 'player.muted' as const
 const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
+const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
+
+function toMediaUrl(filePath?: string): string | undefined {
+  if (!filePath) return undefined
+  const url = new URL('downtube-media://media')
+  url.searchParams.set('path', filePath)
+  return url.toString()
+}
 
 export default function PlayerScreen(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -99,7 +108,11 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
-  const [mediaMeta, setMediaMeta] = useState<{ title?: string; artist?: string }>({})
+  const [mediaMeta, setMediaMeta] = useState<{
+    title?: string
+    artist?: string
+    thumbnailPath?: string
+  }>({})
 
   const hash = window.location.hash
 
@@ -110,18 +123,29 @@ export default function PlayerScreen(): React.JSX.Element {
   const mediaPath = useMemo(() => getMediaPathFromVideoSrc(videoSrc), [videoSrc])
   const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
   const fileNameWithoutExt = useMemo(() => getFileNameWithoutExtension(fileName), [fileName])
+  const lowerFileExtension = useMemo(() => fileExtension.toLowerCase(), [fileExtension])
+  const isAudioFile = useMemo(() => {
+    if (AUDIO_EXTENSIONS.has(lowerFileExtension)) return true
+    return lowerFileExtension === 'webm' && meta.width <= 0 && meta.height <= 0
+  }, [lowerFileExtension, meta.height, meta.width])
+  const thumbnailSrc = useMemo(() => toMediaUrl(mediaMeta.thumbnailPath), [mediaMeta.thumbnailPath])
 
-  const displayFileName = useMemo(() => {
-    if (mediaMeta.title && mediaMeta.artist) return `${mediaMeta.title} - ${mediaMeta.artist}`
+  const primaryText = useMemo(() => {
     if (mediaMeta.title) return mediaMeta.title
     if (mediaMeta.artist) return mediaMeta.artist
     return fileNameWithoutExt
   }, [fileNameWithoutExt, mediaMeta.artist, mediaMeta.title])
 
+  const secondaryText = useMemo(() => {
+    if (mediaMeta.title && mediaMeta.artist) return mediaMeta.artist
+    return undefined
+  }, [mediaMeta.artist, mediaMeta.title])
+
   const videoObjectFit = useMemo(() => {
+    if (isAudioFile) return 'contain'
     if (meta.width <= 0 || meta.height <= 0) return 'contain'
     return meta.width >= meta.height ? 'cover' : 'contain'
-  }, [meta.height, meta.width])
+  }, [isAudioFile, meta.height, meta.width])
 
   const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement>): void => {
     console.error('[player] media load error', { src: videoSrc, error: event.currentTarget.error })
@@ -130,6 +154,7 @@ export default function PlayerScreen(): React.JSX.Element {
   const syncVideoMeta = (): void => {
     const video = videoRef.current
     if (!video) return
+
     setMeta((prev) => ({
       ...prev,
       fileName,
@@ -288,14 +313,18 @@ export default function PlayerScreen(): React.JSX.Element {
         return
       }
 
-      const result = await window.api.readMediaMeta(mediaPath)
+      const result = await window.api.readMediaSidecar(mediaPath)
       if (!mounted) return
       if (!result.success) {
         setMediaMeta({})
         return
       }
 
-      setMediaMeta({ title: result.title, artist: result.artist })
+      setMediaMeta({
+        title: result.title,
+        artist: result.artist,
+        thumbnailPath: result.thumbnailPath
+      })
     }
 
     void loadMediaMeta()
@@ -321,13 +350,13 @@ export default function PlayerScreen(): React.JSX.Element {
       }
       if (e.code === 'ArrowLeft') skip(-10)
       if (e.code === 'ArrowRight') skip(10)
-      if (e.code === 'KeyF') toggleFullscreen()
+      if (e.code === 'KeyF' && !isAudioFile) toggleFullscreen()
       if (e.code === 'KeyM') toggleMute()
     }
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [togglePlay, skip, toggleFullscreen, toggleMute, showUi])
+  }, [isAudioFile, togglePlay, skip, toggleFullscreen, toggleMute, showUi])
 
   useEffect(() => {
     if (!paused) scheduleHide()
@@ -389,23 +418,143 @@ export default function PlayerScreen(): React.JSX.Element {
             }}
             onTimeUpdate={syncVideoMeta}
             onClick={togglePlay}
-            onDoubleClick={toggleFullscreen}
+            onDoubleClick={() => {
+              if (!isAudioFile) toggleFullscreen()
+            }}
             autoPlay
             preload="metadata"
             sx={{
               display: 'block',
               position: 'absolute',
               inset: 0,
-              width: '100%',
-              height: '100%',
+              width: isAudioFile ? 1 : '100%',
+              height: isAudioFile ? 1 : '100%',
               objectFit: videoObjectFit,
               objectPosition: 'center',
               backgroundColor: 'common.black',
               WebkitAppRegion: 'no-drag',
               cursor: 'inherit',
+              opacity: isAudioFile ? 0 : 1,
+              pointerEvents: isAudioFile ? 'none' : 'auto',
               '&::-webkit-media-controls': { display: 'none !important' }
             }}
           />
+
+          {isAudioFile ? (
+            <>
+              {thumbnailSrc ? (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundImage: `url("${thumbnailSrc}")`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(28px)',
+                    transform: 'scale(1.08)',
+                    opacity: 0.18
+                  }}
+                />
+              ) : null}
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: (theme) =>
+                    `radial-gradient(circle at top, ${alpha(theme.palette.error.main, 0.16)} 0%, transparent 34%), linear-gradient(180deg, ${alpha(theme.palette.common.white, 0.04)} 0%, transparent 32%, ${alpha(theme.palette.common.black, 0.38)} 100%)`,
+                  zIndex: 1
+                }}
+              />
+
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  px: 3,
+                  zIndex: 2,
+                  pointerEvents: 'none'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 'min(100%, 560px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    px: 3,
+                    py: 4,
+                    borderRadius: 3,
+                    backgroundColor: (theme) => alpha(theme.palette.common.black, 0.32),
+                    border: (theme) => `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+                    backdropFilter: 'blur(18px)',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Thumbnail
+                    url={thumbnailSrc}
+                    w={160}
+                    h={160}
+                    alt={primaryText}
+                    sx={{
+                      borderRadius: 2,
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      boxShadow: '0 18px 42px rgba(0, 0, 0, 0.35)'
+                    }}
+                  />
+
+                  <Box
+                    sx={{
+                      px: 1.25,
+                      py: 0.5,
+                      borderRadius: 999,
+                      backgroundColor: (theme) => alpha(theme.palette.error.main, 0.18),
+                      color: 'common.white'
+                    }}
+                  >
+                    <Typography
+                      sx={{ fontSize: '0.74rem', fontWeight: 700, letterSpacing: '0.08em' }}
+                    >
+                      {fileExtension ? `AUDIO · ${fileExtension}` : 'AUDIO'}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      title={primaryText}
+                      sx={{
+                        color: 'common.white',
+                        fontSize: { xs: '1.35rem', sm: '1.8rem' },
+                        fontWeight: 800,
+                        letterSpacing: '-0.03em',
+                        wordBreak: 'break-word'
+                      }}
+                    >
+                      {primaryText || fileNameWithoutExt}
+                    </Typography>
+                    {secondaryText ? (
+                      <Typography
+                        title={secondaryText}
+                        sx={{
+                          mt: 0.75,
+                          color: (theme) => alpha(theme.palette.common.white, 0.7),
+                          fontSize: '0.95rem',
+                          fontWeight: 500,
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        {secondaryText}
+                      </Typography>
+                    ) : null}
+                  </Box>
+                </Box>
+              </Box>
+            </>
+          ) : null}
 
           <PlayerAudioVisualizerOverlay
             videoRef={videoRef}
@@ -418,9 +567,11 @@ export default function PlayerScreen(): React.JSX.Element {
             visualizerVisible={visualizerVisible}
             paused={paused}
             playbackRate={playbackRate}
+            isAudioFile={isAudioFile}
             meta={{ width: meta.width, height: meta.height, duration: meta.duration }}
             fileExtension={fileExtension}
-            displayFileName={displayFileName}
+            primaryText={primaryText}
+            secondaryText={secondaryText}
             hoverTime={hoverTime}
             hoverX={hoverX}
             currentSeekVal={currentSeekVal}
@@ -451,7 +602,9 @@ export default function PlayerScreen(): React.JSX.Element {
               setVisualizerVisible(nextVisible)
               void setSettingValue(PLAYER_VISUALIZER_KEY, nextVisible)
             }}
-            onToggleFullscreen={toggleFullscreen}
+            onToggleFullscreen={() => {
+              if (!isAudioFile) toggleFullscreen()
+            }}
           />
         </>
       ) : (

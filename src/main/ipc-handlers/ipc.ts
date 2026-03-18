@@ -1,4 +1,3 @@
-import { spawn } from 'child_process'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
@@ -6,10 +5,10 @@ import path from 'path'
 import url from 'url'
 
 import type { InitState } from '../../types/init.types'
+import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
 import type { SettingKey } from '../../types/settings.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
-import { locateFfprobe } from '../downloads/adapters/ffmpeg/ffmpeg'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
 import type { DownloadJob } from '../downloads/types'
 import { deleteLibraryItem, listLibraryItems } from '../library/library'
@@ -19,6 +18,7 @@ const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
 let initState: InitState = { status: 'idle' }
 let initInFlight: Promise<InitState> | null = null
+const SIDECAR_THUMBNAIL_EXTENSIONS = ['.jpg', '.png', '.webp'] as const
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -86,6 +86,70 @@ async function openPlayerWindow(
   return { success: true }
 }
 
+function getSidecarBasePath(filePath: string): string {
+  const extension = path.extname(filePath)
+  return extension ? filePath.slice(0, -extension.length) : filePath
+}
+
+function resolveSidecarThumbnailPath(filePath: string): string | undefined {
+  const sidecarBasePath = getSidecarBasePath(filePath)
+  return SIDECAR_THUMBNAIL_EXTENSIONS.map((extension) => `${sidecarBasePath}${extension}`).find(
+    (candidate) => fs.existsSync(candidate)
+  )
+}
+
+function readMediaSidecar(filePath: string): ReadMediaSidecarResult {
+  if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+    return { success: false, message: 'Invalid path' }
+  }
+
+  if (!fs.existsSync(filePath)) {
+    return { success: false, message: 'File not found' }
+  }
+
+  const jsonPath = `${getSidecarBasePath(filePath)}.json`
+  if (!fs.existsSync(jsonPath)) {
+    return { success: false, message: 'Sidecar not found' }
+  }
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8')) as Partial<MediaSidecarData>
+    const title =
+      typeof raw.info?.title === 'string' ? raw.info.title.trim() || undefined : undefined
+    const artist =
+      typeof raw.info?.uploader === 'string'
+        ? raw.info.uploader.trim() || undefined
+        : typeof raw.info?.channel === 'string'
+          ? raw.info.channel.trim() || undefined
+          : undefined
+
+    return {
+      success: true,
+      ...(title ? { title } : {}),
+      ...(artist ? { artist } : {}),
+      ...(raw.info ? { info: raw.info } : { info: null }),
+      ...(resolveSidecarThumbnailPath(filePath)
+        ? { thumbnailPath: resolveSidecarThumbnailPath(filePath) }
+        : {}),
+      sidecar: {
+        id: typeof raw.id === 'string' ? raw.id : '',
+        url: typeof raw.url === 'string' ? raw.url : '',
+        type: raw.type === 'video' || raw.type === 'audio' ? raw.type : 'video',
+        filename: typeof raw.filename === 'string' ? raw.filename : '',
+        outputFile: typeof raw.outputFile === 'string' ? raw.outputFile : '',
+        outputPath: typeof raw.outputPath === 'string' ? raw.outputPath : '',
+        downloadedAt: typeof raw.downloadedAt === 'string' ? raw.downloadedAt : '',
+        info: raw.info ?? null
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to read sidecar metadata'
+    }
+  }
+}
+
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
   const broadcastInitState = (state: InitState): void => {
     initState = state
@@ -148,8 +212,8 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
     const job = downloadsQueue.getJob(payload.id)
     if (!job) return { success: false, message: 'Job not found' }
-    if (job.status !== 'completed' || job.type !== 'video') {
-      return { success: false, message: 'Only completed video can be played' }
+    if (job.status !== 'completed') {
+      return { success: false, message: 'Only completed media can be played' }
     }
 
     const filePath = job.finalFilePath ?? job.outputFile
@@ -225,73 +289,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
   })
 
-  safeSetHandler('media-meta-read', async (_, filePath: string) => {
-    try {
-      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
-        return { success: false, message: 'Invalid path' }
-      }
-      if (!fs.existsSync(filePath)) {
-        return { success: false, message: 'File not found' }
-      }
-
-      const ffprobePath = locateFfprobe()
-      const ffprobeResult = await new Promise<{
-        success: boolean
-        stdout?: string
-        message?: string
-      }>((resolve) => {
-        const proc = spawn(
-          ffprobePath,
-          ['-v', 'error', '-show_entries', 'format_tags=title,artist', '-of', 'json', filePath],
-          { windowsHide: true }
-        )
-
-        let stdout = ''
-        let stderr = ''
-
-        proc.stdout.on('data', (data: Buffer) => {
-          stdout += data.toString()
-        })
-
-        proc.stderr.on('data', (data: Buffer) => {
-          stderr += data.toString()
-        })
-
-        proc.on('error', (error: Error) => {
-          resolve({ success: false, message: error.message })
-        })
-
-        proc.on('close', (code: number | null) => {
-          const exitCode = code ?? -1
-          if (exitCode !== 0) {
-            const message = stderr.trim() || `ffprobe exited with code ${exitCode}`
-            resolve({ success: false, message })
-            return
-          }
-          resolve({ success: true, stdout })
-        })
-      })
-
-      if (!ffprobeResult.success) {
-        return { success: false, message: ffprobeResult.message ?? 'Failed to read media metadata' }
-      }
-
-      const raw = JSON.parse(ffprobeResult.stdout ?? '{}') as {
-        format?: { tags?: { title?: unknown; artist?: unknown; ARTIST?: unknown } }
-      }
-
-      const title = typeof raw.format?.tags?.title === 'string' ? raw.format.tags.title : undefined
-      const artistTag = raw.format?.tags?.artist ?? raw.format?.tags?.ARTIST
-      const artist = typeof artistTag === 'string' ? artistTag : undefined
-
-      return { success: true, ...(title ? { title } : {}), ...(artist ? { artist } : {}) }
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to read media metadata'
-      }
-    }
-  })
+  safeSetHandler('media-sidecar-read', async (_, filePath: string) => readMediaSidecar(filePath))
 
   safeSetHandler('download-video', async (_, url: string) => {
     if (downloadsQueue.hasUrl(url)) {

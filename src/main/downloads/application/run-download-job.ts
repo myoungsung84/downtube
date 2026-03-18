@@ -3,6 +3,7 @@ import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
 
+import type { MediaSidecarData } from '../../../types/media-sidecar.types'
 import { configureFfmpegPath, locateFfmpeg, mergeMediaFiles } from '../adapters/ffmpeg/ffmpeg'
 import {
   removeFileIfExists,
@@ -118,7 +119,7 @@ function getSidecarBasePath(outputFile: string): string {
   return ext ? outputFile.slice(0, -ext.length) : outputFile
 }
 
-function buildSidecarMetadata(job: DownloadJob, outputFile: string): Record<string, unknown> {
+function buildSidecarMetadata(job: DownloadJob, outputFile: string): MediaSidecarData {
   return {
     id: job.id,
     url: job.url,

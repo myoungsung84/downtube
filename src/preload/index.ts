@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
 import type { LibraryItem } from '../types/library.types'
+import type { ReadMediaSidecarResult } from '../types/media-sidecar.types'
 import type { SettingKey, SettingValueMap } from '../types/settings.types'
 
 const api = {
@@ -11,7 +12,8 @@ const api = {
   openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
   openDownloadsRootDir: () => ipcRenderer.invoke('downloads-root-open'),
   openDownloadItem: (path: string) => ipcRenderer.invoke('download-item-open', path),
-  readMediaMeta: (path: string) => ipcRenderer.invoke('media-meta-read', path),
+  readMediaSidecar: (path: string): Promise<ReadMediaSidecarResult> =>
+    ipcRenderer.invoke('media-sidecar-read', path),
 
   downloadsStart: () => ipcRenderer.invoke('downloads-start'),
   downloadsPause: () => ipcRenderer.invoke('downloads-pause'),

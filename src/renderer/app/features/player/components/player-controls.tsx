@@ -13,9 +13,11 @@ type PlayerControlsProps = {
   visualizerVisible: boolean
   paused: boolean
   playbackRate: number
+  isAudioFile: boolean
   meta: { width: number; height: number; duration: number }
   fileExtension: string
-  displayFileName: string
+  primaryText: string
+  secondaryText?: string
   hoverTime: number | null
   hoverX: number
   currentSeekVal: number
@@ -46,9 +48,11 @@ export function PlayerControls({
   visualizerVisible,
   paused,
   playbackRate,
+  isAudioFile,
   meta,
   fileExtension,
-  displayFileName,
+  primaryText,
+  secondaryText,
   hoverTime,
   hoverX,
   currentSeekVal,
@@ -113,7 +117,9 @@ export function PlayerControls({
       <PlayerTopOverlay
         uiVisible={uiVisible}
         fileExtension={fileExtension}
-        displayFileName={displayFileName}
+        primaryText={primaryText}
+        secondaryText={secondaryText}
+        isAudioFile={isAudioFile}
         meta={{ width: meta.width, height: meta.height }}
         playbackRate={playbackRate}
         onOpenFolder={onOpenFolder}
@@ -145,6 +151,7 @@ export function PlayerControls({
       <PlayerBottomControls
         uiVisible={uiVisible}
         visualizerVisible={visualizerVisible}
+        allowFullscreen={!isAudioFile}
         muted={muted}
         volume={volume}
         currentSeekVal={currentSeekVal}

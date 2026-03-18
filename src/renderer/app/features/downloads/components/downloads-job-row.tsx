@@ -70,7 +70,7 @@ export default function DownloadsJobRow(props: {
   const canStop = job.status === 'queued' || job.status === 'running'
   const canRetry = job.status === 'failed' || job.status === 'cancelled'
   const canDelete = job.status !== 'running'
-  const canPlay = job.status === 'completed' && job.type === 'video' && Boolean(job.finalFilePath)
+  const canPlay = job.status === 'completed' && Boolean(job.finalFilePath)
 
   const percent = Math.max(0, Math.min(100, job.progress?.percent ?? 0))
   const errorInfo = job.error ? getErrorMessage(job.error) : null

@@ -16,6 +16,7 @@ import {
 type PlayerBottomControlsProps = {
   uiVisible: boolean
   visualizerVisible: boolean
+  allowFullscreen: boolean
   muted: boolean
   volume: number
   currentSeekVal: number
@@ -32,6 +33,7 @@ type PlayerBottomControlsProps = {
 export function PlayerBottomControls({
   uiVisible,
   visualizerVisible,
+  allowFullscreen,
   muted,
   volume,
   currentSeekVal,
@@ -115,9 +117,11 @@ export function PlayerBottomControls({
               <IcVisualizer />
             </Box>
           </PlayerButton>
-          <PlayerButton onClick={onToggleFullscreen} title="전체화면 (F)" size="sm">
-            {isFullscreen ? <IcExitFullscreen /> : <IcFullscreen />}
-          </PlayerButton>
+          {allowFullscreen ? (
+            <PlayerButton onClick={onToggleFullscreen} title="전체화면 (F)" size="sm">
+              {isFullscreen ? <IcExitFullscreen /> : <IcFullscreen />}
+            </PlayerButton>
+          ) : null}
         </Stack>
       </Stack>
     </Box>

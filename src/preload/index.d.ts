@@ -3,6 +3,7 @@
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { InitState } from '@src/types/init.types'
 import type { LibraryItem } from '@src/types/library.types'
+import type { ReadMediaSidecarResult } from '@src/types/media-sidecar.types'
 import type { SettingKey, SettingValueMap } from '@src/types/settings.types'
 
 interface AppAPI {
@@ -11,12 +12,7 @@ interface AppAPI {
   openDownloadDir: () => Promise<{ success: boolean; message?: string }>
   openDownloadsRootDir: () => Promise<{ success: boolean; message?: string }>
   openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
-  readMediaMeta: (path: string) => Promise<{
-    success: boolean
-    title?: string
-    artist?: string
-    message?: string
-  }>
+  readMediaSidecar: (path: string) => Promise<ReadMediaSidecarResult>
 
   downloadsStart: () => Promise<{ success: boolean; message?: string }>
   downloadsPause: () => Promise<{ success: boolean; message?: string }>

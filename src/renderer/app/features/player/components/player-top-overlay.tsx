@@ -7,7 +7,9 @@ import { IcFolder } from './player-icons'
 type PlayerTopOverlayProps = {
   uiVisible: boolean
   fileExtension: string
-  displayFileName: string
+  primaryText: string
+  secondaryText?: string
+  isAudioFile: boolean
   meta: { width: number; height: number }
   playbackRate: number
   onOpenFolder: () => void
@@ -17,7 +19,9 @@ type PlayerTopOverlayProps = {
 export function PlayerTopOverlay({
   uiVisible,
   fileExtension,
-  displayFileName,
+  primaryText,
+  secondaryText,
+  isAudioFile,
   meta,
   playbackRate,
   onOpenFolder,
@@ -43,7 +47,7 @@ export function PlayerTopOverlay({
             top: 18,
             left: 20,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: '10px',
             pointerEvents: uiVisible ? 'auto' : 'none',
             maxWidth: '55%'
@@ -70,25 +74,43 @@ export function PlayerTopOverlay({
                   lineHeight: 1.5
                 }}
               >
-                {fileExtension}
+                {isAudioFile ? `audio${fileExtension ? ` · ${fileExtension}` : ''}` : fileExtension}
               </Typography>
             </Box>
           )}
-          <Typography
-            title={displayFileName}
-            sx={{
-              color: (theme) => alpha(theme.palette.common.white, 0.92),
-              fontWeight: 600,
-              fontSize: '0.88rem',
-              letterSpacing: '-0.01em',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              textShadow: (theme) => `0 1px 6px ${alpha(theme.palette.common.black, 0.8)}`
-            }}
-          >
-            {displayFileName || '알 수 없는 파일'}
-          </Typography>
+          <Stack spacing={0.15} sx={{ minWidth: 0 }}>
+            <Typography
+              title={primaryText}
+              sx={{
+                color: (theme) => alpha(theme.palette.common.white, 0.92),
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                letterSpacing: '-0.01em',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                textShadow: (theme) => `0 1px 6px ${alpha(theme.palette.common.black, 0.8)}`
+              }}
+            >
+              {primaryText || '알 수 없는 파일'}
+            </Typography>
+            {secondaryText ? (
+              <Typography
+                title={secondaryText}
+                sx={{
+                  color: (theme) => alpha(theme.palette.common.white, 0.58),
+                  fontSize: '0.72rem',
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  textShadow: (theme) => `0 1px 6px ${alpha(theme.palette.common.black, 0.8)}`
+                }}
+              >
+                {secondaryText}
+              </Typography>
+            ) : null}
+          </Stack>
           <Box
             component="button"
             onClick={onOpenFolder}
@@ -145,7 +167,7 @@ export function PlayerTopOverlay({
             pointerEvents: uiVisible ? 'auto' : 'none'
           }}
         >
-          {meta.width > 0 && meta.height > 0 && (
+          {!isAudioFile && meta.width > 0 && meta.height > 0 && (
             <Box
               sx={{
                 display: 'inline-flex',
