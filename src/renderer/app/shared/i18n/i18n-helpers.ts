@@ -28,7 +28,11 @@ export function resolveNamespaces(
 ): AppNamespace[] {
   const requested = namespaces ? (Array.isArray(namespaces) ? [...namespaces] : [namespaces]) : []
 
-  return ['common', ...requested.filter((namespace) => namespace !== 'common')].filter(
+  if (requested.length === 0) {
+    return ['common']
+  }
+
+  return [...requested.filter((namespace) => namespace !== 'common'), 'common'].filter(
     (namespace, index, array) => array.indexOf(namespace) === index
   ) as AppNamespace[]
 }
