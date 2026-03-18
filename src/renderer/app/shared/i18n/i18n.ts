@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import type { AppLanguage } from '@src/types/settings.types'
 
 import commonEn from './locales/en/common.json'
 import downloadsEn from './locales/en/downloads.json'
@@ -39,17 +40,34 @@ export const resources = {
   }
 } as const
 
-void i18n.use(initReactI18next).init({
-  resources,
-  lng: 'ko',
-  fallbackLng: 'ko',
-  fallbackNS: 'common',
-  defaultNS,
-  ns: Object.keys(resources.ko),
-  initImmediate: false,
-  interpolation: {
-    escapeValue: false
+let initializePromise: Promise<typeof i18n> | null = null
+
+export async function initializeI18n(language: AppLanguage = 'ko'): Promise<typeof i18n> {
+  if (!initializePromise) {
+    initializePromise = (async () => {
+      await i18n.use(initReactI18next).init({
+        resources,
+        lng: language,
+        fallbackLng: 'ko',
+        fallbackNS: 'common',
+        defaultNS,
+        ns: Object.keys(resources.ko),
+        initImmediate: false,
+        interpolation: {
+          escapeValue: false
+        }
+      })
+
+      return i18n
+    })()
+  } else {
+    await initializePromise
+    if ((i18n.resolvedLanguage ?? i18n.language) !== language) {
+      await i18n.changeLanguage(language)
+    }
   }
-})
+
+  return initializePromise
+}
 
 export { i18n }
