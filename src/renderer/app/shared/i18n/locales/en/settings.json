@@ -4,7 +4,8 @@
       "description": "Choose the language used in the app",
       "options": {
         "en": "English",
-        "ko": "한국어"
+        "ko": "한국어",
+        "system": "System"
       },
       "title": "Language"
     },

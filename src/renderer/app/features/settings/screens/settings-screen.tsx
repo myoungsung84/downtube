@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
-import type { AppLanguage } from '@src/types/settings.types'
+import type { AppLanguagePreference } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
 
 const APP_LANGUAGE_KEY = 'app.language' as const
@@ -34,7 +34,8 @@ export default function SettingsScreen(): React.JSX.Element {
     (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
   )
 
-  const language: AppLanguage = storedLanguage === 'en' ? 'en' : 'ko'
+  const language: AppLanguagePreference =
+    storedLanguage === 'ko' || storedLanguage === 'en' ? storedLanguage : 'system'
   const themeMode: 'light' | 'dark' | 'system' =
     storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'system'
   const defaultType: 'video' | 'audio' = storedDefaultType === 'audio' ? 'audio' : 'video'
@@ -142,10 +143,12 @@ export default function SettingsScreen(): React.JSX.Element {
                   exclusive
                   value={language}
                   onChange={(_, next): void => {
-                    if (next !== 'ko' && next !== 'en') return
-                    void setSettingValue(APP_LANGUAGE_KEY, next).then((savedLanguage) =>
-                      changeLanguage(savedLanguage)
-                    )
+                    if (next !== 'system' && next !== 'ko' && next !== 'en') return
+                    void setSettingValue(APP_LANGUAGE_KEY, next).then((savedLanguage) => {
+                      void window.api
+                        .resolveAppLanguage(savedLanguage)
+                        .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
+                    })
                   }}
                   sx={{
                     width: 'fit-content',
@@ -199,6 +202,9 @@ export default function SettingsScreen(): React.JSX.Element {
                     }
                   }}
                 >
+                  <ToggleButton value="system">
+                    {t('appearance.language.options.system')}
+                  </ToggleButton>
                   <ToggleButton value="ko">{t('appearance.language.options.ko')}</ToggleButton>
                   <ToggleButton value="en">{t('appearance.language.options.en')}</ToggleButton>
                 </ToggleButtonGroup>

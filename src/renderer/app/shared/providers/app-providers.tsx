@@ -18,7 +18,9 @@ function AppLanguageSync(): React.JSX.Element | null {
 
   React.useEffect(() => {
     if (!storedLanguage) return
-    void changeLanguage(storedLanguage)
+    void window.api
+      .resolveAppLanguage(storedLanguage)
+      .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
   }, [changeLanguage, storedLanguage])
 
   return null

@@ -4,7 +4,12 @@ import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { InitState } from '@src/types/init.types'
 import type { LibraryItem } from '@src/types/library.types'
 import type { ReadMediaSidecarResult } from '@src/types/media-sidecar.types'
-import type { SettingKey, SettingValueMap } from '@src/types/settings.types'
+import type {
+  AppLanguage,
+  AppLanguagePreference,
+  SettingKey,
+  SettingValueMap
+} from '@src/types/settings.types'
 
 interface AppAPI {
   openPlayer: (payload: { id: string }) => Promise<{ success: boolean; message?: string }>
@@ -49,6 +54,7 @@ interface AppAPI {
   getSettings: <const K extends readonly SettingKey[]>(
     keys: K
   ) => Promise<Pick<SettingValueMap, K[number]>>
+  resolveAppLanguage: (preference?: AppLanguagePreference) => Promise<AppLanguage>
   setSetting: <K extends SettingKey>(
     key: K,
     value: SettingValueMap[K]

@@ -43,6 +43,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: 'ko',
   fallbackLng: 'ko',
+  fallbackNS: 'common',
   defaultNS,
   ns: Object.keys(resources.ko),
   initImmediate: false,

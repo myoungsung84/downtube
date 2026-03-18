@@ -1,6 +1,6 @@
 import { app } from 'electron'
 
-import type { AppLanguage } from '../../types/settings.types'
+import type { AppLanguage, AppLanguagePreference } from '../../types/settings.types'
 
 export function normalizeLanguage(language: string | null | undefined): AppLanguage | undefined {
   const normalized = language?.trim().toLowerCase()
@@ -21,4 +21,8 @@ export function resolveSystemLanguage(): AppLanguage {
   }
 
   return 'ko'
+}
+
+export function resolveAppLanguagePreference(preference: AppLanguagePreference): AppLanguage {
+  return preference === 'system' ? resolveSystemLanguage() : preference
 }

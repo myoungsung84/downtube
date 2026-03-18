@@ -12,8 +12,8 @@ export function validateSettingValue<K extends SettingKey>(
 ): asserts value is SettingValueMap[K] {
   switch (key) {
     case 'app.language': {
-      if (value !== 'ko' && value !== 'en') {
-        throw new Error(`[settings] ${key} must be "ko" or "en"`)
+      if (value !== 'system' && value !== 'ko' && value !== 'en') {
+        throw new Error(`[settings] ${key} must be "system", "ko", or "en"`)
       }
       return
     }

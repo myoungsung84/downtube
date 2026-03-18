@@ -6,13 +6,13 @@ import url from 'url'
 
 import type { InitState } from '../../types/init.types'
 import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
-import type { SettingKey } from '../../types/settings.types'
+import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
 import type { DownloadJob } from '../downloads/types'
 import { deleteLibraryItem, listLibraryItems } from '../library/library'
-import { getSetting, getSettings, setSetting } from '../settings/settings-store'
+import { getSetting, getSettings, resolveSettingsLanguage, setSetting } from '../settings/settings-store'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -225,6 +225,13 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   safeSetHandler('settings:set', async (_, payload: { key: SettingKey; value: unknown }) => {
     return setSetting(payload.key, payload.value)
   })
+
+  safeSetHandler(
+    'settings:resolve-language',
+    async (_, preference?: AppLanguagePreference) => {
+      return resolveSettingsLanguage(preference)
+    }
+  )
 
   safeSetHandler('download-player', async (_, payload: { id: string }) => {
     if (!payload?.id) return { success: false, message: 'Job not found' }

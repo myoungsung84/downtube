@@ -1,7 +1,7 @@
 import type { SettingValueMap } from '../../types/settings.types'
 
 export const settingsDefaults: SettingValueMap = {
-  'app.language': 'ko',
+  'app.language': 'system',
   'app.themeMode': 'system',
   'player.volume': 1,
   'player.muted': false,

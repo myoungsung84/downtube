@@ -1,9 +1,14 @@
 import Store from 'electron-store'
 
-import type { AppLanguage, SettingKey, SettingValueMap } from '../../types/settings.types'
+import type {
+  AppLanguage,
+  AppLanguagePreference,
+  SettingKey,
+  SettingValueMap
+} from '../../types/settings.types'
 import { settingKeys } from '../../types/settings.types'
 import { settingsDefaults } from './settings-defaults'
-import { resolveSystemLanguage } from './settings-language'
+import { resolveAppLanguagePreference } from './settings-language'
 import { validateSettingValue } from './settings-validator'
 
 const StoreConstructor = (Store as unknown as { default?: typeof Store }).default ?? Store
@@ -22,12 +27,6 @@ const settingsStore = new StoreConstructor<SettingValueMap>({
   defaults: settingsStoreDefaults as Readonly<SettingValueMap>
 })
 
-function ensureAppLanguageSetting(): AppLanguage {
-  const nextLanguage = resolveSystemLanguage()
-  settingsStore.set('app.language', nextLanguage)
-  return nextLanguage
-}
-
 export function getSetting<K extends SettingKey>(key: K): SettingValueMap[K] {
   if (!settingKeys.includes(key)) {
     throw new Error(`Invalid setting key: ${String(key)}`)
@@ -36,9 +35,6 @@ export function getSetting<K extends SettingKey>(key: K): SettingValueMap[K] {
   const rawValue = settingsStore.get(key) as unknown
 
   if (rawValue === undefined) {
-    if (key === 'app.language') {
-      return ensureAppLanguageSetting() as SettingValueMap[K]
-    }
     return settingsDefaults[key]
   }
 
@@ -46,17 +42,20 @@ export function getSetting<K extends SettingKey>(key: K): SettingValueMap[K] {
     validateSettingValue(key, rawValue)
     return rawValue
   } catch {
-    const defaultValue =
-      key === 'app.language'
-        ? (ensureAppLanguageSetting() as SettingValueMap[K])
-        : settingsDefaults[key]
+    const defaultValue = settingsDefaults[key]
     settingsStore.set(key, defaultValue)
     return defaultValue
   }
 }
 
 export function ensureSettingsLanguage(): AppLanguage {
-  return getSetting('app.language')
+  return resolveAppLanguagePreference(getSetting('app.language'))
+}
+
+export function resolveSettingsLanguage(
+  preference: AppLanguagePreference = getSetting('app.language')
+): AppLanguage {
+  return resolveAppLanguagePreference(preference)
 }
 
 export function getSettings<const K extends readonly SettingKey[]>(

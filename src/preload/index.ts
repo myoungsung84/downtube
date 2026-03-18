@@ -4,7 +4,12 @@ import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
 import type { LibraryItem } from '../types/library.types'
 import type { ReadMediaSidecarResult } from '../types/media-sidecar.types'
-import type { SettingKey, SettingValueMap } from '../types/settings.types'
+import type {
+  AppLanguage,
+  AppLanguagePreference,
+  SettingKey,
+  SettingValueMap
+} from '../types/settings.types'
 
 const api = {
   openPlayer: (payload: { id: string }) => ipcRenderer.invoke('download-player', payload),
@@ -59,6 +64,8 @@ const api = {
   getSettings: <const K extends readonly SettingKey[]>(
     keys: K
   ): Promise<Pick<SettingValueMap, K[number]>> => ipcRenderer.invoke('settings:get-many', keys),
+  resolveAppLanguage: (preference?: AppLanguagePreference): Promise<AppLanguage> =>
+    ipcRenderer.invoke('settings:resolve-language', preference),
 
   setSetting: <K extends SettingKey>(
     key: K,
