@@ -55,11 +55,14 @@
 ## 검증 기준
 
 - 기본 검증 순서:
-  1. `pnpm typecheck`
-  2. 필요 시 `pnpm lint`
-  3. 배포 전 확인은 `pnpm build`
-- 포맷은 Prettier 기준을 따른다. 포맷 경고만 있는 경우 스타일을 억지로 우회하지 말고 코드 형식을 맞춘다.
+  1. `pnpm format`
+  2. `pnpm typecheck`
+  3. 필요 시 `pnpm lint`
+  4. 배포 전 확인은 `pnpm build`
+- `pnpm format`은 현재 저장소 기준으로 `prettier --write . && eslint --fix .` 흐름을 사용한다.
+- 포맷 경고만 있는 경우 스타일을 억지로 우회하지 말고 `pnpm format`으로 먼저 코드 형식을 맞춘다.
 - import 정렬, unused import, React hook dependency 경고는 그대로 두지 않는다.
+- 검증 명령은 터미널 기준으로 `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm build` 형식으로 사용한다.
 
 ## 릴리즈 노트 규칙
 
