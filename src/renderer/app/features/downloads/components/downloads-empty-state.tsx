@@ -5,18 +5,8 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import { alpha, Box, Fade, keyframes, Paper, Stack, Typography } from '@mui/material'
 import React from 'react'
 
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 1; }
-`
-
-const float = keyframes`
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-`
-
 const slideUp = keyframes`
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 `
 
@@ -68,41 +58,25 @@ export default function DownloadsEmptyState(): React.JSX.Element {
       >
         <Stack spacing={2.5} alignItems="center">
           {/* Icon */}
-          <Box sx={{ position: 'relative', animation: `${slideUp} 0.5s ease both` }}>
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: -8,
-                borderRadius: '50%',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                animation: `${pulse} 2.8s ease-in-out infinite`
-              }}
-            />
-            <Box
-              sx={{
-                width: 72,
-                height: 72,
-                borderRadius: '50%',
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                border: '2px solid',
-                borderColor: (theme) => alpha(theme.palette.primary.main, 0.2),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                animation: `${float} 3.5s ease-in-out infinite`
-              }}
-            >
-              <DownloadIcon sx={{ fontSize: 36, color: 'primary.main' }} />
-            </Box>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+              border: '2px solid',
+              borderColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: `${slideUp} 0.4s ease both`
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: 36, color: 'primary.main' }} />
           </Box>
 
           {/* Text */}
-          <Stack
-            spacing={0.5}
-            alignItems="center"
-            sx={{ animation: `${slideUp} 0.5s 0.1s ease both`, opacity: 0 }}
-          >
+          <Stack spacing={0.5} alignItems="center">
             <Typography variant="h5" fontWeight={700}>
               다운로드할 영상을 추가해보세요! 🎬
             </Typography>
@@ -123,16 +97,7 @@ export default function DownloadsEmptyState(): React.JSX.Element {
           </Stack>
 
           {/* Steps */}
-          <Stack
-            direction="row"
-            spacing={1.5}
-            justifyContent="center"
-            sx={{
-              width: '100%',
-              animation: `${slideUp} 0.5s 0.2s ease both`,
-              opacity: 0
-            }}
-          >
+          <Stack direction="row" spacing={1.5} justifyContent="center" sx={{ width: '100%' }}>
             {steps.map((step) => (
               <Box
                 key={step.label}
@@ -143,13 +108,12 @@ export default function DownloadsEmptyState(): React.JSX.Element {
                   border: '1px solid',
                   borderColor: (theme) => alpha(theme.palette.divider, 0.8),
                   bgcolor: (theme) => alpha(theme.palette.background.default, 0.6),
-                  transition: 'all 0.2s ease',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                   cursor: 'default',
                   '&:hover': {
                     borderColor: 'primary.main',
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-                    transform: 'translateY(-2px)',
-                    boxShadow: (theme) => `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`
+                    boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.1)}`
                   }
                 }}
               >
