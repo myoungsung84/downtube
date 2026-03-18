@@ -21,6 +21,7 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
+import { useDialog } from '@renderer/shared/hooks/use-dialog'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -59,10 +60,7 @@ function formatDate(item: LibraryItem): string {
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-type MenuState =
-  | { phase: 'idle' }
-  | { phase: 'open'; anchorEl: HTMLElement; item: LibraryItem }
-  | { phase: 'confirmDelete'; anchorEl: HTMLElement; item: LibraryItem }
+type MenuState = { phase: 'idle' } | { phase: 'open'; anchorEl: HTMLElement; item: LibraryItem }
 
 // ─── SegmentedControl ─────────────────────────────────────────────────────────
 
@@ -185,6 +183,7 @@ function SegmentedControl({
 export default function LibraryScreen(): React.JSX.Element {
   const theme = useTheme()
   const { showToast } = useToast()
+  const { confirm } = useDialog()
   const isDark = theme.palette.mode === 'dark'
 
   const [items, setItems] = useState<LibraryItem[]>([])
@@ -192,6 +191,7 @@ export default function LibraryScreen(): React.JSX.Element {
   const [refreshing, setRefreshing] = useState(false)
   const [tab, setTab] = useState<LibraryItemType>('video')
   const [menuState, setMenuState] = useState<MenuState>({ phase: 'idle' })
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<LibraryItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const videoItems = useMemo(() => items.filter((i) => i.type === 'video'), [items])
@@ -234,18 +234,53 @@ export default function LibraryScreen(): React.JSX.Element {
     if (!result.success) showToast(result.message ?? '파일 위치를 열지 못했습니다.', 'error')
   }
 
-  const handleDelete = async (item: LibraryItem): Promise<void> => {
-    setDeletingId(item.id)
-    closeMenu()
-    const result = await window.api.deleteLibraryItem(item.filePath)
-    setDeletingId(null)
-    if (!result.success) {
-      showToast(result.message ?? '삭제하지 못했습니다.', 'error')
-      return
+  const closeMenu = useCallback((): void => {
+    setMenuState({ phase: 'idle' })
+  }, [])
+
+  const blurActiveElement = useCallback((): void => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
     }
-    setItems((prev) => prev.filter((c) => c.filePath !== item.filePath))
-    showToast('삭제했습니다.', 'success')
+  }, [])
+
+  const handleDelete = async (item: LibraryItem): Promise<void> => {
+    const ok = await confirm({
+      title: '삭제 확인',
+      message: `'${item.title ?? item.fileName}' 항목을 라이브러리에서 삭제할까요?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'danger'
+    })
+
+    if (!ok) return
+
+    setDeletingId(item.id)
+
+    try {
+      const result = await window.api.deleteLibraryItem(item.filePath)
+      if (!result.success) {
+        showToast(result.message ?? '삭제하지 못했습니다.', 'error')
+        return
+      }
+
+      setItems((prev) => prev.filter((currentItem) => currentItem.filePath !== item.filePath))
+      showToast('삭제했습니다.', 'success')
+    } catch {
+      showToast('삭제하지 못했습니다.', 'error')
+    } finally {
+      setDeletingId(null)
+    }
   }
+
+  const handleRequestDelete = useCallback(
+    (item: LibraryItem): void => {
+      blurActiveElement()
+      setPendingDeleteItem(item)
+      closeMenu()
+    },
+    [blurActiveElement, closeMenu]
+  )
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
     if (item.type !== 'video') return
@@ -253,16 +288,13 @@ export default function LibraryScreen(): React.JSX.Element {
     if (!result.success) showToast(result.message ?? '플레이어를 열지 못했습니다.', 'error')
   }
 
-  const closeMenu = (): void => setMenuState({ phase: 'idle' })
-
-  const isMenuOpen = menuState.phase === 'open' || menuState.phase === 'confirmDelete'
+  const isMenuOpen = menuState.phase === 'open'
   const menuAnchorEl = isMenuOpen ? menuState.anchorEl : null
   const menuItem = isMenuOpen ? menuState.item : null
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={1.75}>
-        {/* ── 헤더 패널 ─────────────────────────────────────────────────── */}
         <Paper
           elevation={0}
           sx={{
@@ -283,7 +315,6 @@ export default function LibraryScreen(): React.JSX.Element {
           }}
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-            {/* 좌: 타이틀 + 세그먼트 탭 */}
             <Stack direction="row" alignItems="center" spacing={2}>
               <Stack spacing={0.2}>
                 <Typography variant="h5" fontWeight={900} letterSpacing="-0.03em" lineHeight={1.2}>
@@ -294,7 +325,6 @@ export default function LibraryScreen(): React.JSX.Element {
                 </Typography>
               </Stack>
 
-              {/* 수직 구분선 */}
               <Box
                 sx={{
                   width: '1px',
@@ -313,7 +343,6 @@ export default function LibraryScreen(): React.JSX.Element {
               />
             </Stack>
 
-            {/* 우: 액션 버튼 */}
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap alignItems="center">
               <IconButton
                 size="small"
@@ -355,7 +384,6 @@ export default function LibraryScreen(): React.JSX.Element {
           </Stack>
         </Paper>
 
-        {/* ── 리스트 패널 ───────────────────────────────────────────────── */}
         <Paper
           elevation={0}
           sx={{
@@ -447,7 +475,6 @@ export default function LibraryScreen(): React.JSX.Element {
                     }}
                   >
                     <Stack direction="row" sx={{ minHeight: 92 }}>
-                      {/* 썸네일 */}
                       <Box sx={{ width: 152, flexShrink: 0, p: 1.25, pr: 0 }}>
                         <Box
                           sx={{
@@ -498,7 +525,6 @@ export default function LibraryScreen(): React.JSX.Element {
                             </Box>
                           )}
 
-                          {/* 재생 오버레이 */}
                           {isVideo && (
                             <Box
                               sx={{
@@ -524,12 +550,10 @@ export default function LibraryScreen(): React.JSX.Element {
                         </Box>
                       </Box>
 
-                      {/* 콘텐츠 */}
                       <Stack
                         sx={{ minWidth: 0, flex: 1, px: 2, py: 1.5 }}
                         justifyContent="space-between"
                       >
-                        {/* 상단: 타이틀 + 업로더 + 메뉴 */}
                         <Stack
                           direction="row"
                           alignItems="flex-start"
@@ -586,7 +610,6 @@ export default function LibraryScreen(): React.JSX.Element {
                           </IconButton>
                         </Stack>
 
-                        {/* 하단: 메타 정보 */}
                         <Stack
                           direction="row"
                           spacing={0.6}
@@ -678,13 +701,22 @@ export default function LibraryScreen(): React.JSX.Element {
         </Paper>
       </Stack>
 
-      {/* 컨텍스트 메뉴 */}
       <Menu
         anchorEl={menuAnchorEl}
         open={Boolean(menuAnchorEl)}
         onClose={closeMenu}
+        disableRestoreFocus
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        TransitionProps={{
+          onExited: () => {
+            if (!pendingDeleteItem) return
+
+            const item = pendingDeleteItem
+            setPendingDeleteItem(null)
+            void handleDelete(item)
+          }
+        }}
         slotProps={{
           paper: { sx: { minWidth: 164, borderRadius: 1.5 } }
         }}
@@ -703,57 +735,19 @@ export default function LibraryScreen(): React.JSX.Element {
 
         <Divider sx={{ my: 0.5 }} />
 
-        {menuState.phase !== 'confirmDelete' ? (
-          <MenuItem
-            dense
-            sx={{ color: 'error.main' }}
-            onClick={() => {
-              if (menuState.phase === 'open') {
-                setMenuState({
-                  phase: 'confirmDelete',
-                  anchorEl: menuState.anchorEl,
-                  item: menuState.item
-                })
-              }
-            }}
-          >
-            <DeleteOutlineRoundedIcon sx={{ mr: 1.25, fontSize: 16 }} />
-            <Typography variant="body2" color="error">
-              삭제
-            </Typography>
-          </MenuItem>
-        ) : (
-          <Box sx={{ px: 1.5, pt: 0.5, pb: 1.25 }}>
-            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-              정말 삭제할까요?
-            </Typography>
-            <Stack direction="row" spacing={0.75}>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                disableElevation
-                fullWidth
-                sx={{ fontSize: '0.72rem', py: 0.5 }}
-                onClick={() => {
-                  const cur = menuItem
-                  if (cur) void handleDelete(cur)
-                }}
-              >
-                삭제
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                fullWidth
-                sx={{ fontSize: '0.72rem', py: 0.5 }}
-                onClick={closeMenu}
-              >
-                취소
-              </Button>
-            </Stack>
-          </Box>
-        )}
+        <MenuItem
+          dense
+          sx={{ color: 'error.main' }}
+          onClick={() => {
+            const cur = menuItem
+            if (cur) handleRequestDelete(cur)
+          }}
+        >
+          <DeleteOutlineRoundedIcon sx={{ mr: 1.25, fontSize: 16 }} />
+          <Typography variant="body2" color="error">
+            삭제
+          </Typography>
+        </MenuItem>
       </Menu>
     </Box>
   )
