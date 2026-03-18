@@ -55,7 +55,8 @@
 ## 유틸 라이브러리 사용 기준
 
 - 날짜/시간 처리, 포맷, 비교, 상대 시간 계산처럼 JavaScript 기본 API만으로 실수하기 쉬운 영역은 가능하면 `dayjs` 같은 검증된 유틸 라이브러리로 구현한다.
-- 배열/객체 가공, clamp, debounce/throttle, groupBy, uniqBy, orderBy 같은 보조 연산도 직접 구현보다 의도가 더 분명해지는 경우에는 가능하면 `lodash` 같은 유틸 라이브러리를 우선 검토한다.
+- 배열/객체 가공, clamp, debounce/throttle, groupBy, uniqBy, orderBy, isNil, isEmpty 같은 보조 연산도 직접 구현보다 의도가 더 분명해지는 경우에는 가능하면 `lodash` 같은 유틸 라이브러리를 우선 검토한다.
+- 예를 들어 \`value === null || value === undefined\` 같은 반복 패턴은 가능하면 \`isNil(value)\`처럼 의도가 바로 드러나는 형태를 선호한다.
 - 다만 단순한 `map`, `filter`, `find`처럼 기본 내장 API만으로도 충분히 명확한 코드는 굳이 유틸 라이브러리로 감싸지 않는다.
 - 핵심 원칙은 “라이브러리를 무조건 쓰기”가 아니라, 기본 API보다 실수 가능성을 줄이고 의도를 더 명확하게 드러낼 수 있을 때 우선 검토하는 것이다.
 - 새로 추가하는 유틸 사용은 같은 도메인 안에서 일관성을 우선한다. 이미 같은 feature나 모듈에서 `dayjs` 또는 `lodash` 패턴을 쓰고 있다면 가능하면 그 흐름을 맞춘다.
