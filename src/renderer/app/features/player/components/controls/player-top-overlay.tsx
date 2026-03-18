@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import React from 'react'
 
-import { IcFolder } from './player-icons'
+import { IcFolder } from '../visuals/player-icons'
 
 type PlayerTopOverlayProps = {
   uiVisible: boolean

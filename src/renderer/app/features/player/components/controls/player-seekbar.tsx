@@ -3,7 +3,7 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { formatSeconds } from '../lib/player-format'
+import { formatSeconds } from '../../lib'
 
 type PlayerSeekbarProps = {
   uiVisible: boolean

@@ -2,8 +2,8 @@ import { Box } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import React from 'react'
 
+import { IcForward10, IcPause, IcPlay, IcReplay10 } from '../visuals/player-icons'
 import { PlayerButton } from './player-button'
-import { IcForward10, IcPause, IcPlay, IcReplay10 } from './player-icons'
 
 type PlayerCenterControlsProps = {
   uiVisible: boolean

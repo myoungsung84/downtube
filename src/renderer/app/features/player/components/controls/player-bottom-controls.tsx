@@ -3,15 +3,15 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import React from 'react'
 
-import { formatSeconds } from '../lib/player-format'
-import { PlayerButton } from './player-button'
+import { formatSeconds } from '../../lib'
 import {
   IcExitFullscreen,
   IcFullscreen,
   IcVisualizer,
   IcVolumeHigh,
   IcVolumeMute
-} from './player-icons'
+} from '../visuals/player-icons'
+import { PlayerButton } from './player-button'
 
 type PlayerBottomControlsProps = {
   uiVisible: boolean
