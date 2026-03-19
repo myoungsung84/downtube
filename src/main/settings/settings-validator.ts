@@ -1,6 +1,7 @@
 import isNil from 'lodash/isNil'
 
 import type { SettingKey, SettingValueMap } from '../../types/settings.types'
+import { isAppThemePreset } from '../../types/settings.types'
 
 function assertNever(key: never): never {
   throw new Error(`Unsupported setting key: ${String(key)}`)
@@ -26,13 +27,7 @@ export function validateSettingValue<K extends SettingKey>(
     }
 
     case 'app.themePreset': {
-      if (
-        value !== 'default' &&
-        value !== 'slate' &&
-        value !== 'ink' &&
-        value !== 'jade' &&
-        value !== 'aurora'
-      ) {
+      if (!isAppThemePreset(value)) {
         throw new Error(`[settings] ${key} must be "default", "slate", "ink", "jade", or "aurora"`)
       }
       return

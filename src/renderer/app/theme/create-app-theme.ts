@@ -41,6 +41,7 @@ const LIGHT_PRESETS: Record<'default' | 'slate', Partial<ThemeTokens>> = {
     divider: '#A0BEDD'
   }
 }
+type LightPreset = keyof typeof LIGHT_PRESETS
 
 // jade: 다크 전용. 극야의 틸트-블랙. 차갑고 정제된 전기감, 네온 없이 그린-청록 톤만
 // aurora: 다크 전용. 딥 네이비 위 시안 중심, 아주 약한 블루-바이올렛 힌트. 차갑고 전기적인 오로라
@@ -93,6 +94,7 @@ const DARK_PRESETS: Record<'default' | 'ink' | 'jade' | 'aurora', Partial<ThemeT
     divider: '#121E3A'
   }
 }
+type DarkPreset = keyof typeof DARK_PRESETS
 
 const LIGHT_BASE: ThemeTokens = {
   backgroundDefault: '#F4F7FB',
@@ -150,10 +152,11 @@ const DARK_BASE: ThemeTokens = {
   divider: '#1C2331'
 }
 
-function resolvePreset(mode: PaletteMode, preset: AppThemePreset): AppThemePreset {
-  if (mode === 'light') {
-    return preset === 'slate' ? 'slate' : 'default'
-  }
+function resolveLightPreset(preset: AppThemePreset): LightPreset {
+  return preset === 'slate' ? 'slate' : 'default'
+}
+
+function resolveDarkPreset(preset: AppThemePreset): DarkPreset {
   if (preset === 'ink') return 'ink'
   if (preset === 'jade') return 'jade'
   if (preset === 'aurora') return 'aurora'
@@ -161,14 +164,12 @@ function resolvePreset(mode: PaletteMode, preset: AppThemePreset): AppThemePrese
 }
 
 function getTokens(mode: PaletteMode, preset: AppThemePreset): ThemeTokens {
-  const safePreset = resolvePreset(mode, preset)
-
   if (mode === 'light') {
-    const overrides = LIGHT_PRESETS[safePreset as 'default' | 'slate']
+    const overrides = LIGHT_PRESETS[resolveLightPreset(preset)]
     return { ...LIGHT_BASE, ...overrides }
   }
 
-  const overrides = DARK_PRESETS[safePreset as 'default' | 'ink' | 'jade' | 'aurora']
+  const overrides = DARK_PRESETS[resolveDarkPreset(preset)]
   return { ...DARK_BASE, ...overrides }
 }
 
