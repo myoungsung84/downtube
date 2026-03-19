@@ -112,274 +112,270 @@ export default function SettingsScreen(): React.JSX.Element {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
       <Stack sx={{ width: '100%', maxWidth: 720, p: 3 }} spacing={3}>
-          {/* Header */}
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: 2,
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: (theme) => `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
-              }}
+        {/* Header */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: (theme) => `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
+            }}
+          >
+            <SettingsOutlinedIcon sx={{ fontSize: 20, color: 'primary.contrastText' }} />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight={800} lineHeight={1.1}>
+              {t('header.title')}
+            </Typography>
+            <Typography variant="caption" color="text.disabled">
+              {t('header.description')}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Appearance Section */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden',
+            background: (theme) =>
+              theme.palette.mode === 'light'
+                ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
+                    theme.palette.primary.main,
+                    0.015
+                  )} 100%)`
+                : theme.palette.background.paper
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ px: 3, py: 2, bgcolor: 'action.hover' }}
+          >
+            <Typography
+              variant="overline"
+              fontWeight={700}
+              color="text.secondary"
+              letterSpacing={1.5}
             >
-              <SettingsOutlinedIcon sx={{ fontSize: 20, color: 'primary.contrastText' }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" fontWeight={800} lineHeight={1.1}>
-                {t('header.title')}
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                {t('header.description')}
-              </Typography>
-            </Box>
+              {t('appearance.section_title')}
+            </Typography>
           </Stack>
 
-          {/* Appearance Section */}
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              overflow: 'hidden',
-              background: (theme) =>
-                theme.palette.mode === 'light'
-                  ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
-                      theme.palette.primary.main,
-                      0.015
-                    )} 100%)`
-                  : theme.palette.background.paper
-            }}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ px: 3, py: 2, bgcolor: 'action.hover' }}
-            >
-              <Typography
-                variant="overline"
-                fontWeight={700}
-                color="text.secondary"
-                letterSpacing={1.5}
-              >
-                {t('appearance.section_title')}
-              </Typography>
-            </Stack>
+          <Divider />
 
-            <Divider />
-
-            <Stack divider={<Divider />} sx={{ px: 3 }}>
-              <Stack sx={{ py: 2.5 }} spacing={2}>
-                <Stack spacing={0.4}>
-                  <Typography variant="body2" fontWeight={700}>
-                    {t('appearance.language.title')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t('appearance.language.description')}
-                  </Typography>
-                </Stack>
-
-                <ToggleButtonGroup
-                  size="small"
-                  exclusive
-                  value={language}
-                  onChange={(_, next): void => {
-                    if (next !== 'system' && next !== 'ko' && next !== 'en') return
-                    void setSettingValue(APP_LANGUAGE_KEY, next).then((savedLanguage) => {
-                      void window.api
-                        .resolveAppLanguage(savedLanguage)
-                        .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
-                    })
-                  }}
-                  sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
-                >
-                  <ToggleButton value="system">
-                    {t('appearance.language.options.system')}
-                  </ToggleButton>
-                  <ToggleButton value="ko">{t('appearance.language.options.ko')}</ToggleButton>
-                  <ToggleButton value="en">{t('appearance.language.options.en')}</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-
+          <Stack divider={<Divider />} sx={{ px: 3 }}>
+            <Stack sx={{ py: 2.5 }} spacing={2}>
               <Stack spacing={0.4}>
-                <Stack sx={{ py: 2.5 }} spacing={2}>
-                  <Stack spacing={0.4}>
-                    <Typography variant="body2" fontWeight={700}>
-                      {t('appearance.theme.title')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t('appearance.theme.description')}
-                    </Typography>
-                  </Stack>
-
-                  <ToggleButtonGroup
-                    size="small"
-                    exclusive
-                    value={themeMode}
-                    onChange={(_, next): void => {
-                      if (!next) return
-                      if (next !== 'system' && next !== 'light' && next !== 'dark') return
-                      void setSettingValue(APP_THEME_MODE_KEY, next)
-                    }}
-                    sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
-                  >
-                    <ToggleButton value="system">
-                      {t('appearance.theme.options.system')}
-                    </ToggleButton>
-                    <ToggleButton value="light">{t('appearance.theme.options.light')}</ToggleButton>
-                    <ToggleButton value="dark">{t('appearance.theme.options.dark')}</ToggleButton>
-                  </ToggleButtonGroup>
-                </Stack>
+                <Typography variant="body2" fontWeight={700}>
+                  {t('appearance.language.title')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('appearance.language.description')}
+                </Typography>
               </Stack>
-            </Stack>
-          </Paper>
 
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'divider',
-              overflow: 'hidden',
-              background: (theme) =>
-                theme.palette.mode === 'light'
-                  ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
-                      theme.palette.info.main,
-                      0.012
-                    )} 100%)`
-                  : theme.palette.background.paper
-            }}
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={language}
+                onChange={(_, next): void => {
+                  if (next !== 'system' && next !== 'ko' && next !== 'en') return
+                  void setSettingValue(APP_LANGUAGE_KEY, next).then((savedLanguage) => {
+                    void window.api
+                      .resolveAppLanguage(savedLanguage)
+                      .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
+                  })
+                }}
+                sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
+              >
+                <ToggleButton value="system">
+                  {t('appearance.language.options.system')}
+                </ToggleButton>
+                <ToggleButton value="ko">{t('appearance.language.options.ko')}</ToggleButton>
+                <ToggleButton value="en">{t('appearance.language.options.en')}</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+
+            <Stack sx={{ py: 2.5 }} spacing={2}>
+              <Stack spacing={0.4}>
+                <Typography variant="body2" fontWeight={700}>
+                  {t('appearance.theme.title')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('appearance.theme.description')}
+                </Typography>
+              </Stack>
+
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={themeMode}
+                onChange={(_, next): void => {
+                  if (!next) return
+                  if (next !== 'system' && next !== 'light' && next !== 'dark') return
+                  void setSettingValue(APP_THEME_MODE_KEY, next)
+                }}
+                sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
+              >
+                <ToggleButton value="system">{t('appearance.theme.options.system')}</ToggleButton>
+                <ToggleButton value="light">{t('appearance.theme.options.light')}</ToggleButton>
+                <ToggleButton value="dark">{t('appearance.theme.options.dark')}</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Stack>
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            overflow: 'hidden',
+            background: (theme) =>
+              theme.palette.mode === 'light'
+                ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(
+                    theme.palette.info.main,
+                    0.012
+                  )} 100%)`
+                : theme.palette.background.paper
+          }}
+        >
+          {/* Section header */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ px: 3, py: 2, bgcolor: 'action.hover' }}
           >
-            {/* Section header */}
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ px: 3, py: 2, bgcolor: 'action.hover' }}
+            <Typography
+              variant="overline"
+              fontWeight={700}
+              color="text.secondary"
+              letterSpacing={1.5}
             >
-              <Typography
-                variant="overline"
-                fontWeight={700}
-                color="text.secondary"
-                letterSpacing={1.5}
-              >
-                {t('downloads.section_title')}
-              </Typography>
-            </Stack>
+              {t('downloads.section_title')}
+            </Typography>
+          </Stack>
 
-            <Divider />
+          <Divider />
 
-            <Stack divider={<Divider />}>
-              {/* Default format setting */}
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ px: 3, py: 2.5 }}
-              >
-                <Stack spacing={0.4}>
-                  <Typography variant="body2" fontWeight={700}>
-                    {t('downloads.default_type.title')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t('downloads.default_type.description')}
-                  </Typography>
-                </Stack>
-
-                <ToggleButtonGroup
-                  size="small"
-                  exclusive
-                  value={defaultType}
-                  onChange={(_, next): void => {
-                    if (!next) return
-                    if (next !== 'video' && next !== 'audio') return
-                    void setSettingValue(DOWNLOADS_DEFAULT_TYPE_KEY, next)
-                  }}
-                  sx={[TOGGLE_GROUP_SX, { flexShrink: 0, '& .MuiToggleButton-root': { px: 2 } }]}
-                >
-                  <ToggleButton value="video">
-                    <Stack direction="row" spacing={0.75} alignItems="center">
-                      <VideoLibraryIcon sx={{ fontSize: 15 }} />
-                      <span>{t('media.video')}</span>
-                    </Stack>
-                  </ToggleButton>
-                  <ToggleButton value="audio">
-                    <Stack direction="row" spacing={0.75} alignItems="center">
-                      <AudiotrackIcon sx={{ fontSize: 15 }} />
-                      <span>{t('media.audio')}</span>
-                    </Stack>
-                  </ToggleButton>
-                </ToggleButtonGroup>
+          <Stack divider={<Divider />}>
+            {/* Default format setting */}
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ px: 3, py: 2.5 }}
+            >
+              <Stack spacing={0.4}>
+                <Typography variant="body2" fontWeight={700}>
+                  {t('downloads.default_type.title')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t('downloads.default_type.description')}
+                </Typography>
               </Stack>
 
-              {/* Playlist limit setting */}
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ px: 3, py: 2.5 }}
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={defaultType}
+                onChange={(_, next): void => {
+                  if (!next) return
+                  if (next !== 'video' && next !== 'audio') return
+                  void setSettingValue(DOWNLOADS_DEFAULT_TYPE_KEY, next)
+                }}
+                sx={[TOGGLE_GROUP_SX, { flexShrink: 0, '& .MuiToggleButton-root': { px: 2 } }]}
               >
-                <Stack spacing={0.4}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="body2" fontWeight={700}>
-                      {t('downloads.playlist_limit.title')}
-                    </Typography>
-                    <Chip
-                      icon={<PlaylistPlayIcon sx={{ fontSize: '14px !important' }} />}
-                      label={t('downloads.playlist_limit.badge', { count: playlistLimit })}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      sx={{
-                        height: 20,
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.08)
-                            : undefined,
-                        borderColor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.28)
-                            : undefined,
-                        '& .MuiChip-label': { px: 1 }
-                      }}
-                    />
+                <ToggleButton value="video">
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <VideoLibraryIcon sx={{ fontSize: 15 }} />
+                    <span>{t('media.video')}</span>
                   </Stack>
-                  <Typography variant="caption" color="text.secondary">
-                    {t('downloads.playlist_limit.description')}
-                  </Typography>
-                </Stack>
-
-                <ToggleButtonGroup
-                  size="small"
-                  exclusive
-                  value={String(playlistLimit)}
-                  onChange={(_, next): void => {
-                    if (!next) return
-                    const parsed = Number(next)
-                    if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) return
-                    void setSettingValue(DOWNLOADS_PLAYLIST_LIMIT_KEY, parsed)
-                  }}
-                  sx={[
-                    TOGGLE_GROUP_SX,
-                    { flexShrink: 0, '& .MuiToggleButton-root': { px: 2.5, minWidth: 56 } }
-                  ]}
-                >
-                  <ToggleButton value="10">{t('downloads.playlist_limit.options.10')}</ToggleButton>
-                  <ToggleButton value="20">{t('downloads.playlist_limit.options.20')}</ToggleButton>
-                  <ToggleButton value="40">{t('downloads.playlist_limit.options.40')}</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
+                </ToggleButton>
+                <ToggleButton value="audio">
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <AudiotrackIcon sx={{ fontSize: 15 }} />
+                    <span>{t('media.audio')}</span>
+                  </Stack>
+                </ToggleButton>
+              </ToggleButtonGroup>
             </Stack>
-          </Paper>
+
+            {/* Playlist limit setting */}
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ px: 3, py: 2.5 }}
+            >
+              <Stack spacing={0.4}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" fontWeight={700}>
+                    {t('downloads.playlist_limit.title')}
+                  </Typography>
+                  <Chip
+                    icon={<PlaylistPlayIcon sx={{ fontSize: '14px !important' }} />}
+                    label={t('downloads.playlist_limit.badge', { count: playlistLimit })}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.08)
+                          : undefined,
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? alpha(theme.palette.primary.main, 0.28)
+                          : undefined,
+                      '& .MuiChip-label': { px: 1 }
+                    }}
+                  />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {t('downloads.playlist_limit.description')}
+                </Typography>
+              </Stack>
+
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={String(playlistLimit)}
+                onChange={(_, next): void => {
+                  if (!next) return
+                  const parsed = Number(next)
+                  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) return
+                  void setSettingValue(DOWNLOADS_PLAYLIST_LIMIT_KEY, parsed)
+                }}
+                sx={[
+                  TOGGLE_GROUP_SX,
+                  { flexShrink: 0, '& .MuiToggleButton-root': { px: 2.5, minWidth: 56 } }
+                ]}
+              >
+                <ToggleButton value="10">{t('downloads.playlist_limit.options.10')}</ToggleButton>
+                <ToggleButton value="20">{t('downloads.playlist_limit.options.20')}</ToggleButton>
+                <ToggleButton value="40">{t('downloads.playlist_limit.options.40')}</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Stack>
+        </Paper>
       </Stack>
     </Box>
   )
