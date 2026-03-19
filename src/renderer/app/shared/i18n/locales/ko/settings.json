@@ -11,13 +11,26 @@
     },
     "section_title": "화면",
     "theme": {
-      "description": "시스템 설정 또는 라이트/다크 테마를 선택합니다",
+      "description": "색상 모드와 스타일을 함께 설정합니다",
+      "mode_label": "모드",
       "options": {
         "dark": "다크",
         "light": "라이트",
         "system": "시스템"
       },
       "title": "테마"
+    },
+    "theme_preset": {
+      "description": "선택한 모드에서 사용할 색감을 고릅니다",
+      "description_system": "시스템 모드에서는 기본 스타일이 적용됩니다",
+      "options": {
+        "aurora": "오로라",
+        "default": "기본",
+        "ink": "잉크",
+        "jade": "제이드",
+        "slate": "슬레이트"
+      },
+      "title": "스타일"
     }
   },
   "downloads": {

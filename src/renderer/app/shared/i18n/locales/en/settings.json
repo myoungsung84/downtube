@@ -11,13 +11,26 @@
     },
     "section_title": "Display",
     "theme": {
-      "description": "Choose the system setting or a light/dark theme",
+      "description": "Set the color mode and style together",
+      "mode_label": "Mode",
       "options": {
         "dark": "Dark",
         "light": "Light",
         "system": "System"
       },
       "title": "Theme"
+    },
+    "theme_preset": {
+      "description": "Choose a color style for the selected mode",
+      "description_system": "Default style is applied in system mode",
+      "options": {
+        "aurora": "Aurora",
+        "default": "Default",
+        "ink": "Ink",
+        "jade": "Jade",
+        "slate": "Slate"
+      },
+      "title": "Style"
     }
   },
   "downloads": {
