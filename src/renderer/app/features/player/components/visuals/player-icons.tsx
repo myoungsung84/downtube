@@ -62,10 +62,11 @@ export const IcVisualizer = (): React.JSX.Element => (
 
 export const IcAmbientParticles = (): React.JSX.Element => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="7" cy="8" r="1.6" />
-    <circle cx="16.5" cy="6.5" r="1.2" />
-    <circle cx="13" cy="12.5" r="1.4" />
-    <circle cx="6" cy="16.5" r="1.1" />
-    <circle cx="17.5" cy="17" r="1.8" />
+    <circle cx="5" cy="6" r="1.5" />
+    <circle cx="18" cy="5" r="1.0" />
+    <circle cx="11" cy="12" r="2.0" />
+    <circle cx="15" cy="9" r="0.9" />
+    <circle cx="5" cy="18" r="1.2" />
+    <circle cx="19" cy="17" r="1.6" />
   </svg>
 )
