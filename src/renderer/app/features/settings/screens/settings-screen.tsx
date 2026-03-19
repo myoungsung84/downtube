@@ -95,7 +95,9 @@ export default function SettingsScreen(): React.JSX.Element {
   const themeMode: 'light' | 'dark' | 'system' =
     storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'system'
 
-  const rawPreset: AppThemePreset = isAppThemePreset(storedThemePreset) ? storedThemePreset : 'default'
+  const rawPreset: AppThemePreset = isAppThemePreset(storedThemePreset)
+    ? storedThemePreset
+    : 'default'
 
   // mode와 맞지 않는 preset은 default로 표시
   const themePreset: AppThemePreset = (() => {

@@ -1,8 +1,8 @@
 import { CssBaseline, useMediaQuery } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
-import { isAppThemePreset } from '@src/types/settings.types'
 import type { AppThemePreset } from '@src/types/settings.types'
+import { isAppThemePreset } from '@src/types/settings.types'
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import App from './app'
