@@ -172,10 +172,10 @@ export default function createAppTheme(mode: PaletteMode): Theme {
             }
           },
           contained: {
-            boxShadow: isDark ? undefined : `0 1px 2px ${alpha('#0F172A', 0.16)}`,
+            boxShadow: isDark ? undefined : `0 1px 2px ${alpha('#0F172A', 0.12)}`,
             '&:hover': {
               backgroundColor: t.primaryDark,
-              boxShadow: isDark ? undefined : `0 2px 8px ${alpha(t.primaryMain, 0.28)}`
+              boxShadow: isDark ? undefined : `0 1px 4px ${alpha(t.primaryMain, 0.18)}`
             }
           }
         }

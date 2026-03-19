@@ -122,8 +122,7 @@ export default function SettingsScreen(): React.JSX.Element {
               bgcolor: 'primary.main',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: (theme) => `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
+              justifyContent: 'center'
             }}
           >
             <SettingsOutlinedIcon sx={{ fontSize: 20, color: 'primary.contrastText' }} />
