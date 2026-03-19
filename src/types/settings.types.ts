@@ -13,6 +13,7 @@ export const settingKeys = [
   'player.volume',
   'player.muted',
   'player.visualizerEnabled',
+  'player.ambientParticlesEnabled',
   'downloads.defaultType',
   'downloads.playlistLimit',
   'downloads.recentUrls'
@@ -26,6 +27,7 @@ export type SettingValueMap = {
   'player.volume': number
   'player.muted': boolean
   'player.visualizerEnabled': boolean
+  'player.ambientParticlesEnabled': boolean
   'downloads.defaultType': 'video' | 'audio'
   'downloads.playlistLimit': number
   'downloads.recentUrls': RecentUrlHistoryItem[]

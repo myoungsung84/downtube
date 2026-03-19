@@ -7,6 +7,7 @@
   },
   "controls": {
     "bottom": {
+      "ambient_particles": "앰비언트 파티클",
       "fullscreen": "전체화면 (F)",
       "mute": "음소거 (M)",
       "visualizer": "음성 시각화"

@@ -6,6 +6,7 @@ import React from 'react'
 
 import { formatSeconds } from '../../lib'
 import {
+  IcAmbientParticles,
   IcExitFullscreen,
   IcFullscreen,
   IcVisualizer,
@@ -17,6 +18,7 @@ import { PlayerButton } from './player-button'
 type PlayerBottomControlsProps = {
   uiVisible: boolean
   visualizerVisible: boolean
+  ambientParticlesEnabled: boolean
   muted: boolean
   volume: number
   currentSeekVal: number
@@ -26,6 +28,7 @@ type PlayerBottomControlsProps = {
   onVolumeChange: (_: Event, val: number | number[]) => void
   onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
   onToggleVisualizer: () => void
+  onToggleAmbientParticles: () => void
   onToggleFullscreen: () => void
   volSliderSx: SxProps<Theme>
 }
@@ -33,6 +36,7 @@ type PlayerBottomControlsProps = {
 export function PlayerBottomControls({
   uiVisible,
   visualizerVisible,
+  ambientParticlesEnabled,
   muted,
   volume,
   currentSeekVal,
@@ -42,6 +46,7 @@ export function PlayerBottomControls({
   onVolumeChange,
   onVolumeCommit,
   onToggleVisualizer,
+  onToggleAmbientParticles,
   onToggleFullscreen,
   volSliderSx
 }: PlayerBottomControlsProps): React.JSX.Element {
@@ -108,14 +113,36 @@ export function PlayerBottomControls({
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <PlayerButton
-            onClick={onToggleVisualizer}
-            title={t('controls.bottom.visualizer')}
+            onClick={onToggleAmbientParticles}
+            title={t('controls.bottom.ambient_particles')}
             size="sm"
+            active={ambientParticlesEnabled}
           >
             <Box
               sx={{
                 display: 'flex',
-                color: (theme) => alpha(theme.palette.common.white, visualizerVisible ? 0.96 : 0.65)
+                color: (theme) =>
+                  ambientParticlesEnabled
+                    ? theme.palette.error.light
+                    : alpha(theme.palette.common.white, 0.65)
+              }}
+            >
+              <IcAmbientParticles />
+            </Box>
+          </PlayerButton>
+          <PlayerButton
+            onClick={onToggleVisualizer}
+            title={t('controls.bottom.visualizer')}
+            size="sm"
+            active={visualizerVisible}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                color: (theme) =>
+                  visualizerVisible
+                    ? theme.palette.error.light
+                    : alpha(theme.palette.common.white, 0.65)
               }}
             >
               <IcVisualizer />

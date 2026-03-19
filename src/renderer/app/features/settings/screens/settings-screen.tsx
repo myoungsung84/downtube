@@ -13,7 +13,7 @@ import {
   ToggleButtonGroup,
   Typography
 } from '@mui/material'
-import type { SxProps, Theme } from '@mui/material/styles'
+import type { Theme } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { AppLanguagePreference } from '@src/types/settings.types'
@@ -21,7 +21,7 @@ import React, { useEffect } from 'react'
 
 // ─── shared sx ────────────────────────────────────────────────────────────────
 
-const TOGGLE_GROUP_SX: SxProps<Theme> = {
+const TOGGLE_GROUP_SX = {
   bgcolor: 'action.hover',
   borderRadius: '10px',
   p: 0.5,

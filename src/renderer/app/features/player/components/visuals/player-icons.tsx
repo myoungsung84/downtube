@@ -59,3 +59,13 @@ export const IcVisualizer = (): React.JSX.Element => (
     <path d="M3 15h2v4H3zm4-6h2v10H7zm4 3h2v7h-2zm4-8h2v15h-2zm4 5h2v10h-2z" />
   </svg>
 )
+
+export const IcAmbientParticles = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="7" cy="8" r="1.6" />
+    <circle cx="16.5" cy="6.5" r="1.2" />
+    <circle cx="13" cy="12.5" r="1.4" />
+    <circle cx="6" cy="16.5" r="1.1" />
+    <circle cx="17.5" cy="17" r="1.8" />
+  </svg>
+)

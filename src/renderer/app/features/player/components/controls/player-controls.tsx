@@ -11,6 +11,7 @@ import { PlayerTopOverlay } from './player-top-overlay'
 type PlayerControlsProps = {
   uiVisible: boolean
   visualizerVisible: boolean
+  ambientParticlesEnabled: boolean
   paused: boolean
   playbackRate: number
   isAudioFile: boolean
@@ -40,12 +41,14 @@ type PlayerControlsProps = {
   onVolumeChange: (_: Event, val: number | number[]) => void
   onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
   onToggleVisualizer: () => void
+  onToggleAmbientParticles: () => void
   onToggleFullscreen: () => void
 }
 
 export function PlayerControls({
   uiVisible,
   visualizerVisible,
+  ambientParticlesEnabled,
   paused,
   playbackRate,
   isAudioFile,
@@ -75,6 +78,7 @@ export function PlayerControls({
   onVolumeChange,
   onVolumeCommit,
   onToggleVisualizer,
+  onToggleAmbientParticles,
   onToggleFullscreen
 }: PlayerControlsProps): React.JSX.Element {
   return (
@@ -151,6 +155,7 @@ export function PlayerControls({
       <PlayerBottomControls
         uiVisible={uiVisible}
         visualizerVisible={visualizerVisible}
+        ambientParticlesEnabled={ambientParticlesEnabled}
         muted={muted}
         volume={volume}
         currentSeekVal={currentSeekVal}
@@ -160,6 +165,7 @@ export function PlayerControls({
         onVolumeChange={onVolumeChange}
         onVolumeCommit={onVolumeCommit}
         onToggleVisualizer={onToggleVisualizer}
+        onToggleAmbientParticles={onToggleAmbientParticles}
         onToggleFullscreen={onToggleFullscreen}
         volSliderSx={volSliderSx}
       />

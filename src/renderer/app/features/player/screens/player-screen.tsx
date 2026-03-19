@@ -10,6 +10,7 @@ import { PlayerControls } from '../components/controls/player-controls'
 import { AudioPlayerPanel } from '../components/surfaces/player-audio-panel'
 import { PlayerEmptyState } from '../components/surfaces/player-empty-state'
 import { PlayerVideoSurface } from '../components/surfaces/player-video-surface'
+import { PlayerAudioAmbientParticles } from '../components/visuals/player-audio-ambient-particles'
 import PlayerAudioVisualizerOverlay from '../components/visuals/player-audio-visualizer-overlay'
 import {
   AUDIO_EXTENSIONS,
@@ -81,18 +82,23 @@ const volSliderSx: SxProps<Theme> = {
 const PLAYER_VOLUME_KEY = 'player.volume' as const
 const PLAYER_MUTED_KEY = 'player.muted' as const
 const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
+const PLAYER_AMBIENT_PARTICLES_KEY = 'player.ambientParticlesEnabled' as const
 export default function PlayerScreen(): React.JSX.Element {
   const { t } = useI18n('player')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seekbarRef = useRef<HTMLDivElement | null>(null)
+  const ambientAudioLevelRef = useRef(0)
   const mediaMetaRequestIdRef = useRef(0)
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
   const setSettingValue = useSettingsStore((state) => state.setValue)
   const storedVolume = useSettingsStore((state) => state.values[PLAYER_VOLUME_KEY])
   const storedMuted = useSettingsStore((state) => state.values[PLAYER_MUTED_KEY])
   const storedVisualizerVisible = useSettingsStore((state) => state.values[PLAYER_VISUALIZER_KEY])
+  const storedAmbientParticlesEnabled = useSettingsStore(
+    (state) => state.values[PLAYER_AMBIENT_PARTICLES_KEY]
+  )
 
   const hash = window.location.hash
   const searchParams = useMemo(() => getPlayerSearchParamsFromHash(hash), [hash])
@@ -126,6 +132,7 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverTime, setHoverTime] = useState<number | null>(null)
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
+  const [ambientParticlesEnabled, setAmbientParticlesEnabled] = useState(false)
   const [mediaMeta, setMediaMeta] = useState<SidecarMediaMeta>({})
 
   const isAudioFile = useMemo(() => {
@@ -248,7 +255,13 @@ export default function PlayerScreen(): React.JSX.Element {
         prev === storedVisualizerVisible ? prev : storedVisualizerVisible
       )
     }
-  }, [storedMuted, storedVisualizerVisible, storedVolume])
+
+    if (typeof storedAmbientParticlesEnabled === 'boolean') {
+      setAmbientParticlesEnabled((prev) =>
+        prev === storedAmbientParticlesEnabled ? prev : storedAmbientParticlesEnabled
+      )
+    }
+  }, [storedAmbientParticlesEnabled, storedMuted, storedVisualizerVisible, storedVolume])
 
   const maybeScheduleHideUi = useCallback(() => {
     clearHideTimer()
@@ -386,7 +399,12 @@ export default function PlayerScreen(): React.JSX.Element {
   }, [resetPlayerStateForSource])
 
   useEffect(() => {
-    void hydrateSettings([PLAYER_VOLUME_KEY, PLAYER_MUTED_KEY, PLAYER_VISUALIZER_KEY])
+    void hydrateSettings([
+      PLAYER_VOLUME_KEY,
+      PLAYER_MUTED_KEY,
+      PLAYER_VISUALIZER_KEY,
+      PLAYER_AMBIENT_PARTICLES_KEY
+    ])
   }, [hydrateSettings])
 
   useEffect(() => {
@@ -517,15 +535,23 @@ export default function PlayerScreen(): React.JSX.Element {
             />
           ) : null}
 
+          <PlayerAudioAmbientParticles
+            enabled={ambientParticlesEnabled}
+            audioLevelRef={ambientAudioLevelRef}
+          />
+
           <PlayerAudioVisualizerOverlay
             videoRef={videoRef}
             visible={visualizerVisible}
             seekbarRef={seekbarRef}
+            analysisActive={visualizerVisible || ambientParticlesEnabled}
+            audioLevelRef={ambientAudioLevelRef}
           />
 
           <PlayerControls
             uiVisible={uiVisible}
             visualizerVisible={visualizerVisible}
+            ambientParticlesEnabled={ambientParticlesEnabled}
             paused={paused}
             playbackRate={playbackRate}
             isAudioFile={isAudioFile}
@@ -568,6 +594,11 @@ export default function PlayerScreen(): React.JSX.Element {
               const nextVisible = !visualizerVisible
               setVisualizerVisible(nextVisible)
               void setSettingValue(PLAYER_VISUALIZER_KEY, nextVisible)
+            }}
+            onToggleAmbientParticles={() => {
+              const nextEnabled = !ambientParticlesEnabled
+              setAmbientParticlesEnabled(nextEnabled)
+              void setSettingValue(PLAYER_AMBIENT_PARTICLES_KEY, nextEnabled)
             }}
             onToggleFullscreen={toggleFullscreen}
           />

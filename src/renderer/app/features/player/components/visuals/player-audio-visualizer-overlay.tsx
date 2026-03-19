@@ -2,17 +2,22 @@ import { Box } from '@mui/material'
 import React, { useCallback, useEffect, useRef } from 'react'
 
 const MIN_AMPLITUDE_THRESHOLD = 0.03
+const LOW_BAND_BIN_COUNT = 36
 
 type PlayerAudioVisualizerOverlayProps = {
   videoRef: React.RefObject<HTMLVideoElement | null>
   visible: boolean
   seekbarRef: React.RefObject<HTMLDivElement | null>
+  analysisActive?: boolean
+  audioLevelRef?: React.MutableRefObject<number>
 }
 
 export default function PlayerAudioVisualizerOverlay({
   videoRef,
   visible,
-  seekbarRef
+  seekbarRef,
+  analysisActive = visible,
+  audioLevelRef
 }: PlayerAudioVisualizerOverlayProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -25,6 +30,8 @@ export default function PlayerAudioVisualizerOverlay({
   const peakHoldRef = useRef<Float32Array | null>(null)
   const hueOffsetRef = useRef<number>(0)
   const smoothedAmplitudeRef = useRef<number>(0)
+  const lowBandAmplitudeRef = useRef<number>(0)
+  const ambientReactiveLevelRef = useRef<number>(0)
   const melBinsRef = useRef<number[] | null>(null)
   const idleHeightsRef = useRef<Float32Array | null>(null)
   const idleTimeRef = useRef<number>(0)
@@ -87,10 +94,13 @@ export default function PlayerAudioVisualizerOverlay({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    if (!visible) {
+    if (!visible && !analysisActive) {
       stopDrawLoop()
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       canvasOpacityRef.current = 0
+      if (audioLevelRef) {
+        audioLevelRef.current = 0
+      }
       return
     }
 
@@ -186,6 +196,15 @@ export default function PlayerAudioVisualizerOverlay({
       }
       const avgAmplitude = totalEnergy / (dataArray.length * 255)
 
+      let lowBandEnergy = 0
+      let lowBandWeight = 0
+      for (let i = 0; i < Math.min(LOW_BAND_BIN_COUNT, dataArray.length); i++) {
+        const weight = 1 - i / LOW_BAND_BIN_COUNT
+        lowBandEnergy += (dataArray[i] / 255) * weight
+        lowBandWeight += weight
+      }
+      const lowBandAmplitude = lowBandWeight > 0 ? lowBandEnergy / lowBandWeight : 0
+
       const prevSmoothed = smoothedAmplitudeRef.current
       if (avgAmplitude > prevSmoothed) {
         smoothedAmplitudeRef.current = avgAmplitude * 0.6 + prevSmoothed * 0.4
@@ -193,6 +212,26 @@ export default function PlayerAudioVisualizerOverlay({
         smoothedAmplitudeRef.current = prevSmoothed * 0.97
       }
       const smoothedAmp = smoothedAmplitudeRef.current
+
+      const prevLowBand = lowBandAmplitudeRef.current
+      if (lowBandAmplitude > prevLowBand) {
+        lowBandAmplitudeRef.current = lowBandAmplitude * 0.7 + prevLowBand * 0.3
+      } else {
+        lowBandAmplitudeRef.current = prevLowBand * 0.94 + lowBandAmplitude * 0.06
+      }
+      const lowBandSmoothed = lowBandAmplitudeRef.current
+
+      const ambientTarget = Math.min(1, smoothedAmp * 0.48 + lowBandSmoothed * 1.08)
+      const prevAmbientReactive = ambientReactiveLevelRef.current
+      if (ambientTarget > prevAmbientReactive) {
+        ambientReactiveLevelRef.current = ambientTarget * 0.72 + prevAmbientReactive * 0.28
+      } else {
+        ambientReactiveLevelRef.current = prevAmbientReactive * 0.86 + ambientTarget * 0.14
+      }
+
+      if (audioLevelRef) {
+        audioLevelRef.current = ambientReactiveLevelRef.current
+      }
       const hasAudibleEnergy = smoothedAmp > MIN_AMPLITUDE_THRESHOLD
       const amplitudeFloor = hasAudibleEnergy ? 0.01 : 0
 
@@ -205,6 +244,11 @@ export default function PlayerAudioVisualizerOverlay({
         1,
         smoothedAmp / Math.max(MIN_AMPLITUDE_THRESHOLD, avgAmplitude * 0.5 + 0.01)
       )
+
+      if (!visible) {
+        animationFrameRef.current = requestAnimationFrame(draw)
+        return
+      }
 
       const targetHueSpeed = 0.06 + smoothedAmp * 1.4
       hueSpeedRef.current = hueSpeedRef.current * 0.93 + targetHueSpeed * 0.07
@@ -535,16 +579,19 @@ export default function PlayerAudioVisualizerOverlay({
     return () => {
       stopDrawLoop()
     }
-  }, [stopDrawLoop, videoRef, visible, seekbarRef])
+  }, [analysisActive, audioLevelRef, stopDrawLoop, videoRef, visible, seekbarRef])
 
   useEffect(
     () => () => {
       stopDrawLoop()
+      if (audioLevelRef) {
+        audioLevelRef.current = 0
+      }
       sourceRef.current?.disconnect()
       analyserRef.current?.disconnect()
       void audioContextRef.current?.close()
     },
-    [stopDrawLoop]
+    [audioLevelRef, stopDrawLoop]
   )
 
   return (
