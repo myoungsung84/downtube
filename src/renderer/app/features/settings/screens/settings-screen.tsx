@@ -13,10 +13,63 @@ import {
   ToggleButtonGroup,
   Typography
 } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { AppLanguagePreference } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
+
+// ─── shared sx ────────────────────────────────────────────────────────────────
+
+const TOGGLE_GROUP_SX: SxProps<Theme> = {
+  bgcolor: 'action.hover',
+  borderRadius: '10px',
+  p: 0.5,
+  border: '1px solid',
+  borderColor: (theme: Theme) =>
+    theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.15)
+      : alpha(theme.palette.common.white, 0.06),
+  gap: 0.5,
+  '& .MuiToggleButtonGroup-grouped': {
+    border: 'none !important',
+    borderRadius: '8px !important',
+    m: 0
+  },
+  '& .MuiToggleButton-root': {
+    px: 2.25,
+    py: 0.875,
+    fontWeight: 600,
+    fontSize: '0.8rem',
+    color: 'text.secondary',
+    transition: 'all 0.18s ease',
+    '&.Mui-selected': {
+      bgcolor: (theme: Theme) =>
+        theme.palette.mode === 'light'
+          ? alpha(theme.palette.primary.main, 0.1)
+          : theme.palette.background.paper,
+      color: 'text.primary',
+      boxShadow: (theme: Theme) =>
+        theme.palette.mode === 'light'
+          ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(theme.palette.common.black, 0.08)}`
+          : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
+      '&:hover': {
+        bgcolor: (theme: Theme) =>
+          theme.palette.mode === 'light'
+            ? alpha(theme.palette.primary.main, 0.14)
+            : theme.palette.background.paper
+      }
+    },
+    '&:hover:not(.Mui-selected)': {
+      bgcolor: (theme: Theme) =>
+        theme.palette.mode === 'light'
+          ? alpha(theme.palette.primary.main, 0.06)
+          : theme.palette.action.selected
+    }
+  }
+}
+
+// ─── keys ─────────────────────────────────────────────────────────────────────
 
 const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const
@@ -57,15 +110,8 @@ export default function SettingsScreen(): React.JSX.Element {
   }, [hydrateSettings])
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        width: '100%'
-      }}
-    >
-      <Box sx={{ width: '100%', maxWidth: 1400, p: 3 }}>
-        <Stack sx={{ width: '100%', maxWidth: 720 }} spacing={4}>
+    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Stack sx={{ width: '100%', maxWidth: 720, p: 3 }} spacing={3}>
           {/* Header */}
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Box
@@ -150,57 +196,7 @@ export default function SettingsScreen(): React.JSX.Element {
                         .then((resolvedLanguage) => changeLanguage(resolvedLanguage))
                     })
                   }}
-                  sx={{
-                    width: 'fit-content',
-                    bgcolor: 'action.hover',
-                    borderRadius: '10px',
-                    p: 0.5,
-                    border: '1px solid',
-                    borderColor: (theme) =>
-                      theme.palette.mode === 'light'
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.common.white, 0.06),
-                    gap: 0.5,
-                    '& .MuiToggleButtonGroup-grouped': {
-                      border: 'none !important',
-                      borderRadius: '8px !important',
-                      m: 0
-                    },
-                    '& .MuiToggleButton-root': {
-                      px: 2.25,
-                      py: 0.875,
-                      fontWeight: 600,
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                      transition: 'all 0.18s ease',
-                      '&.Mui-selected': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.1)
-                            : theme.palette.background.paper,
-                        color: 'text.primary',
-                        boxShadow: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
-                                theme.palette.common.black,
-                                0.08
-                              )}`
-                            : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
-                        '&:hover': {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.14)
-                              : theme.palette.background.paper
-                        }
-                      },
-                      '&:hover:not(.Mui-selected)': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.06)
-                            : theme.palette.action.selected
-                      }
-                    }
-                  }}
+                  sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
                 >
                   <ToggleButton value="system">
                     {t('appearance.language.options.system')}
@@ -230,57 +226,7 @@ export default function SettingsScreen(): React.JSX.Element {
                       if (next !== 'system' && next !== 'light' && next !== 'dark') return
                       void setSettingValue(APP_THEME_MODE_KEY, next)
                     }}
-                    sx={{
-                      width: 'fit-content',
-                      bgcolor: 'action.hover',
-                      borderRadius: '10px',
-                      p: 0.5,
-                      border: '1px solid',
-                      borderColor: (theme) =>
-                        theme.palette.mode === 'light'
-                          ? alpha(theme.palette.primary.main, 0.15)
-                          : alpha(theme.palette.common.white, 0.06),
-                      gap: 0.5,
-                      '& .MuiToggleButtonGroup-grouped': {
-                        border: 'none !important',
-                        borderRadius: '8px !important',
-                        m: 0
-                      },
-                      '& .MuiToggleButton-root': {
-                        px: 2.25,
-                        py: 0.875,
-                        fontWeight: 600,
-                        fontSize: '0.8rem',
-                        color: 'text.secondary',
-                        transition: 'all 0.18s ease',
-                        '&.Mui-selected': {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.1)
-                              : theme.palette.background.paper,
-                          color: 'text.primary',
-                          boxShadow: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
-                                  theme.palette.common.black,
-                                  0.08
-                                )}`
-                              : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
-                          '&:hover': {
-                            bgcolor: (theme) =>
-                              theme.palette.mode === 'light'
-                                ? alpha(theme.palette.primary.main, 0.14)
-                                : theme.palette.background.paper
-                          }
-                        },
-                        '&:hover:not(.Mui-selected)': {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.06)
-                              : theme.palette.action.selected
-                        }
-                      }
-                    }}
+                    sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
                   >
                     <ToggleButton value="system">
                       {t('appearance.theme.options.system')}
@@ -355,57 +301,7 @@ export default function SettingsScreen(): React.JSX.Element {
                     if (next !== 'video' && next !== 'audio') return
                     void setSettingValue(DOWNLOADS_DEFAULT_TYPE_KEY, next)
                   }}
-                  sx={{
-                    flexShrink: 0,
-                    bgcolor: 'action.hover',
-                    borderRadius: '10px',
-                    p: 0.5,
-                    border: '1px solid',
-                    borderColor: (theme) =>
-                      theme.palette.mode === 'light'
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.common.white, 0.06),
-                    gap: 0.5,
-                    '& .MuiToggleButtonGroup-grouped': {
-                      border: 'none !important',
-                      borderRadius: '8px !important',
-                      m: 0
-                    },
-                    '& .MuiToggleButton-root': {
-                      px: 2,
-                      py: 0.875,
-                      fontWeight: 600,
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                      transition: 'all 0.18s ease',
-                      '&.Mui-selected': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.1)
-                            : theme.palette.background.paper,
-                        color: 'text.primary',
-                        boxShadow: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
-                                theme.palette.common.black,
-                                0.08
-                              )}`
-                            : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
-                        '&:hover': {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.14)
-                              : theme.palette.background.paper
-                        }
-                      },
-                      '&:hover:not(.Mui-selected)': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.06)
-                            : theme.palette.action.selected
-                      }
-                    }
-                  }}
+                  sx={[TOGGLE_GROUP_SX, { flexShrink: 0, '& .MuiToggleButton-root': { px: 2 } }]}
                 >
                   <ToggleButton value="video">
                     <Stack direction="row" spacing={0.75} alignItems="center">
@@ -472,58 +368,10 @@ export default function SettingsScreen(): React.JSX.Element {
                     if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) return
                     void setSettingValue(DOWNLOADS_PLAYLIST_LIMIT_KEY, parsed)
                   }}
-                  sx={{
-                    flexShrink: 0,
-                    bgcolor: 'action.hover',
-                    borderRadius: '10px',
-                    p: 0.5,
-                    border: '1px solid',
-                    borderColor: (theme) =>
-                      theme.palette.mode === 'light'
-                        ? alpha(theme.palette.primary.main, 0.15)
-                        : alpha(theme.palette.common.white, 0.06),
-                    gap: 0.5,
-                    '& .MuiToggleButtonGroup-grouped': {
-                      border: 'none !important',
-                      borderRadius: '8px !important',
-                      m: 0
-                    },
-                    '& .MuiToggleButton-root': {
-                      px: 2.5,
-                      py: 0.875,
-                      fontWeight: 600,
-                      fontSize: '0.8rem',
-                      color: 'text.secondary',
-                      minWidth: 56,
-                      transition: 'all 0.18s ease',
-                      '&.Mui-selected': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.1)
-                            : theme.palette.background.paper,
-                        color: 'text.primary',
-                        boxShadow: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.24)}, 0 1px 3px ${alpha(
-                                theme.palette.common.black,
-                                0.08
-                              )}`
-                            : `0 1px 4px ${alpha(theme.palette.common.black, 0.15)}`,
-                        '&:hover': {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === 'light'
-                              ? alpha(theme.palette.primary.main, 0.14)
-                              : theme.palette.background.paper
-                        }
-                      },
-                      '&:hover:not(.Mui-selected)': {
-                        bgcolor: (theme) =>
-                          theme.palette.mode === 'light'
-                            ? alpha(theme.palette.primary.main, 0.06)
-                            : theme.palette.action.selected
-                      }
-                    }
-                  }}
+                  sx={[
+                    TOGGLE_GROUP_SX,
+                    { flexShrink: 0, '& .MuiToggleButton-root': { px: 2.5, minWidth: 56 } }
+                  ]}
                 >
                   <ToggleButton value="10">{t('downloads.playlist_limit.options.10')}</ToggleButton>
                   <ToggleButton value="20">{t('downloads.playlist_limit.options.20')}</ToggleButton>
@@ -532,8 +380,7 @@ export default function SettingsScreen(): React.JSX.Element {
               </Stack>
             </Stack>
           </Paper>
-        </Stack>
-      </Box>
+      </Stack>
     </Box>
   )
 }
