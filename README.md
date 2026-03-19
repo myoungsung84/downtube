@@ -8,12 +8,13 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/release-1.0.6-111827" alt="Release 1.0.6" />
   <img src="https://img.shields.io/badge/electron-35-47848F?logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white" alt="React" />
 </p>
 
 Downtube is a personal Electron desktop app for queue-based media downloads and local playback.
-The current app combines a downloads screen, a completed-items library, a built-in player, localized UI, and persisted app settings.
+Version 1.0.6 combines queue downloads, a completed-items library, a built-in player, localized UI, theme presets, and persisted app settings.
 
 > Use this project only for media you own, media with a public license, or media you are authorized to use.
 
@@ -42,10 +43,10 @@ The current app combines a downloads screen, a completed-items library, a built-
 - Queue controls for start, pause, stop, remove, and retry
 - Per-job type switching while a job is still queued
 - Recent URL history stored in settings
-- Library view for completed downloads under the app download directory
+- Library view for completed downloads with open, reveal, delete, thumbnail, and JSON sidecar reuse
 - Built-in player for local video and audio playback
-- Playback controls for seek, volume, mute, playback rate, fullscreen, and audio visualizer
-- Settings for theme, language, default download type, and playlist limit
+- Playback controls for seek, volume, mute, playback rate, fullscreen, audio visualizer, and ambient particles
+- Settings for theme mode, theme preset, language, default download type, and playlist limit
 - Korean and English UI, plus a `system` language preference resolved in the main process
 - Resolved language applied before the first React render, including the splash screen
 - Startup checks for bundled binaries and runtime fallback download for `yt-dlp` on Windows and macOS when needed
@@ -158,9 +159,11 @@ Persisted settings are stored through `electron-store` and validated in the main
 | --------------------------- | ------------------------- |
 | App language                | `system`, `ko`, `en`      |
 | App theme                   | `system`, `light`, `dark` |
+| App theme preset            | `default`, `slate`, `ink`, `jade`, `aurora` |
 | Player volume               | —                         |
 | Player muted state          | —                         |
 | Audio visualizer visibility | —                         |
+| Ambient particles visibility | —                        |
 | Default download type       | `video`, `audio`          |
 | Playlist limit              | —                         |
 | Recent URL history          | —                         |
@@ -174,8 +177,10 @@ Persisted settings are stored through `electron-store` and validated in the main
 
 **Theme flow**
 
-- The theme preference is stored in settings.
+- The theme mode and preset are stored separately in settings.
 - `system` theme follows `prefers-color-scheme` in the renderer.
+- In `system` mode, the default preset is applied.
+- Manual light and dark modes expose the `default`, `slate`, `ink`, `jade`, and `aurora` style options supported by the app.
 
 ---
 
@@ -256,7 +261,8 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 - The splash screen reflects the same resolved language as the rest of the app from the first render.
 - Initialization sets up the log file under `Downloads/DownTube/down-tube.log`.
 - In development, the main window and the player window open DevTools automatically.
-- The app bundles media sidecars (`.json`) and thumbnail images next to downloaded files and reuses them in the library and player.
+- The app stores media sidecars (`.json`) and thumbnail images next to downloaded files and reuses them in the library and player.
+- The player includes both an audio visualizer and reactive ambient particles, and each toggle is persisted in settings.
 
 ---
 

@@ -8,12 +8,13 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/release-1.0.6-111827" alt="Release 1.0.6" />
   <img src="https://img.shields.io/badge/electron-35-47848F?logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white" alt="React" />
 </p>
 
 Downtube는 큐 기반 미디어 다운로드와 로컬 재생을 위한 개인 Electron 데스크톱 앱입니다.
-현재 앱은 다운로드 화면, 완료 항목 보관함, 내장 플레이어, 다국어 UI, 설정 저장 기능을 함께 제공합니다.
+1.0.6 기준으로 다운로드 큐, 완료 항목 보관함, 내장 플레이어, 다국어 UI, 테마 프리셋, 설정 저장 기능을 함께 제공합니다.
 
 > 이 프로젝트는 직접 소유한 콘텐츠, 공개 라이선스 콘텐츠, 또는 사용 권한이 있는 콘텐츠를 대상으로 사용하는 것을 전제로 합니다.
 
@@ -40,10 +41,10 @@ Downtube는 큐 기반 미디어 다운로드와 로컬 재생을 위한 개인 
 - 다운로드 시작, 일시정지, 중단, 제거, 재시도 지원
 - 대기 중 작업의 다운로드 타입 전환
 - 최근 URL 기록 저장
-- 앱 다운로드 디렉터리 기준의 완료 항목 보관함
+- 완료 항목 보관함에서 열기, 위치 열기, 삭제, 썸네일, JSON sidecar 재사용 지원
 - 로컬 비디오/오디오 재생용 내장 플레이어
-- 탐색, 볼륨, 음소거, 재생 속도, 전체화면, 오디오 시각화 컨트롤
-- 테마, 언어, 기본 다운로드 타입, 플레이리스트 개수 제한 설정
+- 탐색, 볼륨, 음소거, 재생 속도, 전체화면, 오디오 시각화, ambient particles 컨트롤
+- 테마 모드, 테마 스타일, 언어, 기본 다운로드 타입, 플레이리스트 개수 제한 설정
 - 한국어/영어 UI와 `system` 언어 설정 지원
 - 최종 적용 언어를 React 첫 렌더 전에 확정해 splash와 메인 화면이 같은 언어로 시작
 - 시작 시 번들 바이너리를 점검하고 필요하면 Windows/macOS에서 `yt-dlp`를 런타임에 내려받는 초기화 흐름
@@ -146,9 +147,11 @@ pnpm release:win
 
 - 앱 언어: `system`, `ko`, `en`
 - 앱 테마: `system`, `light`, `dark`
+- 앱 테마 스타일: `default`, `slate`, `ink`, `jade`, `aurora`
 - 플레이어 볼륨
 - 플레이어 음소거 상태
 - 플레이어 오디오 시각화 표시 여부
+- 플레이어 ambient particles 표시 여부
 - 기본 다운로드 타입: `video` 또는 `audio`
 - 플레이리스트 개수 제한
 - 최근 URL 기록
@@ -162,8 +165,10 @@ pnpm release:win
 
 **테마 처리 흐름**
 
-- 테마 preference는 설정에 저장됩니다.
+- 테마 모드와 스타일은 각각 설정에 저장됩니다.
 - `system` 테마는 renderer의 `prefers-color-scheme`를 따릅니다.
+- `system` 모드에서는 기본 스타일이 적용됩니다.
+- 수동 라이트/다크 모드에서는 `default`, `slate`, `ink`, `jade`, `aurora` 스타일을 선택할 수 있습니다.
 
 ## 프로젝트 구조
 
@@ -237,6 +242,7 @@ src
 - 초기화 과정에서 로그 파일은 `Downloads/DownTube/down-tube.log`에 기록됩니다.
 - 개발 모드에서는 메인 창과 플레이어 창이 자동으로 DevTools를 엽니다.
 - 앱은 다운로드 파일 옆에 미디어 sidecar(`.json`)와 썸네일 이미지를 함께 저장하고, 보관함과 플레이어에서 이를 재사용합니다.
+- 플레이어의 오디오 시각화와 ambient particles 토글 상태는 설정에 저장됩니다.
 
 ## 라이선스
 
