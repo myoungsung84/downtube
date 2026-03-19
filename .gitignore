@@ -89,4 +89,6 @@ package-lock.json
 # Local agent artifacts
 # =========================
 .codex/
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/commands/*.md
