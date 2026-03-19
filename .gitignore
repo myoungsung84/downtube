@@ -86,6 +86,7 @@ package-lock.json
 *.tsbuildinfo
 
 # =========================
-# Codex / local agent artifacts
+# Local agent artifacts
 # =========================
 .codex/
+.claude/
