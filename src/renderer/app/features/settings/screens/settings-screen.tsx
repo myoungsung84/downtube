@@ -17,6 +17,7 @@ import type { Theme } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import type { AppLanguagePreference, AppThemePreset } from '@src/types/settings.types'
+import { isAppThemePreset } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
 
 // ─── shared sx ────────────────────────────────────────────────────────────────
@@ -94,14 +95,7 @@ export default function SettingsScreen(): React.JSX.Element {
   const themeMode: 'light' | 'dark' | 'system' =
     storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'system'
 
-  const rawPreset: AppThemePreset =
-    storedThemePreset === 'default' ||
-    storedThemePreset === 'slate' ||
-    storedThemePreset === 'ink' ||
-    storedThemePreset === 'jade' ||
-    storedThemePreset === 'aurora'
-      ? storedThemePreset
-      : 'default'
+  const rawPreset: AppThemePreset = isAppThemePreset(storedThemePreset) ? storedThemePreset : 'default'
 
   // mode와 맞지 않는 preset은 default로 표시
   const themePreset: AppThemePreset = (() => {
@@ -282,14 +276,7 @@ export default function SettingsScreen(): React.JSX.Element {
                   disabled={themeMode === 'system'}
                   onChange={(_, next): void => {
                     if (!next) return
-                    if (
-                      next !== 'default' &&
-                      next !== 'slate' &&
-                      next !== 'ink' &&
-                      next !== 'jade' &&
-                      next !== 'aurora'
-                    )
-                      return
+                    if (!isAppThemePreset(next)) return
                     void setSettingValue(APP_THEME_PRESET_KEY, next)
                   }}
                   sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}

@@ -1,6 +1,7 @@
 import { CssBaseline, useMediaQuery } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
+import { isAppThemePreset } from '@src/types/settings.types'
 import type { AppThemePreset } from '@src/types/settings.types'
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
@@ -28,10 +29,7 @@ function readCachedThemePreset(): AppThemePreset | undefined {
   if (typeof window === 'undefined') return undefined
 
   const raw = window.localStorage.getItem(THEME_PRESET_CACHE_KEY)
-  if (raw === 'default' || raw === 'slate' || raw === 'ink' || raw === 'jade' || raw === 'aurora') {
-    return raw
-  }
-  return undefined
+  return isAppThemePreset(raw) ? raw : undefined
 }
 
 export default function ThemedApp(): React.JSX.Element {
