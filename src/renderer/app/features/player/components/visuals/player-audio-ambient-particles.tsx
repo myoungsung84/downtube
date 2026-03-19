@@ -8,7 +8,9 @@ const drift = keyframes`
     opacity: 0;
   }
   12% {
-    opacity: calc(var(--particle-base-opacity) * var(--ambient-alpha-gain, 1));
+    opacity: calc(
+      var(--particle-base-opacity) * var(--ambient-alpha-gain, 1) * var(--particle-energy-bias, 1)
+    );
   }
   55% {
     transform: translate3d(
@@ -18,7 +20,9 @@ const drift = keyframes`
     ) scale(calc(1.08 + var(--ambient-scale-gain, 0) * 1.5));
   }
   80% {
-    opacity: calc(var(--particle-base-opacity) * var(--ambient-alpha-gain, 1));
+    opacity: calc(
+      var(--particle-base-opacity) * var(--ambient-alpha-gain, 1) * var(--particle-energy-bias, 1)
+    );
   }
   100% {
     transform: translate3d(
