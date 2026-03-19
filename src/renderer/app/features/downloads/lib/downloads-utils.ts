@@ -232,8 +232,10 @@ export function statusTone(status: DownloadJob['status']): {
         bgPaletteKey: 'warning'
       }
     case 'queued':
-    default:
       return { borderColor: 'divider', tone: 'neutral', chipColor: 'default', bgPaletteKey: null }
+
+    default:
+      return assertNever(status)
   }
 }
 
