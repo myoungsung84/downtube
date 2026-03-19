@@ -313,7 +313,7 @@ export default function LibraryScreen(): React.JSX.Element {
             py: 1.75,
             background: isDark
               ? `linear-gradient(135deg,
-                  ${alpha(theme.palette.primary.main, 0.07)},
+                  ${alpha(theme.palette.primary.main, 0.05)},
                   ${alpha(theme.palette.background.paper, 0)})`
               : `linear-gradient(135deg,
                   ${alpha(theme.palette.primary.main, 0.04)},
@@ -323,7 +323,7 @@ export default function LibraryScreen(): React.JSX.Element {
           <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
             <Stack direction="row" alignItems="center" spacing={2}>
               <Stack spacing={0.2}>
-                <Typography variant="h5" fontWeight={900} letterSpacing="-0.03em" lineHeight={1.2}>
+                <Typography variant="h5" fontWeight={800} letterSpacing="-0.03em" lineHeight={1.2}>
                   {t('header.title')}
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
@@ -420,7 +420,9 @@ export default function LibraryScreen(): React.JSX.Element {
                     }}
                   >
                     {tab === 'video' ? (
-                      <MovieRoundedIcon sx={{ fontSize: 30, color: 'primary.main', opacity: 0.6 }} />
+                      <MovieRoundedIcon
+                        sx={{ fontSize: 30, color: 'primary.main', opacity: 0.6 }}
+                      />
                     ) : (
                       <AudioFileRoundedIcon
                         sx={{ fontSize: 30, color: 'warning.main', opacity: 0.6 }}
@@ -608,9 +610,7 @@ export default function LibraryScreen(): React.JSX.Element {
                           flexWrap="wrap"
                           alignItems="center"
                         >
-                          <Typography
-                            sx={{ fontSize: '0.68rem', color: 'text.disabled' }}
-                          >
+                          <Typography sx={{ fontSize: '0.68rem', color: 'text.disabled' }}>
                             {formatDate(item, language)}
                           </Typography>
 

@@ -7,7 +7,7 @@ import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 const slideUp = keyframes`
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 `
 
@@ -38,8 +38,8 @@ export default function DownloadsEmptyState(): React.JSX.Element {
         sx={{
           p: { xs: 3, sm: 3.5 },
           textAlign: 'center',
-          borderRadius: 4,
-          border: '1.5px dashed',
+          borderRadius: 3,
+          border: '1px dashed',
           borderColor: (theme) => alpha(theme.palette.primary.main, 0.25),
           background: (theme) =>
             `linear-gradient(160deg,
@@ -110,12 +110,11 @@ export default function DownloadsEmptyState(): React.JSX.Element {
                   border: '1px solid',
                   borderColor: (theme) => alpha(theme.palette.divider, 0.8),
                   bgcolor: (theme) => alpha(theme.palette.background.default, 0.6),
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  transition: 'border-color 0.15s ease, background-color 0.15s ease',
                   cursor: 'default',
                   '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-                    boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.primary.main, 0.1)}`
+                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.4),
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04)
                   }
                 }}
               >
