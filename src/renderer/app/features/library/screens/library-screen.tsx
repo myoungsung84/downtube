@@ -13,6 +13,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  Fade,
   IconButton,
   Menu,
   MenuItem,
@@ -55,6 +56,15 @@ function formatDate(item: LibraryItem, language: 'ko' | 'en'): string {
 
 type MenuState = { phase: 'idle' } | { phase: 'open'; anchorEl: HTMLElement; item: LibraryItem }
 const PLAYABLE_ITEM_TYPES: readonly LibraryItemType[] = ['video', 'audio']
+
+// 메타 칩(파일크기, 확장자) 공용 sx — 역할이 동일한 두 칩에만 사용
+const META_CHIP_SX = {
+  height: 18,
+  fontSize: '0.66rem',
+  borderRadius: 0.75,
+  borderColor: 'divider',
+  color: 'text.secondary'
+} as const
 
 // ─── SegmentedControl ─────────────────────────────────────────────────────────
 
@@ -292,15 +302,13 @@ export default function LibraryScreen(): React.JSX.Element {
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={1.75}>
+      <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={2.5}>
         <Paper
           elevation={0}
           sx={{
             borderRadius: 2,
             border: '1px solid',
-            borderColor: isDark
-              ? alpha(theme.palette.common.white, 0.08)
-              : alpha(theme.palette.common.black, 0.1),
+            borderColor: 'divider',
             px: 2.25,
             py: 1.75,
             background: isDark
@@ -323,15 +331,7 @@ export default function LibraryScreen(): React.JSX.Element {
                 </Typography>
               </Stack>
 
-              <Box
-                sx={{
-                  width: '1px',
-                  height: 28,
-                  bgcolor: isDark
-                    ? alpha(theme.palette.common.white, 0.1)
-                    : alpha(theme.palette.common.black, 0.1)
-                }}
-              />
+              <Box sx={{ width: '1px', height: 28, bgcolor: 'divider' }} />
 
               <SegmentedControl
                 value={tab}
@@ -389,9 +389,7 @@ export default function LibraryScreen(): React.JSX.Element {
           sx={{
             borderRadius: 2,
             border: '1px solid',
-            borderColor: isDark
-              ? alpha(theme.palette.common.white, 0.08)
-              : alpha(theme.palette.common.black, 0.1),
+            borderColor: 'divider',
             overflow: 'hidden'
           }}
         >
@@ -405,39 +403,41 @@ export default function LibraryScreen(): React.JSX.Element {
               </Stack>
             </Box>
           ) : visibleItems.length === 0 ? (
-            <Box sx={{ py: 9 }}>
-              <Stack alignItems="center" spacing={2}>
-                <Box
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 3,
-                    display: 'grid',
-                    placeItems: 'center',
-                    bgcolor: alpha(
-                      tab === 'video' ? theme.palette.primary.main : theme.palette.warning.main,
-                      isDark ? 0.12 : 0.07
-                    )
-                  }}
-                >
-                  {tab === 'video' ? (
-                    <MovieRoundedIcon sx={{ fontSize: 30, color: 'primary.main', opacity: 0.6 }} />
-                  ) : (
-                    <AudioFileRoundedIcon
-                      sx={{ fontSize: 30, color: 'warning.main', opacity: 0.6 }}
-                    />
-                  )}
-                </Box>
-                <Stack alignItems="center" spacing={0.4}>
-                  <Typography fontWeight={700} fontSize="0.9rem">
-                    {tab === 'video' ? t('empty.video_title') : t('empty.audio_title')}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('empty.description')}
-                  </Typography>
+            <Fade in timeout={400}>
+              <Box sx={{ py: 9 }}>
+                <Stack alignItems="center" spacing={2}>
+                  <Box
+                    sx={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 3,
+                      display: 'grid',
+                      placeItems: 'center',
+                      bgcolor: alpha(
+                        tab === 'video' ? theme.palette.primary.main : theme.palette.warning.main,
+                        isDark ? 0.12 : 0.07
+                      )
+                    }}
+                  >
+                    {tab === 'video' ? (
+                      <MovieRoundedIcon sx={{ fontSize: 30, color: 'primary.main', opacity: 0.6 }} />
+                    ) : (
+                      <AudioFileRoundedIcon
+                        sx={{ fontSize: 30, color: 'warning.main', opacity: 0.6 }}
+                      />
+                    )}
+                  </Box>
+                  <Stack alignItems="center" spacing={0.4}>
+                    <Typography fontWeight={700} fontSize="0.9rem">
+                      {tab === 'video' ? t('empty.video_title') : t('empty.audio_title')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('empty.description')}
+                    </Typography>
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Box>
+              </Box>
+            </Fade>
           ) : (
             <Stack
               divider={
@@ -484,9 +484,7 @@ export default function LibraryScreen(): React.JSX.Element {
                             borderRadius: 1.25,
                             overflow: 'hidden',
                             border: '1px solid',
-                            borderColor: isDark
-                              ? alpha(theme.palette.common.white, 0.07)
-                              : alpha(theme.palette.common.black, 0.1)
+                            borderColor: 'divider'
                           }}
                         >
                           {hasThumbnail ? (
@@ -563,7 +561,7 @@ export default function LibraryScreen(): React.JSX.Element {
                           <Stack spacing={0.3} sx={{ minWidth: 0, flex: 1 }}>
                             <Typography
                               fontWeight={700}
-                              sx={{ fontSize: '0.88rem', lineHeight: 1.4 }}
+                              sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}
                               noWrap
                               title={item.title ?? item.fileName}
                             >
@@ -573,12 +571,7 @@ export default function LibraryScreen(): React.JSX.Element {
                               variant="caption"
                               noWrap
                               title={item.uploader ?? undefined}
-                              sx={{
-                                color: isDark
-                                  ? alpha(theme.palette.common.white, 0.4)
-                                  : theme.palette.text.secondary,
-                                fontSize: '0.72rem'
-                              }}
+                              sx={{ color: 'text.secondary', fontSize: '0.72rem' }}
                             >
                               {item.uploader ?? t('item.uploader_fallback')}
                             </Typography>
@@ -596,9 +589,7 @@ export default function LibraryScreen(): React.JSX.Element {
                               flexShrink: 0,
                               width: 26,
                               height: 26,
-                              color: isDark
-                                ? alpha(theme.palette.common.white, 0.35)
-                                : theme.palette.text.secondary,
+                              color: 'text.secondary',
                               '&:hover': { color: 'text.primary' }
                             }}
                           >
@@ -618,12 +609,7 @@ export default function LibraryScreen(): React.JSX.Element {
                           alignItems="center"
                         >
                           <Typography
-                            sx={{
-                              fontSize: '0.68rem',
-                              color: isDark
-                                ? alpha(theme.palette.common.white, 0.28)
-                                : theme.palette.text.disabled
-                            }}
+                            sx={{ fontSize: '0.68rem', color: 'text.disabled' }}
                           >
                             {formatDate(item, language)}
                           </Typography>
@@ -645,33 +631,13 @@ export default function LibraryScreen(): React.JSX.Element {
                             size="small"
                             variant="outlined"
                             label={formatFileSize(item.fileSize)}
-                            sx={{
-                              height: 18,
-                              fontSize: '0.66rem',
-                              borderRadius: 0.75,
-                              borderColor: isDark
-                                ? alpha(theme.palette.common.white, 0.1)
-                                : alpha(theme.palette.common.black, 0.13),
-                              color: isDark
-                                ? alpha(theme.palette.common.white, 0.45)
-                                : theme.palette.text.secondary
-                            }}
+                            sx={META_CHIP_SX}
                           />
                           <Chip
                             size="small"
                             variant="outlined"
                             label={`.${item.extension}`}
-                            sx={{
-                              height: 18,
-                              fontSize: '0.66rem',
-                              borderRadius: 0.75,
-                              borderColor: isDark
-                                ? alpha(theme.palette.common.white, 0.1)
-                                : alpha(theme.palette.common.black, 0.13),
-                              color: isDark
-                                ? alpha(theme.palette.common.white, 0.45)
-                                : theme.palette.text.secondary
-                            }}
+                            sx={META_CHIP_SX}
                           />
                         </Stack>
                       </Stack>
