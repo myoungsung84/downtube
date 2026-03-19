@@ -168,28 +168,6 @@ export default function PlayerAudioVisualizerOverlay({
 
       analyser.getByteFrequencyData(dataArray)
 
-      const dpr = window.devicePixelRatio || 1
-      const DRAW_W = w
-
-      let centerY = h - Math.floor(h * 0.135)
-      const seekEl = seekbarRef.current
-      if (seekEl) {
-        const canvasRect = canvas.getBoundingClientRect()
-        const seekRect = seekEl.getBoundingClientRect()
-        const seekCenterY = seekRect.top + seekRect.height / 2 - canvasRect.top
-        centerY = Math.round(seekCenterY * dpr)
-      }
-
-      if (!isFinite(centerY) || centerY <= 0) {
-        animationFrameRef.current = requestAnimationFrame(draw)
-        return
-      }
-
-      const GAP = 0
-      const MAX_H = Math.floor(h * 0.32)
-      const MAX_REFLECT = Math.floor(h * 0.13)
-      const RADIUS = Math.max(1, Math.floor((DRAW_W - GAP * (BAR_COUNT - 1)) / BAR_COUNT / 2))
-
       let totalEnergy = 0
       for (let i = 0; i < dataArray.length; i++) {
         totalEnergy += dataArray[i]
@@ -232,6 +210,34 @@ export default function PlayerAudioVisualizerOverlay({
       if (audioLevelRef) {
         audioLevelRef.current = ambientReactiveLevelRef.current
       }
+
+      if (!visible) {
+        animationFrameRef.current = requestAnimationFrame(draw)
+        return
+      }
+
+      const dpr = window.devicePixelRatio || 1
+      const DRAW_W = w
+
+      let centerY = h - Math.floor(h * 0.135)
+      const seekEl = seekbarRef.current
+      if (seekEl) {
+        const canvasRect = canvas.getBoundingClientRect()
+        const seekRect = seekEl.getBoundingClientRect()
+        const seekCenterY = seekRect.top + seekRect.height / 2 - canvasRect.top
+        centerY = Math.round(seekCenterY * dpr)
+      }
+
+      if (!isFinite(centerY) || centerY <= 0) {
+        animationFrameRef.current = requestAnimationFrame(draw)
+        return
+      }
+
+      const GAP = 0
+      const MAX_H = Math.floor(h * 0.32)
+      const MAX_REFLECT = Math.floor(h * 0.13)
+      const RADIUS = Math.max(1, Math.floor((DRAW_W - GAP * (BAR_COUNT - 1)) / BAR_COUNT / 2))
+
       const hasAudibleEnergy = smoothedAmp > MIN_AMPLITUDE_THRESHOLD
       const amplitudeFloor = hasAudibleEnergy ? 0.01 : 0
 
@@ -244,11 +250,6 @@ export default function PlayerAudioVisualizerOverlay({
         1,
         smoothedAmp / Math.max(MIN_AMPLITUDE_THRESHOLD, avgAmplitude * 0.5 + 0.01)
       )
-
-      if (!visible) {
-        animationFrameRef.current = requestAnimationFrame(draw)
-        return
-      }
 
       const targetHueSpeed = 0.06 + smoothedAmp * 1.4
       hueSpeedRef.current = hueSpeedRef.current * 0.93 + targetHueSpeed * 0.07

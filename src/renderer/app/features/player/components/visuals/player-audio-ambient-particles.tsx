@@ -99,7 +99,7 @@ export function PlayerAudioAmbientParticles({
         window.cancelAnimationFrame(frameId)
       }
     }
-  }, [audioLevelRef])
+  }, [audioLevelRef, enabled])
 
   if (!enabled) return null
 
