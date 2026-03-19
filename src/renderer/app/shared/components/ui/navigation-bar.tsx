@@ -97,7 +97,7 @@ export default function NavigationBar(): JSX.Element {
                 })
               }}
             >
-              <Inventory2OutlinedIcon sx={{ fontSize: 22, color: 'text.secondary' }} />
+              <Inventory2OutlinedIcon sx={{ fontSize: 22, color: 'warning.main' }} />
             </IconButton>
           </Tooltip>
         </Stack>
