@@ -7,6 +7,7 @@
   },
   "controls": {
     "bottom": {
+      "ambient_particles": "Ambient particles",
       "fullscreen": "Fullscreen (F)",
       "mute": "Mute (M)",
       "visualizer": "Audio visualizer"

@@ -39,7 +39,8 @@ export function validateSettingValue<K extends SettingKey>(
     }
 
     case 'player.muted':
-    case 'player.visualizerEnabled': {
+    case 'player.visualizerEnabled':
+    case 'player.ambientParticlesEnabled': {
       if (typeof value !== 'boolean') {
         throw new Error(`[settings] ${key} must be a boolean`)
       }

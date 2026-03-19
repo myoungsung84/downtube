@@ -17,6 +17,7 @@ const settingsStoreDefaults: Partial<SettingValueMap> = {
   'player.volume': settingsDefaults['player.volume'],
   'player.muted': settingsDefaults['player.muted'],
   'player.visualizerEnabled': settingsDefaults['player.visualizerEnabled'],
+  'player.ambientParticlesEnabled': settingsDefaults['player.ambientParticlesEnabled'],
   'downloads.defaultType': settingsDefaults['downloads.defaultType'],
   'downloads.playlistLimit': settingsDefaults['downloads.playlistLimit'],
   'downloads.recentUrls': settingsDefaults['downloads.recentUrls']
