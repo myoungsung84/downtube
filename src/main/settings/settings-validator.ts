@@ -25,6 +25,19 @@ export function validateSettingValue<K extends SettingKey>(
       return
     }
 
+    case 'app.themePreset': {
+      if (
+        value !== 'default' &&
+        value !== 'slate' &&
+        value !== 'ink' &&
+        value !== 'jade' &&
+        value !== 'aurora'
+      ) {
+        throw new Error(`[settings] ${key} must be "default", "slate", "ink", "jade", or "aurora"`)
+      }
+      return
+    }
+
     case 'player.volume': {
       if (typeof value !== 'number') {
         throw new Error(`[settings] ${key} must be a number`)

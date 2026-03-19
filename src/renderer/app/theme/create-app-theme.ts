@@ -1,8 +1,10 @@
 import { alpha, createTheme, type PaletteMode, type Theme } from '@mui/material/styles'
+import type { AppThemePreset } from '@src/types/settings.types'
 
 type ThemeTokens = {
   backgroundDefault: string
   backgroundPaper: string
+  bodyGradient: string
   primaryMain: string
   primaryLight: string
   primaryDark: string
@@ -27,66 +29,154 @@ type ThemeTokens = {
   divider: string
 }
 
-function getTokens(mode: PaletteMode): ThemeTokens {
-  if (mode === 'light') {
-    return {
-      backgroundDefault: '#F4F7FB',
-      backgroundPaper: '#FFFFFF',
-      primaryMain: '#2B6DEB',
-      primaryLight: '#5B90F3',
-      primaryDark: '#1E52BD',
-      secondaryMain: '#1C8B82',
-      secondaryLight: '#39AAA1',
-      secondaryDark: '#166B65',
-      textPrimary: '#0E1A2B',
-      textSecondary: '#3D4D63',
-      textDisabled: '#8A98AD',
-      successMain: '#149A67',
-      successLight: '#39B985',
-      successDark: '#0F7A51',
-      errorMain: '#D94A3A',
-      errorLight: '#E57164',
-      errorDark: '#B4382A',
-      warningMain: '#C57A1E',
-      warningLight: '#DA9A49',
-      warningDark: '#9D6017',
-      infoMain: '#0288D1',
-      infoLight: '#31A7E5',
-      infoDark: '#0169A5',
-      divider: '#D7E0EC'
-    }
-  }
-
-  return {
-    backgroundDefault: '#0B0E14',
-    backgroundPaper: '#13171F',
-    primaryMain: '#5B8DEF',
-    primaryLight: '#7BA5F5',
-    primaryDark: '#4A7AD9',
-    secondaryMain: '#9D6FFF',
-    secondaryLight: '#B48FFF',
-    secondaryDark: '#8A5FE6',
-    textPrimary: '#E8EDF4',
-    textSecondary: '#9CA9BA',
-    textDisabled: '#5F6B7A',
-    successMain: '#2DD4BF',
-    successLight: '#5EEAD4',
-    successDark: '#14B8A6',
-    errorMain: '#F87171',
-    errorLight: '#FCA5A5',
-    errorDark: '#EF4444',
-    warningMain: '#FBBF24',
-    warningLight: '#FCD34D',
-    warningDark: '#F59E0B',
-    infoMain: '#38BDF8',
-    infoLight: '#7DD3FC',
-    infoDark: '#0EA5E9',
-    divider: '#1C2331'
+// slate: 라이트 전용. 쿨 블루-그레이 틴트. 배경·패널·디바이더 모두 명확히 차갑게
+const LIGHT_PRESETS: Record<'default' | 'slate', Partial<ThemeTokens>> = {
+  default: {},
+  slate: {
+    backgroundDefault: '#D4E3F5',
+    backgroundPaper: '#E2EEF8',
+    bodyGradient: 'linear-gradient(180deg, #DAE8F6 0%, #CCE0F2 50%, #DAE8F6 100%)',
+    textSecondary: '#304C6A',
+    textDisabled: '#6888AA',
+    divider: '#A0BEDD'
   }
 }
 
-export default function createAppTheme(mode: PaletteMode): Theme {
-  const t = getTokens(mode)
+// jade: 다크 전용. 극야의 틸트-블랙. 차갑고 정제된 전기감, 네온 없이 그린-청록 톤만
+// aurora: 다크 전용. 딥 네이비 위 시안 중심, 아주 약한 블루-바이올렛 힌트. 차갑고 전기적인 오로라
+// ink: 다크 전용. 깊은 네이비-블랙. 배경·패널·디바이더 모두 명확히 짙고 파랗게
+const DARK_PRESETS: Record<'default' | 'ink' | 'jade' | 'aurora', Partial<ThemeTokens>> = {
+  default: {},
+  aurora: {
+    backgroundDefault: '#050B12',
+    backgroundPaper: '#091A2C',
+    bodyGradient: 'linear-gradient(180deg, #070E1C 0%, #030A14 50%, #070E1C 100%)',
+    primaryMain: '#38C4D4',
+    primaryLight: '#58D4E4',
+    primaryDark: '#28A4B4',
+    secondaryMain: '#6870D8',
+    secondaryLight: '#8890E4',
+    secondaryDark: '#5058C0',
+    textPrimary: '#C8E6F0',
+    textSecondary: '#6090A8',
+    textDisabled: '#2A4C60',
+    divider: '#0C2238'
+  },
+  jade: {
+    backgroundDefault: '#050D0C',
+    backgroundPaper: '#0C1C1A',
+    bodyGradient: 'linear-gradient(180deg, #071310 0%, #030A09 50%, #071310 100%)',
+    primaryMain: '#4BBFB8',
+    primaryLight: '#6CCFC8',
+    primaryDark: '#35A09A',
+    secondaryMain: '#5E7FD8',
+    secondaryLight: '#7E9AE5',
+    secondaryDark: '#4A65BE',
+    textPrimary: '#D2EAE8',
+    textSecondary: '#7AAAA8',
+    textDisabled: '#3A6462',
+    divider: '#0F2624'
+  },
+  ink: {
+    backgroundDefault: '#05070F',
+    backgroundPaper: '#0A1020',
+    bodyGradient: 'linear-gradient(180deg, #07091A 0%, #030610 50%, #07091A 100%)',
+    primaryMain: '#6A9CF8',
+    primaryLight: '#8CB6FF',
+    primaryDark: '#4E7EE0',
+    secondaryMain: '#9070F0',
+    secondaryLight: '#AA8EF8',
+    secondaryDark: '#7858D4',
+    textPrimary: '#D4E2F8',
+    textSecondary: '#7A92BC',
+    textDisabled: '#3E5272',
+    divider: '#121E3A'
+  }
+}
+
+const LIGHT_BASE: ThemeTokens = {
+  backgroundDefault: '#F4F7FB',
+  backgroundPaper: '#FFFFFF',
+  bodyGradient: 'linear-gradient(180deg, #F8FAFD 0%, #F1F5FB 50%, #F8FAFD 100%)',
+  primaryMain: '#2B6DEB',
+  primaryLight: '#5B90F3',
+  primaryDark: '#1E52BD',
+  secondaryMain: '#1C8B82',
+  secondaryLight: '#39AAA1',
+  secondaryDark: '#166B65',
+  textPrimary: '#0E1A2B',
+  textSecondary: '#3D4D63',
+  textDisabled: '#8A98AD',
+  successMain: '#149A67',
+  successLight: '#39B985',
+  successDark: '#0F7A51',
+  errorMain: '#D94A3A',
+  errorLight: '#E57164',
+  errorDark: '#B4382A',
+  warningMain: '#C57A1E',
+  warningLight: '#DA9A49',
+  warningDark: '#9D6017',
+  infoMain: '#0288D1',
+  infoLight: '#31A7E5',
+  infoDark: '#0169A5',
+  divider: '#D7E0EC'
+}
+
+const DARK_BASE: ThemeTokens = {
+  backgroundDefault: '#0B0E14',
+  backgroundPaper: '#13171F',
+  bodyGradient: 'linear-gradient(180deg, #0E1420 0%, #090D15 50%, #0E1420 100%)',
+  primaryMain: '#5B8DEF',
+  primaryLight: '#7BA5F5',
+  primaryDark: '#4A7AD9',
+  secondaryMain: '#9D6FFF',
+  secondaryLight: '#B48FFF',
+  secondaryDark: '#8A5FE6',
+  textPrimary: '#E8EDF4',
+  textSecondary: '#9CA9BA',
+  textDisabled: '#5F6B7A',
+  successMain: '#2DD4BF',
+  successLight: '#5EEAD4',
+  successDark: '#14B8A6',
+  errorMain: '#F87171',
+  errorLight: '#FCA5A5',
+  errorDark: '#EF4444',
+  warningMain: '#FBBF24',
+  warningLight: '#FCD34D',
+  warningDark: '#F59E0B',
+  infoMain: '#38BDF8',
+  infoLight: '#7DD3FC',
+  infoDark: '#0EA5E9',
+  divider: '#1C2331'
+}
+
+function resolvePreset(mode: PaletteMode, preset: AppThemePreset): AppThemePreset {
+  if (mode === 'light') {
+    return preset === 'slate' ? 'slate' : 'default'
+  }
+  if (preset === 'ink') return 'ink'
+  if (preset === 'jade') return 'jade'
+  if (preset === 'aurora') return 'aurora'
+  return 'default'
+}
+
+function getTokens(mode: PaletteMode, preset: AppThemePreset): ThemeTokens {
+  const safePreset = resolvePreset(mode, preset)
+
+  if (mode === 'light') {
+    const overrides = LIGHT_PRESETS[safePreset as 'default' | 'slate']
+    return { ...LIGHT_BASE, ...overrides }
+  }
+
+  const overrides = DARK_PRESETS[safePreset as 'default' | 'ink' | 'jade' | 'aurora']
+  return { ...DARK_BASE, ...overrides }
+}
+
+export default function createAppTheme(
+  mode: PaletteMode,
+  preset: AppThemePreset = 'default'
+): Theme {
+  const t = getTokens(mode, preset)
   const isDark = mode === 'dark'
 
   return createTheme({
@@ -148,11 +238,7 @@ export default function createAppTheme(mode: PaletteMode): Theme {
       MuiCssBaseline: {
         styleOverrides: `
         body {
-          background: ${
-            isDark
-              ? 'linear-gradient(180deg, #0E1420 0%, #090D15 50%, #0E1420 100%)'
-              : 'linear-gradient(180deg, #F8FAFD 0%, #F1F5FB 50%, #F8FAFD 100%)'
-          };
+          background: ${t.bodyGradient};
           background-attachment: fixed;
           min-height: 100vh;
         }

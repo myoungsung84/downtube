@@ -13,15 +13,15 @@ import {
   ToggleButtonGroup,
   Typography
 } from '@mui/material'
-import type { SxProps, Theme } from '@mui/material/styles'
+import type { Theme } from '@mui/material/styles'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
-import type { AppLanguagePreference } from '@src/types/settings.types'
+import type { AppLanguagePreference, AppThemePreset } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
 
 // ─── shared sx ────────────────────────────────────────────────────────────────
 
-const TOGGLE_GROUP_SX: SxProps<Theme> = {
+const TOGGLE_GROUP_SX = {
   bgcolor: 'action.hover',
   borderRadius: '10px',
   p: 0.5,
@@ -73,6 +73,7 @@ const TOGGLE_GROUP_SX: SxProps<Theme> = {
 
 const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const
+const APP_THEME_PRESET_KEY = 'app.themePreset' as const
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
 
@@ -82,6 +83,7 @@ export default function SettingsScreen(): React.JSX.Element {
   const setSettingValue = useSettingsStore((state) => state.setValue)
   const storedLanguage = useSettingsStore((state) => state.values[APP_LANGUAGE_KEY])
   const storedThemeMode = useSettingsStore((state) => state.values[APP_THEME_MODE_KEY])
+  const storedThemePreset = useSettingsStore((state) => state.values[APP_THEME_PRESET_KEY])
   const storedDefaultType = useSettingsStore((state) => state.values[DOWNLOADS_DEFAULT_TYPE_KEY])
   const storedPlaylistLimit = useSettingsStore(
     (state) => state.values[DOWNLOADS_PLAYLIST_LIMIT_KEY]
@@ -91,6 +93,24 @@ export default function SettingsScreen(): React.JSX.Element {
     storedLanguage === 'ko' || storedLanguage === 'en' ? storedLanguage : 'system'
   const themeMode: 'light' | 'dark' | 'system' =
     storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'system'
+
+  const rawPreset: AppThemePreset =
+    storedThemePreset === 'default' ||
+    storedThemePreset === 'slate' ||
+    storedThemePreset === 'ink' ||
+    storedThemePreset === 'jade' ||
+    storedThemePreset === 'aurora'
+      ? storedThemePreset
+      : 'default'
+
+  // mode와 맞지 않는 preset은 default로 표시
+  const themePreset: AppThemePreset = (() => {
+    if (themeMode === 'system') return 'default'
+    if (themeMode === 'light') return rawPreset === 'slate' ? 'slate' : 'default'
+    if (rawPreset === 'ink' || rawPreset === 'jade' || rawPreset === 'aurora') return rawPreset
+    return 'default'
+  })()
+
   const defaultType: 'video' | 'audio' = storedDefaultType === 'audio' ? 'audio' : 'video'
   const playlistLimit =
     typeof storedPlaylistLimit === 'number' &&
@@ -104,6 +124,7 @@ export default function SettingsScreen(): React.JSX.Element {
     void hydrateSettings([
       APP_LANGUAGE_KEY,
       APP_THEME_MODE_KEY,
+      APP_THEME_PRESET_KEY,
       DOWNLOADS_DEFAULT_TYPE_KEY,
       DOWNLOADS_PLAYLIST_LIMIT_KEY
     ])
@@ -205,7 +226,8 @@ export default function SettingsScreen(): React.JSX.Element {
               </ToggleButtonGroup>
             </Stack>
 
-            <Stack sx={{ py: 2.5 }} spacing={2}>
+            {/* Theme: mode + preset in one block */}
+            <Stack sx={{ py: 2.5 }} spacing={2.5}>
               <Stack spacing={0.4}>
                 <Typography variant="body2" fontWeight={700}>
                   {t('appearance.theme.title')}
@@ -215,21 +237,88 @@ export default function SettingsScreen(): React.JSX.Element {
                 </Typography>
               </Stack>
 
-              <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={themeMode}
-                onChange={(_, next): void => {
-                  if (!next) return
-                  if (next !== 'system' && next !== 'light' && next !== 'dark') return
-                  void setSettingValue(APP_THEME_MODE_KEY, next)
-                }}
-                sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
-              >
-                <ToggleButton value="system">{t('appearance.theme.options.system')}</ToggleButton>
-                <ToggleButton value="light">{t('appearance.theme.options.light')}</ToggleButton>
-                <ToggleButton value="dark">{t('appearance.theme.options.dark')}</ToggleButton>
-              </ToggleButtonGroup>
+              {/* Mode */}
+              <Stack spacing={1}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                  {t('appearance.theme.mode_label')}
+                </Typography>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={themeMode}
+                  onChange={(_, next): void => {
+                    if (!next) return
+                    if (next !== 'system' && next !== 'light' && next !== 'dark') return
+                    void setSettingValue(APP_THEME_MODE_KEY, next)
+                  }}
+                  sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
+                >
+                  <ToggleButton value="system">{t('appearance.theme.options.system')}</ToggleButton>
+                  <ToggleButton value="light">{t('appearance.theme.options.light')}</ToggleButton>
+                  <ToggleButton value="dark">{t('appearance.theme.options.dark')}</ToggleButton>
+                </ToggleButtonGroup>
+              </Stack>
+
+              {/* Preset */}
+              <Stack spacing={1}>
+                <Stack direction="row" spacing={1} alignItems="baseline">
+                  <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color={themeMode === 'system' ? 'text.disabled' : 'text.secondary'}
+                  >
+                    {t('appearance.theme_preset.title')}
+                  </Typography>
+                  {themeMode === 'system' && (
+                    <Typography variant="caption" color="text.disabled">
+                      {t('appearance.theme_preset.description_system')}
+                    </Typography>
+                  )}
+                </Stack>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={themePreset}
+                  disabled={themeMode === 'system'}
+                  onChange={(_, next): void => {
+                    if (!next) return
+                    if (
+                      next !== 'default' &&
+                      next !== 'slate' &&
+                      next !== 'ink' &&
+                      next !== 'jade' &&
+                      next !== 'aurora'
+                    )
+                      return
+                    void setSettingValue(APP_THEME_PRESET_KEY, next)
+                  }}
+                  sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
+                >
+                  <ToggleButton value="default">
+                    {t('appearance.theme_preset.options.default')}
+                  </ToggleButton>
+                  {themeMode === 'light' && (
+                    <ToggleButton value="slate">
+                      {t('appearance.theme_preset.options.slate')}
+                    </ToggleButton>
+                  )}
+                  {themeMode === 'dark' && (
+                    <ToggleButton value="ink">
+                      {t('appearance.theme_preset.options.ink')}
+                    </ToggleButton>
+                  )}
+                  {themeMode === 'dark' && (
+                    <ToggleButton value="jade">
+                      {t('appearance.theme_preset.options.jade')}
+                    </ToggleButton>
+                  )}
+                  {themeMode === 'dark' && (
+                    <ToggleButton value="aurora">
+                      {t('appearance.theme_preset.options.aurora')}
+                    </ToggleButton>
+                  )}
+                </ToggleButtonGroup>
+              </Stack>
             </Stack>
           </Stack>
         </Paper>

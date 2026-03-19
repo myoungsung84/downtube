@@ -14,6 +14,7 @@ import { validateSettingValue } from './settings-validator'
 const StoreConstructor = (Store as unknown as { default?: typeof Store }).default ?? Store
 const settingsStoreDefaults: Partial<SettingValueMap> = {
   'app.themeMode': settingsDefaults['app.themeMode'],
+  'app.themePreset': settingsDefaults['app.themePreset'],
   'player.volume': settingsDefaults['player.volume'],
   'player.muted': settingsDefaults['player.muted'],
   'player.visualizerEnabled': settingsDefaults['player.visualizerEnabled'],
