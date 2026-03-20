@@ -15,19 +15,22 @@ import PlayerAudioVisualizerOverlay from '../components/visuals/player-audio-vis
 import {
   AUDIO_EXTENSIONS,
   buildInitialMediaInfo,
+  buildPlayerQueue,
   clampSeekTime,
-  getDecodedVideoSrc,
+  cycleRepeatMode,
   getFileExtension,
-  getFileNameFromVideoSrc,
+  getFileNameFromPath,
   getFileNameWithoutExtension,
-  getMediaPathFromVideoSrc,
-  getPlayerSearchParamsFromHash,
+  getPlayerQueueIdFromHash,
   isFiniteDuration,
+  removeQueueItemAtIndex,
   resolveInitialMediaKind,
+  resolveNextQueueIndex,
+  resolvePreviousQueueIndex,
   sanitizePlaybackTime,
   toMediaUrl
 } from '../lib'
-import type { MediaInfo, MediaKind, SidecarMediaMeta } from '../types/player.types'
+import type { MediaInfo, MediaKind, PlayerQueueItem, PlayerRepeatMode } from '../types/player.types'
 
 const seekSliderSx: SxProps<Theme> = {
   color: 'error.main',
@@ -83,6 +86,30 @@ const PLAYER_VOLUME_KEY = 'player.volume' as const
 const PLAYER_MUTED_KEY = 'player.muted' as const
 const PLAYER_VISUALIZER_KEY = 'player.visualizerEnabled' as const
 const PLAYER_AMBIENT_PARTICLES_KEY = 'player.ambientParticlesEnabled' as const
+
+type QueueNavigationMode = 'current' | 'next' | 'previous'
+
+function resolveCandidateIndex(
+  mode: QueueNavigationMode,
+  queueLength: number,
+  candidateIndex: number,
+  repeatMode: PlayerRepeatMode
+): number | null {
+  if (queueLength === 0) return null
+
+  if (mode === 'current') {
+    return clamp(candidateIndex, 0, queueLength - 1)
+  }
+
+  if (mode === 'next') {
+    if (candidateIndex < queueLength) return candidateIndex
+    return repeatMode === 'all' ? 0 : null
+  }
+
+  if (candidateIndex >= 0) return candidateIndex
+  return repeatMode === 'all' ? queueLength - 1 : null
+}
+
 export default function PlayerScreen(): React.JSX.Element {
   const { t } = useI18n('player')
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -91,6 +118,9 @@ export default function PlayerScreen(): React.JSX.Element {
   const seekbarRef = useRef<HTMLDivElement | null>(null)
   const ambientAudioLevelRef = useRef(0)
   const mediaMetaRequestIdRef = useRef(0)
+  const queueRef = useRef<PlayerQueueItem[]>([])
+  const currentIndexRef = useRef(0)
+  const repeatModeRef = useRef<PlayerRepeatMode>('off')
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
   const setSettingValue = useSettingsStore((state) => state.setValue)
   const storedVolume = useSettingsStore((state) => state.values[PLAYER_VOLUME_KEY])
@@ -101,25 +131,26 @@ export default function PlayerScreen(): React.JSX.Element {
   )
 
   const hash = window.location.hash
-  const searchParams = useMemo(() => getPlayerSearchParamsFromHash(hash), [hash])
-  const rawVideoSrc = useMemo(() => searchParams.get('src') ?? '', [searchParams])
-  const videoSrc = useMemo(() => getDecodedVideoSrc(rawVideoSrc), [rawVideoSrc])
-  const fileName = useMemo(() => getFileNameFromVideoSrc(videoSrc), [videoSrc])
-  const mediaPath = useMemo(() => getMediaPathFromVideoSrc(videoSrc), [videoSrc])
-  const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
-  const fileNameWithoutExt = useMemo(() => getFileNameWithoutExtension(fileName), [fileName])
-  const lowerFileExtension = useMemo(() => fileExtension.toLowerCase(), [fileExtension])
-  const upperFileExtension = useMemo(() => fileExtension.toUpperCase(), [fileExtension])
-  const knownAudioExtension = useMemo(
-    () => AUDIO_EXTENSIONS.has(lowerFileExtension),
-    [lowerFileExtension]
-  )
+  const queueId = useMemo(() => getPlayerQueueIdFromHash(hash), [hash])
+  const [initialPaths, setInitialPaths] = useState<string[]>([])
 
-  const [mediaInfo, setMediaInfo] = useState<MediaInfo>(() => buildInitialMediaInfo(fileName))
+  useEffect(() => {
+    if (!queueId) return
+    let cancelled = false
+    void window.api.getPlayerQueue(queueId).then((paths) => {
+      if (!cancelled) setInitialPaths(paths)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [queueId])
+
+  const [queue, setQueue] = useState<PlayerQueueItem[]>(() => [])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [repeatMode, setRepeatMode] = useState<PlayerRepeatMode>('off')
+  const [mediaInfo, setMediaInfo] = useState<MediaInfo>(() => buildInitialMediaInfo(''))
   const [currentTime, setCurrentTime] = useState(0)
-  const [mediaKind, setMediaKind] = useState<MediaKind>(() =>
-    resolveInitialMediaKind(lowerFileExtension)
-  )
+  const [mediaKind, setMediaKind] = useState<MediaKind>('unknown')
   const [hasLoadedMetadata, setHasLoadedMetadata] = useState(false)
   const [paused, setPaused] = useState(false)
   const [volume, setVolume] = useState(1)
@@ -133,7 +164,40 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
   const [ambientParticlesEnabled, setAmbientParticlesEnabled] = useState(false)
-  const [mediaMeta, setMediaMeta] = useState<SidecarMediaMeta>({})
+  const [queuePanelOpen, setQueuePanelOpen] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+
+  useEffect(() => {
+    queueRef.current = queue
+  }, [queue])
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex
+  }, [currentIndex])
+
+  useEffect(() => {
+    repeatModeRef.current = repeatMode
+  }, [repeatMode])
+
+  useEffect(() => {
+    const nextQueue = buildPlayerQueue(initialPaths)
+    setQueue(nextQueue)
+    setCurrentIndex(0)
+    setRepeatMode('off')
+  }, [initialPaths])
+
+  const currentItem = queue[currentIndex] ?? null
+  const mediaPath = currentItem?.mediaPath ?? ''
+  const videoSrc = currentItem?.mediaSrc ?? ''
+  const fileName = currentItem?.fileName ?? getFileNameFromPath(mediaPath)
+  const fileExtension = useMemo(() => getFileExtension(fileName), [fileName])
+  const fileNameWithoutExt = useMemo(() => getFileNameWithoutExtension(fileName), [fileName])
+  const lowerFileExtension = useMemo(() => fileExtension.toLowerCase(), [fileExtension])
+  const upperFileExtension = useMemo(() => fileExtension.toUpperCase(), [fileExtension])
+  const knownAudioExtension = useMemo(
+    () => AUDIO_EXTENSIONS.has(lowerFileExtension),
+    [lowerFileExtension]
+  )
 
   const isAudioFile = useMemo(() => {
     if (knownAudioExtension) return true
@@ -142,20 +206,49 @@ export default function PlayerScreen(): React.JSX.Element {
     return mediaKind === 'audio'
   }, [hasLoadedMetadata, knownAudioExtension, lowerFileExtension, mediaKind])
 
-  const thumbnailSrc = useMemo(() => toMediaUrl(mediaMeta.thumbnailPath), [mediaMeta.thumbnailPath])
+  const thumbnailSrc = useMemo(() => toMediaUrl(currentItem?.thumbnailPath), [currentItem])
   const primaryText = useMemo(
-    () => mediaMeta.title?.trim() || fileNameWithoutExt || fileName || t('fallback.unknown_file'),
-    [fileName, fileNameWithoutExt, mediaMeta.title, t]
+    () =>
+      currentItem?.title?.trim() || fileNameWithoutExt || fileName || t('fallback.unknown_file'),
+    [currentItem, fileName, fileNameWithoutExt, t]
   )
-  const secondaryText = useMemo(() => {
-    if (!mediaMeta.title) return undefined
-    return mediaMeta.artist?.trim() || undefined
-  }, [mediaMeta.artist, mediaMeta.title])
+  const secondaryText = useMemo(
+    () => currentItem?.artist?.trim() || undefined,
+    [currentItem?.artist]
+  )
   const videoObjectFit = useMemo(() => {
     if (isAudioFile) return 'contain'
     if (mediaInfo.width <= 0 || mediaInfo.height <= 0) return 'contain'
     return mediaInfo.width >= mediaInfo.height ? 'cover' : 'contain'
   }, [isAudioFile, mediaInfo.height, mediaInfo.width])
+  const canGoPrevious = useMemo(
+    () =>
+      queue.length > 1 &&
+      resolvePreviousQueueIndex(queue.length, currentIndex, repeatMode) !== null,
+    [currentIndex, queue.length, repeatMode]
+  )
+  const canGoNext = useMemo(
+    () =>
+      queue.length > 1 && resolveNextQueueIndex(queue.length, currentIndex, repeatMode) !== null,
+    [currentIndex, queue.length, repeatMode]
+  )
+
+  const nextQueueIndex = useMemo(
+    () => resolveNextQueueIndex(queue.length, currentIndex, repeatMode),
+    [queue.length, currentIndex, repeatMode]
+  )
+  const nextQueueItem = nextQueueIndex !== null ? (queue[nextQueueIndex] ?? null) : null
+  const nextItemLabel = useMemo(() => {
+    if (!nextQueueItem) return undefined
+    return (
+      nextQueueItem.title?.trim() ||
+      getFileNameWithoutExtension(nextQueueItem.fileName) ||
+      nextQueueItem.fileName ||
+      undefined
+    )
+  }, [nextQueueItem])
+
+  const showLoadingOverlay = isTransitioning || (!hasLoadedMetadata && !!videoSrc)
 
   const clearHideTimer = useCallback(() => {
     if (hideTimer.current) {
@@ -214,6 +307,7 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const syncMediaReadyState = useCallback(() => {
     setHasLoadedMetadata(true)
+    setIsTransitioning(false)
     syncStaticMediaMeta()
     syncCurrentTime()
     resolveWebmMediaKind()
@@ -277,6 +371,70 @@ export default function PlayerScreen(): React.JSX.Element {
     setUiVisible(true)
     maybeScheduleHideUi()
   }, [maybeScheduleHideUi])
+
+  const applyQueueState = useCallback((nextQueue: PlayerQueueItem[], nextIndex: number): void => {
+    setQueue(nextQueue)
+    setCurrentIndex(nextQueue.length === 0 ? 0 : clamp(nextIndex, 0, nextQueue.length - 1))
+  }, [])
+
+  const stopPlayback = useCallback(() => {
+    setIsTransitioning(false)
+    const video = videoRef.current
+    if (!video) {
+      setPaused(true)
+      return
+    }
+
+    video.pause()
+    setPaused(true)
+  }, [])
+
+  const moveToPlayableIndex = useCallback(
+    async (startIndex: number, mode: QueueNavigationMode): Promise<boolean> => {
+      let workingQueue = [...queueRef.current]
+      let workingCurrentIndex = currentIndexRef.current
+      let candidateIndex = startIndex
+
+      while (workingQueue.length > 0) {
+        const normalizedCandidateIndex = resolveCandidateIndex(
+          mode,
+          workingQueue.length,
+          candidateIndex,
+          repeatModeRef.current
+        )
+
+        if (normalizedCandidateIndex === null) {
+          applyQueueState(workingQueue, workingCurrentIndex)
+          return false
+        }
+
+        candidateIndex = normalizedCandidateIndex
+        const candidate = workingQueue[candidateIndex]
+        if (!candidate) {
+          applyQueueState(workingQueue, workingCurrentIndex)
+          return false
+        }
+
+        if (await window.api.fileExists(candidate.mediaPath)) {
+          applyQueueState(workingQueue, candidateIndex)
+          return true
+        }
+
+        const removal = removeQueueItemAtIndex(workingQueue, workingCurrentIndex, candidateIndex)
+        workingQueue = removal.queue
+        workingCurrentIndex = removal.currentIndex
+
+        if (mode === 'previous') {
+          candidateIndex -= 1
+        }
+      }
+
+      applyQueueState([], 0)
+      stopPlayback()
+      return false
+    },
+    [applyQueueState, stopPlayback]
+  )
 
   const handleVideoError = useCallback(
     (event: React.SyntheticEvent<HTMLVideoElement>): void => {
@@ -394,6 +552,62 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const handleSeekbarMouseLeave = useCallback(() => setHoverTime(null), [])
 
+  const handleNext = useCallback(async (): Promise<void> => {
+    const nextIndex = resolveNextQueueIndex(
+      queueRef.current.length,
+      currentIndexRef.current,
+      repeatModeRef.current
+    )
+
+    if (nextIndex === null) {
+      stopPlayback()
+      return
+    }
+
+    setIsTransitioning(true)
+    const moved = await moveToPlayableIndex(nextIndex, 'next')
+    if (!moved) setIsTransitioning(false)
+  }, [moveToPlayableIndex, stopPlayback])
+
+  const handlePrevious = useCallback(async (): Promise<void> => {
+    const previousIndex = resolvePreviousQueueIndex(
+      queueRef.current.length,
+      currentIndexRef.current,
+      repeatModeRef.current
+    )
+
+    if (previousIndex === null) {
+      return
+    }
+
+    setIsTransitioning(true)
+    const moved = await moveToPlayableIndex(previousIndex, 'previous')
+    if (!moved) setIsTransitioning(false)
+  }, [moveToPlayableIndex])
+
+  const handleQueueItemClick = useCallback(
+    async (index: number): Promise<void> => {
+      if (index === currentIndexRef.current) return
+      setIsTransitioning(true)
+      const moved = await moveToPlayableIndex(index, 'current')
+      if (!moved) setIsTransitioning(false)
+    },
+    [moveToPlayableIndex]
+  )
+
+  const handleEnded = useCallback(() => {
+    const video = videoRef.current
+
+    if (repeatModeRef.current === 'one') {
+      if (!video) return
+      video.currentTime = 0
+      void video.play()
+      return
+    }
+
+    void handleNext()
+  }, [handleNext])
+
   useEffect(() => {
     resetPlayerStateForSource()
   }, [resetPlayerStateForSource])
@@ -416,27 +630,81 @@ export default function PlayerScreen(): React.JSX.Element {
   }, [applyPlaybackRateToElement, videoSrc])
 
   useEffect(() => {
-    const requestId = ++mediaMetaRequestIdRef.current
-    setMediaMeta({})
+    if (!currentItem?.mediaPath) return
+    void moveToPlayableIndex(currentIndexRef.current, 'current')
+  }, [currentItem?.mediaPath, moveToPlayableIndex])
 
-    if (!mediaPath) return
+  useEffect(() => {
+    const requestId = ++mediaMetaRequestIdRef.current
+
+    if (!currentItem?.mediaPath) return
 
     void (async () => {
-      const result = await window.api.readMediaSidecar(mediaPath)
-      if (mediaMetaRequestIdRef.current !== requestId) return
+      const result = await window.api.readMediaSidecar(currentItem.mediaPath)
+      if (mediaMetaRequestIdRef.current !== requestId || !result.success) return
 
-      if (!result.success) {
-        setMediaMeta({})
-        return
-      }
-
-      setMediaMeta({
-        title: result.title,
-        artist: result.artist,
-        thumbnailPath: result.thumbnailPath
-      })
+      setQueue((prev) =>
+        prev.map((item) =>
+          item.mediaPath !== currentItem.mediaPath
+            ? item
+            : {
+                ...item,
+                title: result.title ?? item.title,
+                artist: result.artist ?? item.artist,
+                thumbnailPath: result.thumbnailPath ?? item.thumbnailPath
+              }
+        )
+      )
     })()
-  }, [mediaPath])
+  }, [currentItem?.mediaPath])
+
+  // Hydrate all queue items (title/artist/thumbnail) when the queue is first built.
+  // This ensures the queue panel shows consistent labels for every item upfront.
+  useEffect(() => {
+    const paths = initialPaths.map((p) => p.trim()).filter(Boolean)
+    if (paths.length <= 1) return // Single item is handled by the currentItem effect above
+
+    let cancelled = false
+
+    void (async () => {
+      const results = await Promise.all(
+        paths.map(async (mediaPath) => {
+          const result = await window.api.readMediaSidecar(mediaPath)
+          return { mediaPath, result }
+        })
+      )
+
+      if (cancelled) return
+
+      const updates = new Map(
+        results
+          .filter(
+            ({ result }) =>
+              result.success && (result.title ?? result.artist ?? result.thumbnailPath)
+          )
+          .map(({ mediaPath, result }) => [mediaPath, result])
+      )
+
+      if (updates.size === 0) return
+
+      setQueue((prev) =>
+        prev.map((item) => {
+          const update = updates.get(item.mediaPath)
+          if (!update) return item
+          return {
+            ...item,
+            title: update.title ?? item.title,
+            artist: update.artist ?? item.artist,
+            thumbnailPath: update.thumbnailPath ?? item.thumbnailPath
+          }
+        })
+      )
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialPaths])
 
   useEffect(() => {
     const onFsChange = (): void => setIsFullscreen(!!document.fullscreenElement)
@@ -456,6 +724,7 @@ export default function PlayerScreen(): React.JSX.Element {
       if (event.code === 'ArrowRight') skip(10)
       if (event.code === 'KeyF') toggleFullscreen()
       if (event.code === 'KeyM') toggleMute()
+      if (event.code === 'KeyQ') setQueuePanelOpen((prev) => !prev)
     }
 
     window.addEventListener('keydown', onKey)
@@ -513,6 +782,7 @@ export default function PlayerScreen(): React.JSX.Element {
             onCanPlay={syncMediaReadyState}
             onPlay={() => setPaused(false)}
             onPause={() => setPaused(true)}
+            onEnded={handleEnded}
             onSeeked={() => {
               syncStaticMediaMeta()
               syncCurrentTime()
@@ -548,10 +818,46 @@ export default function PlayerScreen(): React.JSX.Element {
             audioLevelRef={ambientAudioLevelRef}
           />
 
+          {/* Loading / transition overlay */}
+          <>
+            <style>{`
+              @keyframes player-spin {
+                0%   { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: (theme) => alpha(theme.palette.common.black, 0.4),
+                opacity: showLoadingOverlay ? 1 : 0,
+                pointerEvents: showLoadingOverlay ? 'auto' : 'none',
+                transition: 'opacity 0.25s ease'
+              }}
+            >
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  border: (theme) => `2px solid ${alpha(theme.palette.common.white, 0.12)}`,
+                  borderTopColor: (theme) => alpha(theme.palette.error.main, 0.85),
+                  animation: showLoadingOverlay ? 'player-spin 0.75s linear infinite' : 'none'
+                }}
+              />
+            </Box>
+          </>
+
           <PlayerControls
             uiVisible={uiVisible}
             visualizerVisible={visualizerVisible}
             ambientParticlesEnabled={ambientParticlesEnabled}
+            queuePanelOpen={queuePanelOpen}
             paused={paused}
             playbackRate={playbackRate}
             isAudioFile={isAudioFile}
@@ -568,7 +874,14 @@ export default function PlayerScreen(): React.JSX.Element {
             currentSeekVal={currentSeekVal}
             muted={muted}
             volume={volume}
+            currentIndex={currentIndex}
+            queueLength={queue.length}
+            queue={queue}
+            repeatMode={repeatMode}
             isFullscreen={isFullscreen}
+            canGoPrevious={canGoPrevious}
+            canGoNext={canGoNext}
+            nextItemLabel={nextItemLabel}
             seekbarRef={seekbarRef}
             seekSliderSx={seekSliderSx}
             volSliderSx={volSliderSx}
@@ -590,6 +903,9 @@ export default function PlayerScreen(): React.JSX.Element {
             onToggleMute={toggleMute}
             onVolumeChange={handleVolumeChange}
             onVolumeCommit={handleVolumeCommit}
+            onPreviousTrack={() => void handlePrevious()}
+            onNextTrack={() => void handleNext()}
+            onCycleRepeatMode={() => setRepeatMode((prev) => cycleRepeatMode(prev))}
             onToggleVisualizer={() => {
               const nextVisible = !visualizerVisible
               setVisualizerVisible(nextVisible)
@@ -600,6 +916,8 @@ export default function PlayerScreen(): React.JSX.Element {
               setAmbientParticlesEnabled(nextEnabled)
               void setSettingValue(PLAYER_AMBIENT_PARTICLES_KEY, nextEnabled)
             }}
+            onToggleQueuePanel={() => setQueuePanelOpen((prev) => !prev)}
+            onQueueItemClick={(index) => void handleQueueItemClick(index)}
             onToggleFullscreen={toggleFullscreen}
           />
         </>

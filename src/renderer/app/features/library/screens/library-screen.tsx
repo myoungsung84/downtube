@@ -292,7 +292,16 @@ export default function LibraryScreen(): React.JSX.Element {
   )
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
-    const result = await window.api.openPlayerFile(item.filePath)
+    const startIndex = visibleItems.findIndex(
+      (visibleItem) => visibleItem.filePath === item.filePath
+    )
+    const orderedPaths = visibleItems.map((visibleItem) => visibleItem.filePath)
+    const queuePaths =
+      startIndex <= 0
+        ? orderedPaths
+        : [...orderedPaths.slice(startIndex), ...orderedPaths.slice(0, startIndex)]
+
+    const result = await window.api.openPlayer({ paths: queuePaths })
     if (!result.success) showToast(result.message ?? t('toast.open_player_failed'), 'error')
   }
 

@@ -155,18 +155,18 @@ It builds the Windows artifact and creates or updates a draft GitHub release.
 
 Persisted settings are stored through `electron-store` and validated in the main process.
 
-| Setting                     | Values                    |
-| --------------------------- | ------------------------- |
-| App language                | `system`, `ko`, `en`      |
-| App theme                   | `system`, `light`, `dark` |
-| App theme preset            | `default`, `slate`, `ink`, `jade`, `aurora` |
-| Player volume               | —                         |
-| Player muted state          | —                         |
-| Audio visualizer visibility | —                         |
-| Ambient particles visibility | —                        |
-| Default download type       | `video`, `audio`          |
-| Playlist limit              | —                         |
-| Recent URL history          | —                         |
+| Setting                      | Values                                      |
+| ---------------------------- | ------------------------------------------- |
+| App language                 | `system`, `ko`, `en`                        |
+| App theme                    | `system`, `light`, `dark`                   |
+| App theme preset             | `default`, `slate`, `ink`, `jade`, `aurora` |
+| Player volume                | —                                           |
+| Player muted state           | —                                           |
+| Audio visualizer visibility  | —                                           |
+| Ambient particles visibility | —                                           |
+| Default download type        | `video`, `audio`                            |
+| Playlist limit               | —                                           |
+| Recent URL history           | —                                           |
 
 **Language flow**
 

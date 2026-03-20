@@ -2,38 +2,27 @@ export function getPlayerSearchParamsFromHash(hash: string): URLSearchParams {
   return new URLSearchParams(hash.split('?')[1] || '')
 }
 
-export function getDecodedVideoSrc(rawVideoSrc: string): string {
-  if (!rawVideoSrc) return ''
+export function getPlayerQueueIdFromHash(hash: string): string {
+  return getPlayerSearchParamsFromHash(hash).get('queueId') ?? ''
+}
+
+export function getPlayerPathsFromHash(hash: string): string[] {
+  const rawPaths = getPlayerSearchParamsFromHash(hash).get('paths') ?? ''
+  if (!rawPaths) return []
+
   try {
-    return decodeURIComponent(rawVideoSrc)
+    const parsed = JSON.parse(rawPaths) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((candidate): candidate is string => typeof candidate === 'string')
   } catch {
-    return rawVideoSrc
+    return []
   }
 }
 
-export function getFileNameFromVideoSrc(videoSrc: string): string {
-  if (!videoSrc) return ''
-  try {
-    const url = new URL(videoSrc)
-    const filePath = url.searchParams.get('path') ?? ''
-    if (!filePath) return ''
-    const decodedPath = decodeURIComponent(filePath)
-    const segments = decodedPath.split(/[\\/]/).filter(Boolean)
-    return segments[segments.length - 1] ?? ''
-  } catch {
-    return ''
-  }
-}
-
-export function getMediaPathFromVideoSrc(videoSrc: string): string {
-  if (!videoSrc) return ''
-  try {
-    const url = new URL(videoSrc)
-    const path = url.searchParams.get('path') ?? ''
-    return path ? decodeURIComponent(path) : ''
-  } catch {
-    return ''
-  }
+export function getFileNameFromPath(filePath: string): string {
+  if (!filePath) return ''
+  const segments = filePath.split(/[\\/]/).filter(Boolean)
+  return segments[segments.length - 1] ?? ''
 }
 
 export function getFileExtension(fileName: string): string {

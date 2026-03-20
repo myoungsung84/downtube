@@ -10,6 +10,13 @@
       "ambient_particles": "앰비언트 파티클",
       "fullscreen": "전체화면 (F)",
       "mute": "음소거 (M)",
+      "next": "다음 곡",
+      "next_up": "다음",
+      "previous": "이전 곡",
+      "queue": "재생 목록",
+      "repeat_all": "전체 반복",
+      "repeat_off": "반복 끔",
+      "repeat_one": "한 곡 반복",
       "visualizer": "음성 시각화"
     },
     "center": {
@@ -25,11 +32,18 @@
   "fallback": {
     "unknown_file": "알 수 없는 파일"
   },
+  "media": {
+    "audio": "오디오"
+  },
   "overlay": {
     "actions": {
       "open_folder_label": "폴더",
       "open_folder_title": "폴더 열기"
     },
     "unknown_file": "알 수 없는 파일"
+  },
+  "queue_panel": {
+    "close": "닫기",
+    "title": "재생목록"
   }
 }

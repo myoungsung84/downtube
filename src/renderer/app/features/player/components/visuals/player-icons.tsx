@@ -24,6 +24,31 @@ export const IcForward10 = (): React.JSX.Element => (
   </svg>
 )
 
+export const IcPreviousTrack = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+  </svg>
+)
+
+export const IcNextTrack = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z" />
+  </svg>
+)
+
+export const IcRepeat = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z" />
+  </svg>
+)
+
+export const IcRepeatOne = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z" />
+    <path d="M12.7 8.9h1.5v6.2h-1.5zm-1.4 1.1V8.9l-1.7 1.2v1.4z" />
+  </svg>
+)
+
 export const IcVolumeHigh = (): React.JSX.Element => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
@@ -68,5 +93,17 @@ export const IcAmbientParticles = (): React.JSX.Element => (
     <circle cx="15" cy="9" r="0.9" />
     <circle cx="5" cy="18" r="1.2" />
     <circle cx="19" cy="17" r="1.6" />
+  </svg>
+)
+
+export const IcQueueList = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1 5 3-5 3z" />
+  </svg>
+)
+
+export const IcClose = (): React.JSX.Element => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
   </svg>
 )
