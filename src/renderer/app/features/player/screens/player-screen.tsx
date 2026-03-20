@@ -21,7 +21,7 @@ import {
   getFileExtension,
   getFileNameFromPath,
   getFileNameWithoutExtension,
-  getPlayerPathsFromHash,
+  getPlayerQueueIdFromHash,
   isFiniteDuration,
   removeQueueItemAtIndex,
   resolveInitialMediaKind,
@@ -131,9 +131,21 @@ export default function PlayerScreen(): React.JSX.Element {
   )
 
   const hash = window.location.hash
-  const initialPaths = useMemo(() => getPlayerPathsFromHash(hash), [hash])
+  const queueId = useMemo(() => getPlayerQueueIdFromHash(hash), [hash])
+  const [initialPaths, setInitialPaths] = useState<string[]>([])
 
-  const [queue, setQueue] = useState<PlayerQueueItem[]>(() => buildPlayerQueue(initialPaths))
+  useEffect(() => {
+    if (!queueId) return
+    let cancelled = false
+    void window.api.getPlayerQueue(queueId).then((paths) => {
+      if (!cancelled) setInitialPaths(paths)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [queueId])
+
+  const [queue, setQueue] = useState<PlayerQueueItem[]>(() => [])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [repeatMode, setRepeatMode] = useState<PlayerRepeatMode>('off')
   const [mediaInfo, setMediaInfo] = useState<MediaInfo>(() => buildInitialMediaInfo(''))
@@ -553,7 +565,8 @@ export default function PlayerScreen(): React.JSX.Element {
     }
 
     setIsTransitioning(true)
-    await moveToPlayableIndex(nextIndex, 'next')
+    const moved = await moveToPlayableIndex(nextIndex, 'next')
+    if (!moved) setIsTransitioning(false)
   }, [moveToPlayableIndex, stopPlayback])
 
   const handlePrevious = useCallback(async (): Promise<void> => {
@@ -568,14 +581,16 @@ export default function PlayerScreen(): React.JSX.Element {
     }
 
     setIsTransitioning(true)
-    await moveToPlayableIndex(previousIndex, 'previous')
+    const moved = await moveToPlayableIndex(previousIndex, 'previous')
+    if (!moved) setIsTransitioning(false)
   }, [moveToPlayableIndex])
 
   const handleQueueItemClick = useCallback(
     async (index: number): Promise<void> => {
       if (index === currentIndexRef.current) return
       setIsTransitioning(true)
-      await moveToPlayableIndex(index, 'current')
+      const moved = await moveToPlayableIndex(index, 'current')
+      if (!moved) setIsTransitioning(false)
     },
     [moveToPlayableIndex]
   )
@@ -651,25 +666,40 @@ export default function PlayerScreen(): React.JSX.Element {
 
     let cancelled = false
 
-    void Promise.all(
-      paths.map(async (mediaPath) => {
-        const result = await window.api.readMediaSidecar(mediaPath)
-        if (cancelled || !result.success) return
-        setQueue((prev) =>
-          prev.map((item) => {
-            if (item.mediaPath !== mediaPath) return item
-            const hasNewData = result.title ?? result.artist ?? result.thumbnailPath
-            if (!hasNewData) return item
-            return {
-              ...item,
-              title: result.title ?? item.title,
-              artist: result.artist ?? item.artist,
-              thumbnailPath: result.thumbnailPath ?? item.thumbnailPath
-            }
-          })
-        )
-      })
-    )
+    void (async () => {
+      const results = await Promise.all(
+        paths.map(async (mediaPath) => {
+          const result = await window.api.readMediaSidecar(mediaPath)
+          return { mediaPath, result }
+        })
+      )
+
+      if (cancelled) return
+
+      const updates = new Map(
+        results
+          .filter(
+            ({ result }) =>
+              result.success && (result.title ?? result.artist ?? result.thumbnailPath)
+          )
+          .map(({ mediaPath, result }) => [mediaPath, result])
+      )
+
+      if (updates.size === 0) return
+
+      setQueue((prev) =>
+        prev.map((item) => {
+          const update = updates.get(item.mediaPath)
+          if (!update) return item
+          return {
+            ...item,
+            title: update.title ?? item.title,
+            artist: update.artist ?? item.artist,
+            thumbnailPath: update.thumbnailPath ?? item.thumbnailPath
+          }
+        })
+      )
+    })()
 
     return () => {
       cancelled = true

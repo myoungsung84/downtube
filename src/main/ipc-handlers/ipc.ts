@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import log from 'electron-log'
 import fs, { mkdirSync } from 'fs'
@@ -25,6 +27,7 @@ let playerWindow: BrowserWindow | null = null
 let initState: InitState = { status: 'idle' }
 let initInFlight: Promise<InitState> | null = null
 const SIDECAR_THUMBNAIL_EXTENSIONS = ['.jpg', '.png', '.webp'] as const
+const playerQueueStore = new Map<string, string[]>()
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -87,6 +90,8 @@ async function openPlayerWindow(
     playerWindow.close()
   }
 
+  const queueId = randomUUID()
+
   playerWindow = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -100,8 +105,13 @@ async function openPlayerWindow(
     }
   })
 
+  playerQueueStore.set(queueId, paths)
+  playerWindow.once('closed', () => {
+    playerQueueStore.delete(queueId)
+  })
+
   const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
-  const playerHash = `/player?${new URLSearchParams({ paths: JSON.stringify(paths) }).toString()}`
+  const playerHash = `/player?${new URLSearchParams({ queueId }).toString()}`
   const playerUrl = !app.isPackaged
     ? `http://localhost:${devPort}/#${playerHash}`
     : url.format({
@@ -111,7 +121,12 @@ async function openPlayerWindow(
         hash: playerHash
       })
 
-  await playerWindow.loadURL(playerUrl)
+  try {
+    await playerWindow.loadURL(playerUrl)
+  } catch (error) {
+    playerQueueStore.delete(queueId)
+    throw error
+  }
 
   if (!app.isPackaged) {
     playerWindow.webContents.openDevTools({ mode: 'detach' })
@@ -278,6 +293,11 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         message: error instanceof Error ? error.message : 'Failed to open player'
       }
     }
+  })
+
+  safeSetHandler('player-queue-get', (_, queueId: string) => {
+    if (!queueId || typeof queueId !== 'string') return []
+    return playerQueueStore.get(queueId) ?? []
   })
 
   safeSetHandler('download-dir-open', async () => {
