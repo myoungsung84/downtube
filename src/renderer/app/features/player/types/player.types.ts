@@ -12,9 +12,3 @@ export type MediaInfo = {
   width: number
   height: number
 }
-
-export type SidecarMediaMeta = {
-  title?: string
-  artist?: string
-  thumbnailPath?: string
-}

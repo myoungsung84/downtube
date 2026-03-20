@@ -39,34 +39,6 @@ import type {
   PlayerRepeatMode
 } from '../types/player.types'
 
-const seekSliderSx: SxProps<Theme> = {
-  color: 'error.main',
-  height: 2,
-  padding: '10px 0',
-  mx: 0,
-  '& .MuiSlider-root': { padding: 0 },
-  '& .MuiSlider-thumb': {
-    width: 14,
-    height: 14,
-    backgroundColor: 'common.white',
-    boxShadow: (theme) => `0 0 0 2px ${alpha(theme.palette.error.main, 0.5)}`,
-    transition: 'box-shadow 0.15s',
-    '&:before': { display: 'none' },
-    '&:hover, &.Mui-focusVisible': {
-      boxShadow: (theme) => `0 0 0 8px ${alpha(theme.palette.error.main, 0.25)}`
-    }
-  },
-  '& .MuiSlider-rail': {
-    backgroundColor: (theme) => alpha(theme.palette.common.white, 0.25),
-    opacity: 1
-  },
-  '& .MuiSlider-track': {
-    border: 'none',
-    backgroundColor: 'error.main',
-    opacity: 1
-  }
-}
-
 const volSliderSx: SxProps<Theme> = {
   color: 'common.white',
   height: 3,
@@ -211,9 +183,6 @@ export default function PlayerScreen(): React.JSX.Element {
     () => currentItem?.artist?.trim() || undefined,
     [currentItem?.artist]
   )
-  const videoObjectFit = useMemo(() => {
-    return 'contain'
-  }, [])
   const mediaOrientation = useMemo<MediaOrientation>(
     () => resolveMediaOrientation(mediaInfo.width, mediaInfo.height),
     [mediaInfo.height, mediaInfo.width]
@@ -803,7 +772,6 @@ export default function PlayerScreen(): React.JSX.Element {
             src={videoSrc}
             isAudioFile={isAudioFile}
             surfaceSx={videoSurfaceSx}
-            videoObjectFit={videoObjectFit}
             onError={handleVideoError}
             onLoadedMetadata={syncMediaReadyState}
             onCanPlay={syncMediaReadyState}
@@ -910,7 +878,6 @@ export default function PlayerScreen(): React.JSX.Element {
             canGoNext={canGoNext}
             nextItemLabel={nextItemLabel}
             seekbarRef={seekbarRef}
-            seekSliderSx={seekSliderSx}
             volSliderSx={volSliderSx}
             onOpenFolder={handleOpenFolder}
             onChangePlaybackRate={(rate) => {

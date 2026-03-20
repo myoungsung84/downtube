@@ -36,7 +36,6 @@ type PlayerControlsProps = {
   canGoNext: boolean
   nextItemLabel?: string
   seekbarRef: React.RefObject<HTMLDivElement | null>
-  seekSliderSx: SxProps<Theme>
   volSliderSx: SxProps<Theme>
   onOpenFolder: () => void
   onChangePlaybackRate: (rate: number) => void
@@ -86,7 +85,6 @@ export function PlayerControls({
   canGoNext,
   nextItemLabel,
   seekbarRef,
-  seekSliderSx,
   volSliderSx,
   onOpenFolder,
   onChangePlaybackRate,
@@ -179,7 +177,6 @@ export function PlayerControls({
         onSeekbarMouseLeave={onSeekbarMouseLeave}
         onSeekChange={onSeekChange}
         onSeekCommit={onSeekCommit}
-        seekSliderSx={seekSliderSx}
       />
 
       <PlayerBottomControls

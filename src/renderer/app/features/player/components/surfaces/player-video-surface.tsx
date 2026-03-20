@@ -7,7 +7,6 @@ type PlayerVideoSurfaceProps = {
   src: string
   isAudioFile: boolean
   surfaceSx?: SxProps<Theme>
-  videoObjectFit: string
   onError: (event: React.SyntheticEvent<HTMLVideoElement>) => void
   onLoadedMetadata: () => void
   onCanPlay: () => void
@@ -25,7 +24,6 @@ export function PlayerVideoSurface({
   src,
   isAudioFile,
   surfaceSx,
-  videoObjectFit,
   onError,
   onLoadedMetadata,
   onCanPlay,
@@ -79,7 +77,7 @@ export function PlayerVideoSurface({
             inset: 0,
             width: isAudioFile ? 1 : '100%',
             height: isAudioFile ? 1 : '100%',
-            objectFit: videoObjectFit,
+            objectFit: 'contain',
             objectPosition: 'center',
             backgroundColor: 'common.black',
             WebkitAppRegion: 'no-drag',
