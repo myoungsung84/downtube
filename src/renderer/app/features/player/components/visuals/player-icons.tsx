@@ -95,3 +95,15 @@ export const IcAmbientParticles = (): React.JSX.Element => (
     <circle cx="19" cy="17" r="1.6" />
   </svg>
 )
+
+export const IcQueueList = (): React.JSX.Element => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1 5 3-5 3z" />
+  </svg>
+)
+
+export const IcClose = (): React.JSX.Element => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+  </svg>
+)

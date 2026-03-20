@@ -3,7 +3,8 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import React from 'react'
 
-import type { PlayerRepeatMode } from '../../types/player.types'
+import type { PlayerQueueItem, PlayerRepeatMode } from '../../types/player.types'
+import { PlayerQueuePanel } from '../surfaces/player-queue-panel'
 import { PlayerBottomControls } from './player-bottom-controls'
 import { PlayerCenterControls } from './player-center-controls'
 import { PlayerSeekbar } from './player-seekbar'
@@ -13,6 +14,7 @@ type PlayerControlsProps = {
   uiVisible: boolean
   visualizerVisible: boolean
   ambientParticlesEnabled: boolean
+  queuePanelOpen: boolean
   paused: boolean
   playbackRate: number
   isAudioFile: boolean
@@ -27,10 +29,12 @@ type PlayerControlsProps = {
   volume: number
   currentIndex: number
   queueLength: number
+  queue: PlayerQueueItem[]
   repeatMode: PlayerRepeatMode
   isFullscreen: boolean
   canGoPrevious: boolean
   canGoNext: boolean
+  nextItemLabel?: string
   seekbarRef: React.RefObject<HTMLDivElement | null>
   seekSliderSx: SxProps<Theme>
   volSliderSx: SxProps<Theme>
@@ -51,6 +55,8 @@ type PlayerControlsProps = {
   onCycleRepeatMode: () => void
   onToggleVisualizer: () => void
   onToggleAmbientParticles: () => void
+  onToggleQueuePanel: () => void
+  onQueueItemClick: (index: number) => void
   onToggleFullscreen: () => void
 }
 
@@ -58,6 +64,7 @@ export function PlayerControls({
   uiVisible,
   visualizerVisible,
   ambientParticlesEnabled,
+  queuePanelOpen,
   paused,
   playbackRate,
   isAudioFile,
@@ -72,10 +79,12 @@ export function PlayerControls({
   volume,
   currentIndex,
   queueLength,
+  queue,
   repeatMode,
   isFullscreen,
   canGoPrevious,
   canGoNext,
+  nextItemLabel,
   seekbarRef,
   seekSliderSx,
   volSliderSx,
@@ -96,10 +105,13 @@ export function PlayerControls({
   onCycleRepeatMode,
   onToggleVisualizer,
   onToggleAmbientParticles,
+  onToggleQueuePanel,
+  onQueueItemClick,
   onToggleFullscreen
 }: PlayerControlsProps): React.JSX.Element {
   return (
     <>
+      {/* Top gradient */}
       <Box
         sx={{
           position: 'absolute',
@@ -116,6 +128,7 @@ export function PlayerControls({
         }}
       />
 
+      {/* Bottom gradient */}
       <Box
         sx={{
           position: 'absolute',
@@ -173,6 +186,7 @@ export function PlayerControls({
         uiVisible={uiVisible}
         visualizerVisible={visualizerVisible}
         ambientParticlesEnabled={ambientParticlesEnabled}
+        queuePanelOpen={queuePanelOpen}
         muted={muted}
         volume={volume}
         currentSeekVal={currentSeekVal}
@@ -183,6 +197,7 @@ export function PlayerControls({
         isFullscreen={isFullscreen}
         canGoPrevious={canGoPrevious}
         canGoNext={canGoNext}
+        nextItemLabel={nextItemLabel}
         onToggleMute={onToggleMute}
         onVolumeChange={onVolumeChange}
         onVolumeCommit={onVolumeCommit}
@@ -191,8 +206,34 @@ export function PlayerControls({
         onCycleRepeatMode={onCycleRepeatMode}
         onToggleVisualizer={onToggleVisualizer}
         onToggleAmbientParticles={onToggleAmbientParticles}
+        onToggleQueuePanel={onToggleQueuePanel}
         onToggleFullscreen={onToggleFullscreen}
         volSliderSx={volSliderSx}
+      />
+
+      {/* Queue panel backdrop: closes panel when clicking outside */}
+      {queuePanelOpen && (
+        <Box
+          onClick={onToggleQueuePanel}
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 288,
+            bottom: 0,
+            zIndex: 9,
+            cursor: 'default'
+          }}
+        />
+      )}
+
+      {/* Queue panel */}
+      <PlayerQueuePanel
+        open={queuePanelOpen}
+        queue={queue}
+        currentIndex={currentIndex}
+        onSelectIndex={onQueueItemClick}
+        onClose={onToggleQueuePanel}
       />
     </>
   )

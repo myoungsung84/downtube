@@ -152,6 +152,8 @@ export default function PlayerScreen(): React.JSX.Element {
   const [hoverX, setHoverX] = useState(0)
   const [visualizerVisible, setVisualizerVisible] = useState(false)
   const [ambientParticlesEnabled, setAmbientParticlesEnabled] = useState(false)
+  const [queuePanelOpen, setQueuePanelOpen] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
     queueRef.current = queue
@@ -219,6 +221,23 @@ export default function PlayerScreen(): React.JSX.Element {
     [currentIndex, queue.length, repeatMode]
   )
 
+  const nextQueueIndex = useMemo(
+    () => resolveNextQueueIndex(queue.length, currentIndex, repeatMode),
+    [queue.length, currentIndex, repeatMode]
+  )
+  const nextQueueItem = nextQueueIndex !== null ? (queue[nextQueueIndex] ?? null) : null
+  const nextItemLabel = useMemo(() => {
+    if (!nextQueueItem) return undefined
+    return (
+      nextQueueItem.title?.trim() ||
+      getFileNameWithoutExtension(nextQueueItem.fileName) ||
+      nextQueueItem.fileName ||
+      undefined
+    )
+  }, [nextQueueItem])
+
+  const showLoadingOverlay = isTransitioning || (!hasLoadedMetadata && !!videoSrc)
+
   const clearHideTimer = useCallback(() => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current)
@@ -276,6 +295,7 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const syncMediaReadyState = useCallback(() => {
     setHasLoadedMetadata(true)
+    setIsTransitioning(false)
     syncStaticMediaMeta()
     syncCurrentTime()
     resolveWebmMediaKind()
@@ -346,6 +366,7 @@ export default function PlayerScreen(): React.JSX.Element {
   }, [])
 
   const stopPlayback = useCallback(() => {
+    setIsTransitioning(false)
     const video = videoRef.current
     if (!video) {
       setPaused(true)
@@ -531,6 +552,7 @@ export default function PlayerScreen(): React.JSX.Element {
       return
     }
 
+    setIsTransitioning(true)
     await moveToPlayableIndex(nextIndex, 'next')
   }, [moveToPlayableIndex, stopPlayback])
 
@@ -545,8 +567,18 @@ export default function PlayerScreen(): React.JSX.Element {
       return
     }
 
+    setIsTransitioning(true)
     await moveToPlayableIndex(previousIndex, 'previous')
   }, [moveToPlayableIndex])
+
+  const handleQueueItemClick = useCallback(
+    async (index: number): Promise<void> => {
+      if (index === currentIndexRef.current) return
+      setIsTransitioning(true)
+      await moveToPlayableIndex(index, 'current')
+    },
+    [moveToPlayableIndex]
+  )
 
   const handleEnded = useCallback(() => {
     const video = videoRef.current
@@ -611,6 +643,39 @@ export default function PlayerScreen(): React.JSX.Element {
     })()
   }, [currentItem?.mediaPath])
 
+  // Hydrate all queue items (title/artist/thumbnail) when the queue is first built.
+  // This ensures the queue panel shows consistent labels for every item upfront.
+  useEffect(() => {
+    const paths = initialPaths.map((p) => p.trim()).filter(Boolean)
+    if (paths.length <= 1) return // Single item is handled by the currentItem effect above
+
+    let cancelled = false
+
+    void Promise.all(
+      paths.map(async (mediaPath) => {
+        const result = await window.api.readMediaSidecar(mediaPath)
+        if (cancelled || !result.success) return
+        setQueue((prev) =>
+          prev.map((item) => {
+            if (item.mediaPath !== mediaPath) return item
+            const hasNewData = result.title ?? result.artist ?? result.thumbnailPath
+            if (!hasNewData) return item
+            return {
+              ...item,
+              title: result.title ?? item.title,
+              artist: result.artist ?? item.artist,
+              thumbnailPath: result.thumbnailPath ?? item.thumbnailPath
+            }
+          })
+        )
+      })
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialPaths])
+
   useEffect(() => {
     const onFsChange = (): void => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onFsChange)
@@ -629,6 +694,7 @@ export default function PlayerScreen(): React.JSX.Element {
       if (event.code === 'ArrowRight') skip(10)
       if (event.code === 'KeyF') toggleFullscreen()
       if (event.code === 'KeyM') toggleMute()
+      if (event.code === 'KeyQ') setQueuePanelOpen((prev) => !prev)
     }
 
     window.addEventListener('keydown', onKey)
@@ -722,10 +788,46 @@ export default function PlayerScreen(): React.JSX.Element {
             audioLevelRef={ambientAudioLevelRef}
           />
 
+          {/* Loading / transition overlay */}
+          <>
+            <style>{`
+              @keyframes player-spin {
+                0%   { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: (theme) => alpha(theme.palette.common.black, 0.4),
+                opacity: showLoadingOverlay ? 1 : 0,
+                pointerEvents: showLoadingOverlay ? 'auto' : 'none',
+                transition: 'opacity 0.25s ease'
+              }}
+            >
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  border: (theme) => `2px solid ${alpha(theme.palette.common.white, 0.12)}`,
+                  borderTopColor: (theme) => alpha(theme.palette.error.main, 0.85),
+                  animation: showLoadingOverlay ? 'player-spin 0.75s linear infinite' : 'none'
+                }}
+              />
+            </Box>
+          </>
+
           <PlayerControls
             uiVisible={uiVisible}
             visualizerVisible={visualizerVisible}
             ambientParticlesEnabled={ambientParticlesEnabled}
+            queuePanelOpen={queuePanelOpen}
             paused={paused}
             playbackRate={playbackRate}
             isAudioFile={isAudioFile}
@@ -744,10 +846,12 @@ export default function PlayerScreen(): React.JSX.Element {
             volume={volume}
             currentIndex={currentIndex}
             queueLength={queue.length}
+            queue={queue}
             repeatMode={repeatMode}
             isFullscreen={isFullscreen}
             canGoPrevious={canGoPrevious}
             canGoNext={canGoNext}
+            nextItemLabel={nextItemLabel}
             seekbarRef={seekbarRef}
             seekSliderSx={seekSliderSx}
             volSliderSx={volSliderSx}
@@ -782,6 +886,8 @@ export default function PlayerScreen(): React.JSX.Element {
               setAmbientParticlesEnabled(nextEnabled)
               void setSettingValue(PLAYER_AMBIENT_PARTICLES_KEY, nextEnabled)
             }}
+            onToggleQueuePanel={() => setQueuePanelOpen((prev) => !prev)}
+            onQueueItemClick={(index) => void handleQueueItemClick(index)}
             onToggleFullscreen={toggleFullscreen}
           />
         </>

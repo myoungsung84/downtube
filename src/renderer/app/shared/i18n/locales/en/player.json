@@ -11,7 +11,9 @@
       "fullscreen": "Fullscreen (F)",
       "mute": "Mute (M)",
       "next": "Next track",
+      "next_up": "Next",
       "previous": "Previous track",
+      "queue": "Queue",
       "repeat_all": "Repeat all",
       "repeat_off": "Repeat off",
       "repeat_one": "Repeat one",
@@ -39,5 +41,9 @@
       "open_folder_title": "Open folder"
     },
     "unknown_file": "Unknown file"
+  },
+  "queue_panel": {
+    "close": "Close",
+    "title": "Queue"
   }
 }
