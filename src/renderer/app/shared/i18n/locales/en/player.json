@@ -10,6 +10,11 @@
       "ambient_particles": "Ambient particles",
       "fullscreen": "Fullscreen (F)",
       "mute": "Mute (M)",
+      "next": "Next track",
+      "previous": "Previous track",
+      "repeat_all": "Repeat all",
+      "repeat_off": "Repeat off",
+      "repeat_one": "Repeat one",
       "visualizer": "Audio visualizer"
     },
     "center": {
@@ -24,6 +29,9 @@
   },
   "fallback": {
     "unknown_file": "Unknown file"
+  },
+  "media": {
+    "audio": "Audio"
   },
   "overlay": {
     "actions": {

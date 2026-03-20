@@ -6,6 +6,7 @@ import url from 'url'
 
 import type { InitState } from '../../types/init.types'
 import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
+import type { PlayerOpenPayload } from '../../types/player.types'
 import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
@@ -52,19 +53,35 @@ function isPathInsideDownloadDir(filePath: string): boolean {
   return !rel.startsWith('..') && !path.isAbsolute(rel)
 }
 
+function parsePlayerPaths(payload: PlayerOpenPayload): string[] | null {
+  if (!payload || !Array.isArray(payload.paths)) {
+    return null
+  }
+
+  const normalizedPaths = payload.paths
+    .filter((candidate): candidate is string => typeof candidate === 'string')
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length > 0)
+
+  if (normalizedPaths.length === 0) {
+    return null
+  }
+
+  if (!normalizedPaths.every((candidate) => isPathInsideDownloadDir(candidate))) {
+    return null
+  }
+
+  return normalizedPaths
+}
+
 async function openPlayerWindow(
   mainWindow: BrowserWindow,
-  filePath: string
+  payload: PlayerOpenPayload
 ): Promise<{ success: boolean; message?: string }> {
-  if (!filePath) return { success: false, message: 'Output file path not found' }
-  if (!isPathInsideDownloadDir(filePath)) {
-    return { success: false, message: 'Access denied: path is outside download directory' }
+  const paths = parsePlayerPaths(payload)
+  if (!paths) {
+    return { success: false, message: 'Invalid player payload' }
   }
-  if (!fs.existsSync(filePath)) return { success: false, message: 'Output file does not exist' }
-
-  const mediaUrl = new URL('downtube-media://media')
-  mediaUrl.searchParams.set('path', filePath)
-  const mediaSrc = mediaUrl.toString()
 
   if (playerWindow && !playerWindow.isDestroyed()) {
     playerWindow.close()
@@ -84,7 +101,7 @@ async function openPlayerWindow(
   })
 
   const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
-  const playerHash = `/player?${new URLSearchParams({ src: mediaSrc }).toString()}`
+  const playerHash = `/player?${new URLSearchParams({ paths: JSON.stringify(paths) }).toString()}`
   const playerUrl = !app.isPackaged
     ? `http://localhost:${devPort}/#${playerHash}`
     : url.format({
@@ -174,6 +191,23 @@ async function readMediaSidecar(filePath: string): Promise<ReadMediaSidecarResul
   }
 }
 
+async function fileExists(filePath: string): Promise<boolean> {
+  if (typeof filePath !== 'string' || filePath.trim().length === 0) {
+    return false
+  }
+
+  if (!isPathInsideDownloadDir(filePath)) {
+    return false
+  }
+
+  try {
+    await fs.promises.access(filePath, fs.constants.F_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const ipcHandler = (mainWindow: BrowserWindow): void => {
   const broadcastInitState = (state: InitState): void => {
     initState = state
@@ -235,27 +269,9 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     return resolveSettingsLanguage(preference)
   })
 
-  safeSetHandler('download-player', async (_, payload: { id: string }) => {
-    if (!payload?.id) return { success: false, message: 'Job not found' }
-
-    const job = downloadsQueue.getJob(payload.id)
-    if (!job) return { success: false, message: 'Job not found' }
-    if (job.status !== 'completed') {
-      return { success: false, message: 'Only completed media can be played' }
-    }
-
-    const filePath = job.finalFilePath ?? job.outputFile
-    if (!filePath) return { success: false, message: 'Output file path not found' }
-    return openPlayerWindow(mainWindow, filePath)
-  })
-
-  safeSetHandler('download-player-file', async (_, filePath: string) => {
+  safeSetHandler('player-open', async (_, payload: PlayerOpenPayload) => {
     try {
-      if (typeof filePath !== 'string' || filePath.trim().length === 0) {
-        return { success: false, message: 'Invalid path' }
-      }
-
-      return await openPlayerWindow(mainWindow, filePath)
+      return await openPlayerWindow(mainWindow, payload)
     } catch (error) {
       return {
         success: false,
@@ -316,6 +332,8 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       }
     }
   })
+
+  safeSetHandler('file-exists', async (_, filePath: string) => fileExists(filePath))
 
   safeSetHandler('media-sidecar-read', async (_, filePath: string) => readMediaSidecar(filePath))
 

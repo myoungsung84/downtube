@@ -230,7 +230,13 @@ export default function DownloadsScreen(): React.JSX.Element {
   }
 
   const handlePlay = async (job: DownloadJob): Promise<void> => {
-    const res = await window.api.openPlayer({ id: job.id })
+    const filePath = job.finalFilePath ?? job.outputFile
+    if (!filePath) {
+      showToast(t('toast.player.unavailable'), 'error')
+      return
+    }
+
+    const res = await window.api.openPlayer({ paths: [filePath] })
     if (!res.success) {
       console.error('Failed to open player:', res.message)
       showToast(res.message ?? t('toast.player.unavailable'), 'error')

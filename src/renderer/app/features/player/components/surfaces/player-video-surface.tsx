@@ -11,6 +11,7 @@ type PlayerVideoSurfaceProps = {
   onCanPlay: () => void
   onPlay: () => void
   onPause: () => void
+  onEnded: () => void
   onSeeked: () => void
   onTimeUpdate: () => void
   onClick: () => void
@@ -27,6 +28,7 @@ export function PlayerVideoSurface({
   onCanPlay,
   onPlay,
   onPause,
+  onEnded,
   onSeeked,
   onTimeUpdate,
   onClick,
@@ -42,6 +44,7 @@ export function PlayerVideoSurface({
       onCanPlay={onCanPlay}
       onPlay={onPlay}
       onPause={onPause}
+      onEnded={onEnded}
       onSeeked={onSeeked}
       onTimeUpdate={onTimeUpdate}
       onClick={onClick}

@@ -4,6 +4,7 @@ import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
 import type { LibraryItem } from '../types/library.types'
 import type { ReadMediaSidecarResult } from '../types/media-sidecar.types'
+import type { PlayerOpenPayload } from '../types/player.types'
 import type {
   AppLanguage,
   AppLanguagePreference,
@@ -12,11 +13,11 @@ import type {
 } from '../types/settings.types'
 
 const api = {
-  openPlayer: (payload: { id: string }) => ipcRenderer.invoke('download-player', payload),
-  openPlayerFile: (filePath: string) => ipcRenderer.invoke('download-player-file', filePath),
+  openPlayer: (payload: PlayerOpenPayload) => ipcRenderer.invoke('player-open', payload),
   openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
   openDownloadsRootDir: () => ipcRenderer.invoke('downloads-root-open'),
   openDownloadItem: (path: string) => ipcRenderer.invoke('download-item-open', path),
+  fileExists: (path: string): Promise<boolean> => ipcRenderer.invoke('file-exists', path),
   readMediaSidecar: (path: string): Promise<ReadMediaSidecarResult> =>
     ipcRenderer.invoke('media-sidecar-read', path),
 

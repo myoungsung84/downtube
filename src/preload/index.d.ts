@@ -4,6 +4,7 @@ import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { InitState } from '@src/types/init.types'
 import type { LibraryItem } from '@src/types/library.types'
 import type { ReadMediaSidecarResult } from '@src/types/media-sidecar.types'
+import type { PlayerOpenPayload } from '@src/types/player.types'
 import type {
   AppLanguage,
   AppLanguagePreference,
@@ -12,11 +13,11 @@ import type {
 } from '@src/types/settings.types'
 
 interface AppAPI {
-  openPlayer: (payload: { id: string }) => Promise<{ success: boolean; message?: string }>
-  openPlayerFile: (filePath: string) => Promise<{ success: boolean; message?: string }>
+  openPlayer: (payload: PlayerOpenPayload) => Promise<{ success: boolean; message?: string }>
   openDownloadDir: () => Promise<{ success: boolean; message?: string }>
   openDownloadsRootDir: () => Promise<{ success: boolean; message?: string }>
   openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
+  fileExists: (path: string) => Promise<boolean>
   readMediaSidecar: (path: string) => Promise<ReadMediaSidecarResult>
 
   downloadsStart: () => Promise<{ success: boolean; message?: string }>

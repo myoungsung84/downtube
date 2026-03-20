@@ -5,10 +5,15 @@ import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
 import { formatSeconds } from '../../lib'
+import type { PlayerRepeatMode } from '../../types/player.types'
 import {
   IcAmbientParticles,
   IcExitFullscreen,
   IcFullscreen,
+  IcNextTrack,
+  IcPreviousTrack,
+  IcRepeat,
+  IcRepeatOne,
   IcVisualizer,
   IcVolumeHigh,
   IcVolumeMute
@@ -23,10 +28,18 @@ type PlayerBottomControlsProps = {
   volume: number
   currentSeekVal: number
   duration: number
+  currentIndex: number
+  queueLength: number
+  repeatMode: PlayerRepeatMode
   isFullscreen: boolean
+  canGoPrevious: boolean
+  canGoNext: boolean
   onToggleMute: () => void
   onVolumeChange: (_: Event, val: number | number[]) => void
   onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
+  onPreviousTrack: () => void
+  onNextTrack: () => void
+  onCycleRepeatMode: () => void
   onToggleVisualizer: () => void
   onToggleAmbientParticles: () => void
   onToggleFullscreen: () => void
@@ -41,16 +54,31 @@ export function PlayerBottomControls({
   volume,
   currentSeekVal,
   duration,
+  currentIndex,
+  queueLength,
+  repeatMode,
   isFullscreen,
+  canGoPrevious,
+  canGoNext,
   onToggleMute,
   onVolumeChange,
   onVolumeCommit,
+  onPreviousTrack,
+  onNextTrack,
+  onCycleRepeatMode,
   onToggleVisualizer,
   onToggleAmbientParticles,
   onToggleFullscreen,
   volSliderSx
 }: PlayerBottomControlsProps): React.JSX.Element {
   const { t } = useI18n('player')
+  const repeatTitle =
+    repeatMode === 'one'
+      ? t('controls.bottom.repeat_one')
+      : repeatMode === 'all'
+        ? t('controls.bottom.repeat_all')
+        : t('controls.bottom.repeat_off')
+
   return (
     <Box
       sx={{
@@ -110,8 +138,57 @@ export function PlayerBottomControls({
             </Box>
             {formatSeconds(duration)}
           </Typography>
+          {queueLength > 0 ? (
+            <Typography
+              sx={{
+                ml: 1.5,
+                color: (theme) => alpha(theme.palette.common.white, 0.55),
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                fontVariantNumeric: 'tabular-nums',
+                whiteSpace: 'nowrap',
+                userSelect: 'none'
+              }}
+            >
+              {currentIndex + 1} / {queueLength}
+            </Typography>
+          ) : null}
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
+          <PlayerButton
+            onClick={onPreviousTrack}
+            title={t('controls.bottom.previous')}
+            size="sm"
+            disabled={!canGoPrevious}
+          >
+            <IcPreviousTrack />
+          </PlayerButton>
+          <PlayerButton
+            onClick={onNextTrack}
+            title={t('controls.bottom.next')}
+            size="sm"
+            disabled={!canGoNext}
+          >
+            <IcNextTrack />
+          </PlayerButton>
+          <PlayerButton
+            onClick={onCycleRepeatMode}
+            title={repeatTitle}
+            size="sm"
+            active={repeatMode !== 'off'}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                color: (theme) =>
+                  repeatMode === 'off'
+                    ? alpha(theme.palette.common.white, 0.65)
+                    : theme.palette.error.light
+              }}
+            >
+              {repeatMode === 'one' ? <IcRepeatOne /> : <IcRepeat />}
+            </Box>
+          </PlayerButton>
           <PlayerButton
             onClick={onToggleAmbientParticles}
             title={t('controls.bottom.ambient_particles')}

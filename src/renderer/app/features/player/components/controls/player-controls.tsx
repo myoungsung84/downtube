@@ -3,6 +3,7 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import React from 'react'
 
+import type { PlayerRepeatMode } from '../../types/player.types'
 import { PlayerBottomControls } from './player-bottom-controls'
 import { PlayerCenterControls } from './player-center-controls'
 import { PlayerSeekbar } from './player-seekbar'
@@ -24,7 +25,12 @@ type PlayerControlsProps = {
   currentSeekVal: number
   muted: boolean
   volume: number
+  currentIndex: number
+  queueLength: number
+  repeatMode: PlayerRepeatMode
   isFullscreen: boolean
+  canGoPrevious: boolean
+  canGoNext: boolean
   seekbarRef: React.RefObject<HTMLDivElement | null>
   seekSliderSx: SxProps<Theme>
   volSliderSx: SxProps<Theme>
@@ -40,6 +46,9 @@ type PlayerControlsProps = {
   onToggleMute: () => void
   onVolumeChange: (_: Event, val: number | number[]) => void
   onVolumeCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
+  onPreviousTrack: () => void
+  onNextTrack: () => void
+  onCycleRepeatMode: () => void
   onToggleVisualizer: () => void
   onToggleAmbientParticles: () => void
   onToggleFullscreen: () => void
@@ -61,7 +70,12 @@ export function PlayerControls({
   currentSeekVal,
   muted,
   volume,
+  currentIndex,
+  queueLength,
+  repeatMode,
   isFullscreen,
+  canGoPrevious,
+  canGoNext,
   seekbarRef,
   seekSliderSx,
   volSliderSx,
@@ -77,6 +91,9 @@ export function PlayerControls({
   onToggleMute,
   onVolumeChange,
   onVolumeCommit,
+  onPreviousTrack,
+  onNextTrack,
+  onCycleRepeatMode,
   onToggleVisualizer,
   onToggleAmbientParticles,
   onToggleFullscreen
@@ -160,10 +177,18 @@ export function PlayerControls({
         volume={volume}
         currentSeekVal={currentSeekVal}
         duration={meta.duration}
+        currentIndex={currentIndex}
+        queueLength={queueLength}
+        repeatMode={repeatMode}
         isFullscreen={isFullscreen}
+        canGoPrevious={canGoPrevious}
+        canGoNext={canGoNext}
         onToggleMute={onToggleMute}
         onVolumeChange={onVolumeChange}
         onVolumeCommit={onVolumeCommit}
+        onPreviousTrack={onPreviousTrack}
+        onNextTrack={onNextTrack}
+        onCycleRepeatMode={onCycleRepeatMode}
         onToggleVisualizer={onToggleVisualizer}
         onToggleAmbientParticles={onToggleAmbientParticles}
         onToggleFullscreen={onToggleFullscreen}
