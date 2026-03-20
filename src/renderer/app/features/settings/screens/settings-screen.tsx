@@ -128,7 +128,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-      <Stack sx={{ width: '100%', maxWidth: 720, p: 3 }} spacing={3}>
+      <Stack sx={{ width: '100%', maxWidth: 1400, p: 3 }} spacing={3}>
         {/* Header */}
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Box
