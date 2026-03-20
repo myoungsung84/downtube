@@ -24,6 +24,7 @@ import {
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
+let playerOpenInFlight = false
 let initState: InitState = { status: 'idle' }
 let initInFlight: Promise<InitState> | null = null
 let _ffprobePath: string | null = null
@@ -346,6 +347,12 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   })
 
   safeSetHandler('player-open', async (_, payload: PlayerOpenPayload) => {
+    if (playerOpenInFlight) {
+      return { success: true }
+    }
+
+    playerOpenInFlight = true
+
     try {
       return await openPlayerWindow(mainWindow, payload)
     } catch (error) {
@@ -353,6 +360,8 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to open player'
       }
+    } finally {
+      playerOpenInFlight = false
     }
   })
 

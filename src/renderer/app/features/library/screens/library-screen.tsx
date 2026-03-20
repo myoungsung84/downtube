@@ -30,7 +30,7 @@ import { useToast } from '@renderer/shared/hooks/use-toast'
 import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import dayjs from 'dayjs'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -202,6 +202,8 @@ export default function LibraryScreen(): React.JSX.Element {
   const [menuState, setMenuState] = useState<MenuState>({ phase: 'idle' })
   const [pendingDeleteItem, setPendingDeleteItem] = useState<LibraryItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const playerOpenInFlightRef = useRef(false)
+  const lastPlayerOpenRef = useRef<{ itemId: string; at: number } | null>(null)
 
   const videoItems = useMemo(() => items.filter((i) => i.type === 'video'), [items])
   const audioItems = useMemo(() => items.filter((i) => i.type === 'audio'), [items])
@@ -292,6 +294,15 @@ export default function LibraryScreen(): React.JSX.Element {
   )
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
+    const now = Date.now()
+    const lastOpen = lastPlayerOpenRef.current
+
+    if (lastOpen && lastOpen.itemId === item.id && now - lastOpen.at < 400) {
+      return
+    }
+
+    if (playerOpenInFlightRef.current) return
+
     const startIndex = visibleItems.findIndex(
       (visibleItem) => visibleItem.filePath === item.filePath
     )
@@ -301,8 +312,15 @@ export default function LibraryScreen(): React.JSX.Element {
         ? orderedPaths
         : [...orderedPaths.slice(startIndex), ...orderedPaths.slice(0, startIndex)]
 
-    const result = await window.api.openPlayer({ paths: queuePaths })
-    if (!result.success) showToast(result.message ?? t('toast.open_player_failed'), 'error')
+    lastPlayerOpenRef.current = { itemId: item.id, at: now }
+    playerOpenInFlightRef.current = true
+
+    try {
+      const result = await window.api.openPlayer({ paths: queuePaths })
+      if (!result.success) showToast(result.message ?? t('toast.open_player_failed'), 'error')
+    } finally {
+      playerOpenInFlightRef.current = false
+    }
   }
 
   const isMenuOpen = menuState.phase === 'open'
