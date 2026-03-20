@@ -25,12 +25,19 @@ import {
   isFiniteDuration,
   removeQueueItemAtIndex,
   resolveInitialMediaKind,
+  resolveMediaOrientation,
   resolveNextQueueIndex,
   resolvePreviousQueueIndex,
   sanitizePlaybackTime,
   toMediaUrl
 } from '../lib'
-import type { MediaInfo, MediaKind, PlayerQueueItem, PlayerRepeatMode } from '../types/player.types'
+import type {
+  MediaInfo,
+  MediaKind,
+  MediaOrientation,
+  PlayerQueueItem,
+  PlayerRepeatMode
+} from '../types/player.types'
 
 const seekSliderSx: SxProps<Theme> = {
   color: 'error.main',
@@ -205,10 +212,59 @@ export default function PlayerScreen(): React.JSX.Element {
     [currentItem?.artist]
   )
   const videoObjectFit = useMemo(() => {
-    if (isAudioFile) return 'contain'
-    if (mediaInfo.width <= 0 || mediaInfo.height <= 0) return 'contain'
-    return mediaInfo.width >= mediaInfo.height ? 'cover' : 'contain'
-  }, [isAudioFile, mediaInfo.height, mediaInfo.width])
+    return 'contain'
+  }, [])
+  const mediaOrientation = useMemo<MediaOrientation>(
+    () => resolveMediaOrientation(mediaInfo.width, mediaInfo.height),
+    [mediaInfo.height, mediaInfo.width]
+  )
+  const videoSurfaceSx = useMemo<SxProps<Theme>>(() => {
+    if (isAudioFile) {
+      return {
+        width: 1,
+        height: 1
+      }
+    }
+
+    const aspectRatio =
+      mediaInfo.width > 0 && mediaInfo.height > 0
+        ? `${mediaInfo.width} / ${mediaInfo.height}`
+        : undefined
+
+    if (!aspectRatio) {
+      return {
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%'
+      }
+    }
+
+    if (mediaOrientation === 'landscape') {
+      return {
+        width: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        aspectRatio
+      }
+    }
+
+    if (mediaOrientation === 'portrait') {
+      return {
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        aspectRatio
+      }
+    }
+
+    return {
+      width: 'min(100%, 100vh)',
+      maxWidth: '100%',
+      maxHeight: '100%',
+      aspectRatio
+    }
+  }, [isAudioFile, mediaInfo.height, mediaInfo.width, mediaOrientation])
   const canGoPrevious = useMemo(
     () =>
       queue.length > 1 &&
@@ -746,6 +802,7 @@ export default function PlayerScreen(): React.JSX.Element {
             videoRef={videoRef}
             src={videoSrc}
             isAudioFile={isAudioFile}
+            surfaceSx={videoSurfaceSx}
             videoObjectFit={videoObjectFit}
             onError={handleVideoError}
             onLoadedMetadata={syncMediaReadyState}
