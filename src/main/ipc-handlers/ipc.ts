@@ -29,7 +29,7 @@ let initInFlight: Promise<InitState> | null = null
 let _ffprobePath: string | null = null
 const SIDECAR_THUMBNAIL_EXTENSIONS = ['.jpg', '.png', '.webp'] as const
 const PLAYER_AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
-const PLAYER_SIZE_DEFAULT = { width: 1440, height: 810 } as const
+const PLAYER_SIZE_DEFAULT = { width: 1280, height: 720 } as const
 const PLAYER_SIZE_WIDE = { width: 1280, height: 560 } as const
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
