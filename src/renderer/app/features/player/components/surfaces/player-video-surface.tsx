@@ -43,7 +43,7 @@ export function PlayerVideoSurface({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pointerEvents: 'none',
+        pointerEvents: isAudioFile ? 'none' : 'auto',
         bgcolor: 'common.black'
       }}
     >
