@@ -172,6 +172,11 @@ async function openPlayerWindow(
     }
   })
 
+  playerQueueStore.set(queueId, paths)
+  playerWindow.once('closed', () => {
+    playerQueueStore.delete(queueId)
+  })
+
   const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
   const playerHash = `/player?${new URLSearchParams({ paths: JSON.stringify(existingPaths) }).toString()}`
   const playerUrl = !app.isPackaged
@@ -354,6 +359,11 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         message: error instanceof Error ? error.message : 'Failed to open player'
       }
     }
+  })
+
+  safeSetHandler('player-queue-get', (_, queueId: string) => {
+    if (!queueId || typeof queueId !== 'string') return []
+    return playerQueueStore.get(queueId) ?? []
   })
 
   safeSetHandler('download-dir-open', async () => {

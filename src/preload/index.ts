@@ -20,6 +20,8 @@ const api = {
   fileExists: (path: string): Promise<boolean> => ipcRenderer.invoke('file-exists', path),
   readMediaSidecar: (path: string): Promise<ReadMediaSidecarResult> =>
     ipcRenderer.invoke('media-sidecar-read', path),
+  getPlayerQueue: (queueId: string): Promise<string[]> =>
+    ipcRenderer.invoke('player-queue-get', queueId),
 
   downloadsStart: () => ipcRenderer.invoke('downloads-start'),
   downloadsPause: () => ipcRenderer.invoke('downloads-pause'),
