@@ -113,7 +113,9 @@ export function AudioPlayerPanel({
     <>
       <PlayerBackgroundLayer thumbnailSrc={thumbnailSrc} />
 
+      {/* Clickable surface: covers the full audio background area, excluding controls overlay */}
       <Box
+        onClick={onTogglePlay}
         sx={{
           position: 'absolute',
           inset: 0,
@@ -121,11 +123,15 @@ export function AudioPlayerPanel({
           alignItems: 'center',
           justifyContent: 'center',
           px: 3,
-          zIndex: 2
+          zIndex: 2,
+          cursor: 'pointer'
         }}
       >
         <Box
-          onClick={onTogglePlay}
+          onClick={(e) => {
+            e.stopPropagation()
+            onTogglePlay()
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()

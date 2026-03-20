@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron'
 import log from 'electron-log'
+import ffmpeg from 'fluent-ffmpeg'
 import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import url from 'url'
@@ -10,6 +11,7 @@ import type { PlayerOpenPayload } from '../../types/player.types'
 import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
+import { locateFfprobe } from '../downloads/adapters/ffmpeg/ffmpeg'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
 import type { DownloadJob } from '../downloads/types'
 import { deleteLibraryItem, listLibraryItems } from '../library/library'
@@ -24,7 +26,11 @@ const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
 let initState: InitState = { status: 'idle' }
 let initInFlight: Promise<InitState> | null = null
+let _ffprobePath: string | null = null
 const SIDECAR_THUMBNAIL_EXTENSIONS = ['.jpg', '.png', '.webp'] as const
+const PLAYER_AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
+const PLAYER_SIZE_DEFAULT = { width: 1440, height: 810 } as const
+const PLAYER_SIZE_WIDE = { width: 1280, height: 560 } as const
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -74,6 +80,54 @@ function parsePlayerPaths(payload: PlayerOpenPayload): string[] | null {
   return normalizedPaths
 }
 
+async function probeVideoSize(filePath: string): Promise<{ width: number; height: number } | null> {
+  return Promise.race([
+    new Promise<{ width: number; height: number } | null>((resolve) => {
+      ffmpeg.ffprobe(filePath, (err, data) => {
+        if (err) {
+          resolve(null)
+          return
+        }
+        const videoStream = data.streams.find((s) => s.codec_type === 'video')
+        const w = videoStream?.width
+        const h = videoStream?.height
+        if (typeof w === 'number' && typeof h === 'number' && w > 0 && h > 0) {
+          resolve({ width: w, height: h })
+        } else {
+          resolve(null)
+        }
+      })
+    }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+  ])
+}
+
+async function resolvePlayerWindowSize(
+  firstPath: string
+): Promise<{ width: number; height: number }> {
+  try {
+    const ext = path.extname(firstPath).toLowerCase().slice(1)
+    if (PLAYER_AUDIO_EXTENSIONS.has(ext)) return PLAYER_SIZE_DEFAULT
+
+    const sidecar = await readMediaSidecar(firstPath)
+    if (sidecar.success && sidecar.sidecar?.type === 'audio') return PLAYER_SIZE_DEFAULT
+
+    if (!_ffprobePath) {
+      _ffprobePath = locateFfprobe()
+      ffmpeg.setFfprobePath(_ffprobePath)
+    }
+
+    const size = await probeVideoSize(firstPath)
+    if (!size || size.width <= 0 || size.height <= 0) return PLAYER_SIZE_DEFAULT
+    if (size.width <= size.height) return PLAYER_SIZE_DEFAULT // portrait / square
+
+    if (size.width / size.height >= 2.0) return PLAYER_SIZE_WIDE
+    return PLAYER_SIZE_DEFAULT
+  } catch {
+    return PLAYER_SIZE_DEFAULT
+  }
+}
+
 async function openPlayerWindow(
   mainWindow: BrowserWindow,
   payload: PlayerOpenPayload
@@ -87,12 +141,21 @@ async function openPlayerWindow(
     playerWindow.close()
   }
 
+  const resolvedSize = await resolvePlayerWindowSize(paths[0])
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+  const { width: waWidth, height: waHeight } = display.workArea
+  const MARGIN = 80
+  const initWidth = Math.min(resolvedSize.width, Math.max(900, waWidth - MARGIN))
+  const initHeight = Math.min(resolvedSize.height, Math.max(506, waHeight - MARGIN))
+
   playerWindow = new BrowserWindow({
-    width: 1280,
-    height: 820,
-    minWidth: 980,
-    minHeight: 640,
+    width: initWidth,
+    height: initHeight,
+    minWidth: 900,
+    minHeight: 506,
+    useContentSize: true,
     show: false,
+    backgroundColor: '#000000',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -111,13 +174,17 @@ async function openPlayerWindow(
         hash: playerHash
       })
 
+  const win = playerWindow
+  win.once('ready-to-show', () => {
+    if (!win.isDestroyed()) win.show()
+  })
+
   await playerWindow.loadURL(playerUrl)
 
   if (!app.isPackaged) {
     playerWindow.webContents.openDevTools({ mode: 'detach' })
   }
 
-  playerWindow.show()
   return { success: true }
 }
 

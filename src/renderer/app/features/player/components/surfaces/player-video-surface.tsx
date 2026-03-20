@@ -45,7 +45,8 @@ export function PlayerVideoSurface({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        bgcolor: 'common.black'
       }}
     >
       <Box
