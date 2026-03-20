@@ -21,44 +21,23 @@ import {
   getFileExtension,
   getFileNameFromPath,
   getFileNameWithoutExtension,
-  getPlayerQueueIdFromHash,
+  getPlayerPathsFromHash,
   isFiniteDuration,
   removeQueueItemAtIndex,
   resolveInitialMediaKind,
+  resolveMediaOrientation,
   resolveNextQueueIndex,
   resolvePreviousQueueIndex,
   sanitizePlaybackTime,
   toMediaUrl
 } from '../lib'
-import type { MediaInfo, MediaKind, PlayerQueueItem, PlayerRepeatMode } from '../types/player.types'
-
-const seekSliderSx: SxProps<Theme> = {
-  color: 'error.main',
-  height: 2,
-  padding: '10px 0',
-  mx: 0,
-  '& .MuiSlider-root': { padding: 0 },
-  '& .MuiSlider-thumb': {
-    width: 14,
-    height: 14,
-    backgroundColor: 'common.white',
-    boxShadow: (theme) => `0 0 0 2px ${alpha(theme.palette.error.main, 0.5)}`,
-    transition: 'box-shadow 0.15s',
-    '&:before': { display: 'none' },
-    '&:hover, &.Mui-focusVisible': {
-      boxShadow: (theme) => `0 0 0 8px ${alpha(theme.palette.error.main, 0.25)}`
-    }
-  },
-  '& .MuiSlider-rail': {
-    backgroundColor: (theme) => alpha(theme.palette.common.white, 0.25),
-    opacity: 1
-  },
-  '& .MuiSlider-track': {
-    border: 'none',
-    backgroundColor: 'error.main',
-    opacity: 1
-  }
-}
+import type {
+  MediaInfo,
+  MediaKind,
+  MediaOrientation,
+  PlayerQueueItem,
+  PlayerRepeatMode
+} from '../types/player.types'
 
 const volSliderSx: SxProps<Theme> = {
   color: 'common.white',
@@ -131,21 +110,9 @@ export default function PlayerScreen(): React.JSX.Element {
   )
 
   const hash = window.location.hash
-  const queueId = useMemo(() => getPlayerQueueIdFromHash(hash), [hash])
-  const [initialPaths, setInitialPaths] = useState<string[]>([])
+  const initialPaths = useMemo(() => getPlayerPathsFromHash(hash), [hash])
 
-  useEffect(() => {
-    if (!queueId) return
-    let cancelled = false
-    void window.api.getPlayerQueue(queueId).then((paths) => {
-      if (!cancelled) setInitialPaths(paths)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [queueId])
-
-  const [queue, setQueue] = useState<PlayerQueueItem[]>(() => [])
+  const [queue, setQueue] = useState<PlayerQueueItem[]>(() => buildPlayerQueue(initialPaths))
   const [currentIndex, setCurrentIndex] = useState(0)
   const [repeatMode, setRepeatMode] = useState<PlayerRepeatMode>('off')
   const [mediaInfo, setMediaInfo] = useState<MediaInfo>(() => buildInitialMediaInfo(''))
@@ -216,11 +183,57 @@ export default function PlayerScreen(): React.JSX.Element {
     () => currentItem?.artist?.trim() || undefined,
     [currentItem?.artist]
   )
-  const videoObjectFit = useMemo(() => {
-    if (isAudioFile) return 'contain'
-    if (mediaInfo.width <= 0 || mediaInfo.height <= 0) return 'contain'
-    return mediaInfo.width >= mediaInfo.height ? 'cover' : 'contain'
-  }, [isAudioFile, mediaInfo.height, mediaInfo.width])
+  const mediaOrientation = useMemo<MediaOrientation>(
+    () => resolveMediaOrientation(mediaInfo.width, mediaInfo.height),
+    [mediaInfo.height, mediaInfo.width]
+  )
+  const videoSurfaceSx = useMemo<SxProps<Theme>>(() => {
+    if (isAudioFile) {
+      return {
+        width: 1,
+        height: 1
+      }
+    }
+
+    const aspectRatio =
+      mediaInfo.width > 0 && mediaInfo.height > 0
+        ? `${mediaInfo.width} / ${mediaInfo.height}`
+        : undefined
+
+    if (!aspectRatio) {
+      return {
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%'
+      }
+    }
+
+    if (mediaOrientation === 'landscape') {
+      return {
+        width: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        aspectRatio
+      }
+    }
+
+    if (mediaOrientation === 'portrait') {
+      return {
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        aspectRatio
+      }
+    }
+
+    return {
+      width: 'min(100%, 100vh)',
+      maxWidth: '100%',
+      maxHeight: '100%',
+      aspectRatio
+    }
+  }, [isAudioFile, mediaInfo.height, mediaInfo.width, mediaOrientation])
   const canGoPrevious = useMemo(
     () =>
       queue.length > 1 &&
@@ -565,8 +578,7 @@ export default function PlayerScreen(): React.JSX.Element {
     }
 
     setIsTransitioning(true)
-    const moved = await moveToPlayableIndex(nextIndex, 'next')
-    if (!moved) setIsTransitioning(false)
+    await moveToPlayableIndex(nextIndex, 'next')
   }, [moveToPlayableIndex, stopPlayback])
 
   const handlePrevious = useCallback(async (): Promise<void> => {
@@ -581,16 +593,14 @@ export default function PlayerScreen(): React.JSX.Element {
     }
 
     setIsTransitioning(true)
-    const moved = await moveToPlayableIndex(previousIndex, 'previous')
-    if (!moved) setIsTransitioning(false)
+    await moveToPlayableIndex(previousIndex, 'previous')
   }, [moveToPlayableIndex])
 
   const handleQueueItemClick = useCallback(
     async (index: number): Promise<void> => {
       if (index === currentIndexRef.current) return
       setIsTransitioning(true)
-      const moved = await moveToPlayableIndex(index, 'current')
-      if (!moved) setIsTransitioning(false)
+      await moveToPlayableIndex(index, 'current')
     },
     [moveToPlayableIndex]
   )
@@ -666,40 +676,25 @@ export default function PlayerScreen(): React.JSX.Element {
 
     let cancelled = false
 
-    void (async () => {
-      const results = await Promise.all(
-        paths.map(async (mediaPath) => {
-          const result = await window.api.readMediaSidecar(mediaPath)
-          return { mediaPath, result }
-        })
-      )
-
-      if (cancelled) return
-
-      const updates = new Map(
-        results
-          .filter(
-            ({ result }) =>
-              result.success && (result.title ?? result.artist ?? result.thumbnailPath)
-          )
-          .map(({ mediaPath, result }) => [mediaPath, result])
-      )
-
-      if (updates.size === 0) return
-
-      setQueue((prev) =>
-        prev.map((item) => {
-          const update = updates.get(item.mediaPath)
-          if (!update) return item
-          return {
-            ...item,
-            title: update.title ?? item.title,
-            artist: update.artist ?? item.artist,
-            thumbnailPath: update.thumbnailPath ?? item.thumbnailPath
-          }
-        })
-      )
-    })()
+    void Promise.all(
+      paths.map(async (mediaPath) => {
+        const result = await window.api.readMediaSidecar(mediaPath)
+        if (cancelled || !result.success) return
+        setQueue((prev) =>
+          prev.map((item) => {
+            if (item.mediaPath !== mediaPath) return item
+            const hasNewData = result.title ?? result.artist ?? result.thumbnailPath
+            if (!hasNewData) return item
+            return {
+              ...item,
+              title: result.title ?? item.title,
+              artist: result.artist ?? item.artist,
+              thumbnailPath: result.thumbnailPath ?? item.thumbnailPath
+            }
+          })
+        )
+      })
+    )
 
     return () => {
       cancelled = true
@@ -776,7 +771,7 @@ export default function PlayerScreen(): React.JSX.Element {
             videoRef={videoRef}
             src={videoSrc}
             isAudioFile={isAudioFile}
-            videoObjectFit={videoObjectFit}
+            surfaceSx={videoSurfaceSx}
             onError={handleVideoError}
             onLoadedMetadata={syncMediaReadyState}
             onCanPlay={syncMediaReadyState}
@@ -883,7 +878,6 @@ export default function PlayerScreen(): React.JSX.Element {
             canGoNext={canGoNext}
             nextItemLabel={nextItemLabel}
             seekbarRef={seekbarRef}
-            seekSliderSx={seekSliderSx}
             volSliderSx={volSliderSx}
             onOpenFolder={handleOpenFolder}
             onChangePlaybackRate={(rate) => {

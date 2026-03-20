@@ -1,5 +1,4 @@
 import { Box } from '@mui/material'
-import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import clamp from 'lodash/clamp'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -17,7 +16,6 @@ type PlayerSeekbarProps = {
   onSeekbarMouseLeave: () => void
   onSeekChange: (_: Event, val: number | number[]) => void
   onSeekCommit: (_: React.SyntheticEvent | Event, val: number | number[]) => void
-  seekSliderSx: SxProps<Theme>
 }
 
 export function PlayerSeekbar({

@@ -2,10 +2,6 @@ export function getPlayerSearchParamsFromHash(hash: string): URLSearchParams {
   return new URLSearchParams(hash.split('?')[1] || '')
 }
 
-export function getPlayerQueueIdFromHash(hash: string): string {
-  return getPlayerSearchParamsFromHash(hash).get('queueId') ?? ''
-}
-
 export function getPlayerPathsFromHash(hash: string): string[] {
   const rawPaths = getPlayerSearchParamsFromHash(hash).get('paths') ?? ''
   if (!rawPaths) return []

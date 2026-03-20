@@ -2,7 +2,7 @@ import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import clamp from 'lodash/clamp'
 
 import type { PlayerQueueItem, PlayerRepeatMode } from '../types/player.types'
-import type { MediaInfo, MediaKind } from '../types/player.types'
+import type { MediaInfo, MediaKind, MediaOrientation } from '../types/player.types'
 
 export { toMediaUrl }
 
@@ -30,6 +30,13 @@ export function resolveInitialMediaKind(extension: string): MediaKind {
 
 export function buildInitialMediaInfo(fileName: string): MediaInfo {
   return { fileName, duration: 0, width: 0, height: 0 }
+}
+
+export function resolveMediaOrientation(width: number, height: number): MediaOrientation {
+  if (width <= 0 || height <= 0) return 'unknown'
+  if (width > height) return 'landscape'
+  if (height > width) return 'portrait'
+  return 'square'
 }
 
 export function buildPlayerQueue(paths: string[]): PlayerQueueItem[] {
