@@ -19,7 +19,6 @@ interface AppAPI {
   openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
   fileExists: (path: string) => Promise<boolean>
   readMediaSidecar: (path: string) => Promise<ReadMediaSidecarResult>
-  getPlayerQueue: (queueId: string) => Promise<string[]>
 
   downloadsStart: () => Promise<{ success: boolean; message?: string }>
   downloadsPause: () => Promise<{ success: boolean; message?: string }>
