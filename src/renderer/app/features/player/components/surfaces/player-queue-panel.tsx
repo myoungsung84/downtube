@@ -134,8 +134,18 @@ export function PlayerQueuePanel({
             <Box
               key={`${item.mediaPath}-${index}`}
               ref={isCurrent ? currentItemRef : null}
+              component={isCurrent ? 'div' : 'button'}
+              tabIndex={isCurrent ? undefined : 0}
+              aria-label={label}
+              aria-current={isCurrent ? true : undefined}
               onClick={() => {
                 if (!isCurrent) onSelectIndex(index)
+              }}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (!isCurrent && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  onSelectIndex(index)
+                }
               }}
               sx={{
                 display: 'flex',
@@ -145,12 +155,21 @@ export function PlayerQueuePanel({
                 py: '9px',
                 borderRadius: '7px',
                 cursor: isCurrent ? 'default' : 'pointer',
+                background: 'transparent',
                 backgroundColor: (theme) =>
                   isCurrent ? alpha(theme.palette.error.main, 0.18) : 'transparent',
                 border: (theme) =>
                   `1px solid ${isCurrent ? alpha(theme.palette.error.main, 0.3) : 'transparent'}`,
+                width: '100%',
+                textAlign: 'left',
                 mb: '2px',
                 transition: 'background-color 0.12s, border-color 0.12s',
+                '&:focus-visible': isCurrent
+                  ? undefined
+                  : {
+                      outline: (theme) => `2px solid ${alpha(theme.palette.common.white, 0.5)}`,
+                      outlineOffset: '1px'
+                    },
                 '&:hover': isCurrent
                   ? undefined
                   : {

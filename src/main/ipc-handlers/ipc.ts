@@ -31,6 +31,9 @@ const SIDECAR_THUMBNAIL_EXTENSIONS = ['.jpg', '.png', '.webp'] as const
 const PLAYER_AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'])
 const PLAYER_SIZE_DEFAULT = { width: 1280, height: 720 } as const
 const PLAYER_SIZE_WIDE = { width: 1280, height: 560 } as const
+const PLAYER_MIN_WIDTH = 900
+const PLAYER_MIN_HEIGHT = 506
+const PLAYER_WINDOW_MARGIN = 80
 
 function safeSetHandler(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
   if (registeredHandlers.has(channel)) {
@@ -137,22 +140,28 @@ async function openPlayerWindow(
     return { success: false, message: 'Invalid player payload' }
   }
 
+  const existingPaths = paths.filter((p) => fs.existsSync(p))
+  if (existingPaths.length === 0) {
+    return { success: false, message: 'File not found' }
+  }
+
   if (playerWindow && !playerWindow.isDestroyed()) {
     playerWindow.close()
   }
 
-  const resolvedSize = await resolvePlayerWindowSize(paths[0])
+  const resolvedSize = await resolvePlayerWindowSize(existingPaths[0])
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
   const { width: waWidth, height: waHeight } = display.workArea
-  const MARGIN = 80
-  const initWidth = Math.min(resolvedSize.width, Math.max(900, waWidth - MARGIN))
-  const initHeight = Math.min(resolvedSize.height, Math.max(506, waHeight - MARGIN))
+  const availableWidth = waWidth - PLAYER_WINDOW_MARGIN
+  const availableHeight = waHeight - PLAYER_WINDOW_MARGIN
+  const initWidth = Math.min(resolvedSize.width, availableWidth)
+  const initHeight = Math.min(resolvedSize.height, availableHeight)
 
   playerWindow = new BrowserWindow({
     width: initWidth,
     height: initHeight,
-    minWidth: 900,
-    minHeight: 506,
+    minWidth: Math.min(PLAYER_MIN_WIDTH, availableWidth),
+    minHeight: Math.min(PLAYER_MIN_HEIGHT, availableHeight),
     useContentSize: true,
     show: false,
     backgroundColor: '#000000',
@@ -164,7 +173,7 @@ async function openPlayerWindow(
   })
 
   const devPort = mainWindow?.webContents.getURL().match(/localhost:(\d+)/)?.[1] ?? '5173'
-  const playerHash = `/player?${new URLSearchParams({ paths: JSON.stringify(paths) }).toString()}`
+  const playerHash = `/player?${new URLSearchParams({ paths: JSON.stringify(existingPaths) }).toString()}`
   const playerUrl = !app.isPackaged
     ? `http://localhost:${devPort}/#${playerHash}`
     : url.format({
