@@ -6,7 +6,7 @@ import type { ToastOptions, ToastSeverity } from './toast.types'
 
 type ToastState = {
   open: boolean
-  message: string
+  message: React.ReactNode
   severity: ToastSeverity
   duration: number
 }
@@ -28,7 +28,7 @@ export default function ToastProvider({
   }, [])
 
   const showToast = useCallback(
-    (message: string, severity: ToastSeverity = 'info', options?: ToastOptions) => {
+    (message: React.ReactNode, severity: ToastSeverity = 'info', options?: ToastOptions) => {
       setToast({
         open: true,
         message,
@@ -50,18 +50,35 @@ export default function ToastProvider({
         autoHideDuration={toast.duration}
         onClose={hideToast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        sx={{
+          maxWidth: 'calc(100vw - 32px)'
+        }}
       >
         <Alert
           severity={toast.severity}
           onClose={hideToast}
           variant="filled"
           sx={{
+            alignItems: 'flex-start',
             fontWeight: 600,
             boxShadow: 4,
             fontSize: '0.95rem',
-            minWidth: 300,
+            minWidth: { xs: 0, sm: 300 },
+            maxWidth: 'min(560px, calc(100vw - 32px))',
+            overflow: 'hidden',
             color: 'common.white',
-            '& .MuiAlert-message': { flex: 1 }
+            '& .MuiAlert-action': {
+              alignSelf: 'flex-start',
+              mt: -0.25,
+              mr: -0.5
+            },
+            '& .MuiAlert-message': {
+              flex: 1,
+              minWidth: 0,
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word'
+            }
           }}
         >
           {toast.message}
