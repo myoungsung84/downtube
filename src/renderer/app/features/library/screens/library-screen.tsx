@@ -205,6 +205,7 @@ export default function LibraryScreen(): React.JSX.Element {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const playerOpenInFlightRef = useRef(false)
   const lastPlayerOpenRef = useRef<{ itemId: string; at: number } | null>(null)
+  const pendingDeleteFrameRef = useRef<number | null>(null)
 
   const videoItems = useMemo(() => items.filter((i) => i.type === 'video'), [items])
   const audioItems = useMemo(() => items.filter((i) => i.type === 'audio'), [items])
@@ -236,6 +237,14 @@ export default function LibraryScreen(): React.JSX.Element {
   useEffect(() => {
     void loadItems()
   }, [loadItems])
+
+  useEffect(() => {
+    return () => {
+      if (pendingDeleteFrameRef.current !== null) {
+        window.cancelAnimationFrame(pendingDeleteFrameRef.current)
+      }
+    }
+  }, [])
 
   const handleOpenDownloadsFolder = async (): Promise<void> => {
     try {
@@ -708,7 +717,11 @@ export default function LibraryScreen(): React.JSX.Element {
 
             const item = pendingDeleteItem
             setPendingDeleteItem(null)
-            void handleDelete(item)
+            blurActiveElement()
+            pendingDeleteFrameRef.current = window.requestAnimationFrame(() => {
+              pendingDeleteFrameRef.current = null
+              void handleDelete(item)
+            })
           }
         }}
         slotProps={{
