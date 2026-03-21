@@ -215,7 +215,14 @@ export default function LibraryScreen(): React.JSX.Element {
       if (mode === 'refresh') setRefreshing(true)
       else setLoading(true)
       try {
-        setItems(await window.api.listLibraryItems())
+        const result = await window.api.listLibraryItems()
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'library:toast.load_failed'), 'error')
+          setItems([])
+          return
+        }
+
+        setItems(result.items)
       } catch {
         showToast(t('toast.load_failed'), 'error')
       } finally {

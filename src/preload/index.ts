@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
 import type { InitState } from '../types/init.types'
-import type { LibraryItem } from '../types/library.types'
+import type { ListLibraryItemsResult } from '../types/library.types'
 import type { ReadMediaSidecarResult } from '../types/media-sidecar.types'
 import type { PlayerOpenPayload } from '../types/player.types'
 import type {
@@ -38,7 +38,7 @@ const api = {
     ipcRenderer.invoke('download-set-type', payload),
 
   listDownloads: (): Promise<DownloadJob[]> => ipcRenderer.invoke('downloads-list'),
-  listLibraryItems: (): Promise<LibraryItem[]> => ipcRenderer.invoke('library-list'),
+  listLibraryItems: (): Promise<ListLibraryItemsResult> => ipcRenderer.invoke('library-list'),
   deleteLibraryItem: (filePath: string) => ipcRenderer.invoke('library-delete', filePath),
 
   stopDownload: (url: string) => ipcRenderer.invoke('download-stop', url),

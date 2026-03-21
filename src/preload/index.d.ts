@@ -3,7 +3,7 @@
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { AppResult } from '@src/types/error.types'
 import type { InitState } from '@src/types/init.types'
-import type { LibraryItem } from '@src/types/library.types'
+import type { ListLibraryItemsResult } from '@src/types/library.types'
 import type { ReadMediaSidecarResult } from '@src/types/media-sidecar.types'
 import type { PlayerOpenPayload } from '@src/types/player.types'
 import type {
@@ -41,7 +41,7 @@ interface AppAPI {
   removeDownload: (jobId: string) => Promise<AppResult>
 
   listDownloads: () => Promise<DownloadJob[]>
-  listLibraryItems: () => Promise<LibraryItem[]>
+  listLibraryItems: () => Promise<ListLibraryItemsResult>
   deleteLibraryItem: (filePath: string) => Promise<AppResult>
 
   onDownloadsEvent: (callback: (ev: DownloadQueueEvent) => void) => () => void

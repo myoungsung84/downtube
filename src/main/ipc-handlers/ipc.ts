@@ -6,6 +6,7 @@ import url from 'url'
 
 import type { AppResult } from '../../types/error.types'
 import type { InitState } from '../../types/init.types'
+import type { ListLibraryItemsResult } from '../../types/library.types'
 import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
 import type { PlayerOpenPayload } from '../../types/player.types'
 import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
@@ -166,20 +167,20 @@ function resolveSidecarThumbnailPath(filePath: string): string | undefined {
 
 async function readMediaSidecar(filePath: string): Promise<ReadMediaSidecarResult> {
   if (typeof filePath !== 'string' || filePath.trim().length === 0) {
-    return { success: false, message: 'Invalid path' }
+    return failureResult('common.invalid_request')
   }
 
   if (!isPathInsideDownloadDir(filePath)) {
-    return { success: false, message: 'Access denied: path is outside download directory' }
+    return failureResult('common.access_denied')
   }
 
   if (!fs.existsSync(filePath)) {
-    return { success: false, message: 'File not found' }
+    return failureResult('common.file_not_found')
   }
 
   const jsonPath = `${getSidecarBasePath(filePath)}.json`
   if (!fs.existsSync(jsonPath)) {
-    return { success: false, message: 'Sidecar not found' }
+    return failureResult('common.file_not_found')
   }
 
   try {
@@ -195,8 +196,7 @@ async function readMediaSidecar(filePath: string): Promise<ReadMediaSidecarResul
           ? raw.info.channel.trim() || undefined
           : undefined
 
-    return {
-      success: true,
+    return successResult({
       ...(title ? { title } : {}),
       ...(artist ? { artist } : {}),
       ...(raw.info ? { info: raw.info } : { info: null }),
@@ -213,12 +213,9 @@ async function readMediaSidecar(filePath: string): Promise<ReadMediaSidecarResul
         downloadedAt: typeof raw.downloadedAt === 'string' ? raw.downloadedAt : '',
         info: raw.info ?? null
       }
-    }
+    })
   } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Failed to read sidecar metadata'
-    }
+    return failureFromUnknown('common.unknown', error)
   }
 }
 
@@ -512,8 +509,17 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
   safeSetHandler('downloads-list', async () => downloadsQueue.getJobs())
 
-  safeSetHandler('library-list', async () => {
-    return listLibraryItems(getDownloadDir())
+  safeSetHandler('library-list', async (): Promise<ListLibraryItemsResult> => {
+    try {
+      const items = await listLibraryItems(getDownloadDir())
+      return successResult({ items })
+    } catch (error) {
+      log.error('Error listing library items:', error)
+      return {
+        success: false,
+        error: normalizeUnknownAppError('common.unknown', error)
+      }
+    }
   })
 
   safeSetHandler('library-delete', async (_, filePath: string) => {

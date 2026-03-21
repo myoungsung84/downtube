@@ -1,4 +1,5 @@
 import type { DownloadInfo, DownloadJob } from './download.types'
+import type { AppResult } from './error.types'
 
 export type MediaSidecarData = {
   id: string
@@ -11,12 +12,13 @@ export type MediaSidecarData = {
   info: DownloadInfo | null
 }
 
-export type ReadMediaSidecarResult = {
+export type ReadMediaSidecarData = {
   success: boolean
   title?: string
   artist?: string
   thumbnailPath?: string
   info?: DownloadInfo | null
   sidecar?: MediaSidecarData
-  message?: string
 }
+
+export type ReadMediaSidecarResult = AppResult<Omit<ReadMediaSidecarData, 'success'>>
