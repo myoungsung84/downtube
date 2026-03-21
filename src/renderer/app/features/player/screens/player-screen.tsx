@@ -25,19 +25,12 @@ import {
   isFiniteDuration,
   removeQueueItemAtIndex,
   resolveInitialMediaKind,
-  resolveMediaOrientation,
   resolveNextQueueIndex,
   resolvePreviousQueueIndex,
   sanitizePlaybackTime,
   toMediaUrl
 } from '../lib'
-import type {
-  MediaInfo,
-  MediaKind,
-  MediaOrientation,
-  PlayerQueueItem,
-  PlayerRepeatMode
-} from '../types/player.types'
+import type { MediaInfo, MediaKind, PlayerQueueItem, PlayerRepeatMode } from '../types/player.types'
 
 const volSliderSx: SxProps<Theme> = {
   color: 'common.white',
@@ -183,57 +176,6 @@ export default function PlayerScreen(): React.JSX.Element {
     () => currentItem?.artist?.trim() || undefined,
     [currentItem?.artist]
   )
-  const mediaOrientation = useMemo<MediaOrientation>(
-    () => resolveMediaOrientation(mediaInfo.width, mediaInfo.height),
-    [mediaInfo.height, mediaInfo.width]
-  )
-  const videoSurfaceSx = useMemo<SxProps<Theme>>(() => {
-    if (isAudioFile) {
-      return {
-        width: 1,
-        height: 1
-      }
-    }
-
-    const aspectRatio =
-      mediaInfo.width > 0 && mediaInfo.height > 0
-        ? `${mediaInfo.width} / ${mediaInfo.height}`
-        : undefined
-
-    if (!aspectRatio) {
-      return {
-        width: '100%',
-        height: '100%',
-        maxWidth: '100%',
-        maxHeight: '100%'
-      }
-    }
-
-    if (mediaOrientation === 'landscape') {
-      return {
-        width: '100%',
-        maxWidth: '100%',
-        maxHeight: '100%',
-        aspectRatio
-      }
-    }
-
-    if (mediaOrientation === 'portrait') {
-      return {
-        height: '100%',
-        maxWidth: '100%',
-        maxHeight: '100%',
-        aspectRatio
-      }
-    }
-
-    return {
-      width: 'min(100%, 100vh)',
-      maxWidth: '100%',
-      maxHeight: '100%',
-      aspectRatio
-    }
-  }, [isAudioFile, mediaInfo.height, mediaInfo.width, mediaOrientation])
   const canGoPrevious = useMemo(
     () =>
       queue.length > 1 &&
@@ -755,11 +697,10 @@ export default function PlayerScreen(): React.JSX.Element {
         }
       }}
       sx={{
-        width: '100vw',
-        height: '100vh',
+        position: 'fixed',
+        inset: 0,
         background: 'common.black',
         overflow: 'hidden',
-        position: 'relative',
         WebkitAppRegion: 'no-drag',
         cursor: uiVisible ? 'default' : 'none',
         userSelect: 'none'
@@ -771,7 +712,6 @@ export default function PlayerScreen(): React.JSX.Element {
             videoRef={videoRef}
             src={videoSrc}
             isAudioFile={isAudioFile}
-            surfaceSx={videoSurfaceSx}
             onError={handleVideoError}
             onLoadedMetadata={syncMediaReadyState}
             onCanPlay={syncMediaReadyState}
