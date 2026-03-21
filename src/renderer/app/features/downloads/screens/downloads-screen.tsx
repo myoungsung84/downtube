@@ -27,6 +27,40 @@ const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const
 const DOWNLOADS_RECENT_URLS_KEY = 'downloads.recentUrls' as const
 
+function renderDownloadsJobToast(title: string, description: string): React.JSX.Element {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Box
+        component="span"
+        title={title}
+        sx={{
+          display: 'block',
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {title}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          display: 'block',
+          minWidth: 0,
+          lineHeight: 1.4,
+          opacity: 0.92,
+          whiteSpace: 'normal',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word'
+        }}
+      >
+        {description}
+      </Box>
+    </Box>
+  )
+}
+
 export default function DownloadsScreen(): React.JSX.Element {
   const refUrl = useRef<HTMLInputElement>(null)
 
@@ -341,14 +375,23 @@ export default function DownloadsScreen(): React.JSX.Element {
 
       if (ev.type === 'job-updated') {
         const oldJob = jobsRef.current.find((j) => j.id === ev.job.id)
+        const jobTitle = inferTitle(ev.job)
 
         setJobs((prev) => sortJobs(prev.map((j) => (j.id !== ev.job.id ? j : ev.job))))
 
         if (oldJob?.status !== 'completed' && ev.job.status === 'completed') {
-          showToast(t('toast.job.completed', { title: inferTitle(ev.job) }), 'success')
+          showToast(renderDownloadsJobToast(jobTitle, t('job.status.completed')), 'success', {
+            duration: 4000
+          })
         }
         if (oldJob?.status !== 'failed' && ev.job.status === 'failed') {
-          showToast(`❌ ${resolveAppErrorMessage(ev.job.error)}`, 'error')
+          showToast(
+            renderDownloadsJobToast(jobTitle, resolveAppErrorMessage(ev.job.error)),
+            'error',
+            {
+              duration: 4500
+            }
+          )
         }
 
         return

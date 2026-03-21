@@ -205,6 +205,8 @@ export default function LibraryScreen(): React.JSX.Element {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const playerOpenInFlightRef = useRef(false)
   const lastPlayerOpenRef = useRef<{ itemId: string; at: number } | null>(null)
+  const lastMenuTriggerRef = useRef<HTMLElement | null>(null)
+  const pendingDeleteFrameRef = useRef<number | null>(null)
 
   const videoItems = useMemo(() => items.filter((i) => i.type === 'video'), [items])
   const audioItems = useMemo(() => items.filter((i) => i.type === 'audio'), [items])
@@ -237,6 +239,14 @@ export default function LibraryScreen(): React.JSX.Element {
     void loadItems()
   }, [loadItems])
 
+  useEffect(() => {
+    return () => {
+      if (pendingDeleteFrameRef.current !== null) {
+        window.cancelAnimationFrame(pendingDeleteFrameRef.current)
+      }
+    }
+  }, [])
+
   const handleOpenDownloadsFolder = async (): Promise<void> => {
     try {
       const result = await window.api.openDownloadDir()
@@ -261,15 +271,16 @@ export default function LibraryScreen(): React.JSX.Element {
     }
   }
 
-  const closeMenu = useCallback((): void => {
-    setMenuState({ phase: 'idle' })
-  }, [])
-
   const blurActiveElement = useCallback((): void => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
   }, [])
+
+  const closeMenu = useCallback((): void => {
+    blurActiveElement()
+    setMenuState({ phase: 'idle' })
+  }, [blurActiveElement])
 
   const handleDelete = async (item: LibraryItem): Promise<void> => {
     const ok = await confirm({
@@ -302,11 +313,10 @@ export default function LibraryScreen(): React.JSX.Element {
 
   const handleRequestDelete = useCallback(
     (item: LibraryItem): void => {
-      blurActiveElement()
       setPendingDeleteItem(item)
       closeMenu()
     },
-    [blurActiveElement, closeMenu]
+    [closeMenu]
   )
 
   const handleOpenPlayer = async (item: LibraryItem): Promise<void> => {
@@ -629,6 +639,7 @@ export default function LibraryScreen(): React.JSX.Element {
                             disabled={isDeleting}
                             onClick={(e) => {
                               e.stopPropagation()
+                              lastMenuTriggerRef.current = e.currentTarget
                               setMenuState({ phase: 'open', anchorEl: e.currentTarget, item })
                             }}
                             sx={{
@@ -704,11 +715,19 @@ export default function LibraryScreen(): React.JSX.Element {
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         TransitionProps={{
           onExited: () => {
-            if (!pendingDeleteItem) return
+            if (!pendingDeleteItem) {
+              if (lastMenuTriggerRef.current?.isConnected) {
+                lastMenuTriggerRef.current.focus()
+              }
+              return
+            }
 
             const item = pendingDeleteItem
             setPendingDeleteItem(null)
-            void handleDelete(item)
+            pendingDeleteFrameRef.current = window.requestAnimationFrame(() => {
+              pendingDeleteFrameRef.current = null
+              void handleDelete(item)
+            })
           }
         }}
         slotProps={{

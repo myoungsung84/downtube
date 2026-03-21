@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning'
 
 export type ToastOptions = {
@@ -5,6 +7,6 @@ export type ToastOptions = {
 }
 
 export type ToastContextValue = {
-  showToast: (message: string, severity?: ToastSeverity, options?: ToastOptions) => void
+  showToast: (message: ReactNode, severity?: ToastSeverity, options?: ToastOptions) => void
   hideToast: () => void
 }
