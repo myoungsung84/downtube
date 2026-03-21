@@ -27,6 +27,7 @@ import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { useToast } from '@renderer/shared/hooks/use-toast'
+import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import { toMediaUrl } from '@renderer/shared/lib/media-url'
 import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
 import dayjs from 'dayjs'
@@ -233,7 +234,10 @@ export default function LibraryScreen(): React.JSX.Element {
     try {
       const result = await window.api.openDownloadDir()
       if (result && 'success' in result && !result.success) {
-        showToast(result.message ?? t('toast.open_downloads_folder_failed'), 'error')
+        showToast(
+          resolveAppErrorMessage(result.error, 'library:toast.open_downloads_folder_failed'),
+          'error'
+        )
       }
     } catch {
       showToast(t('toast.open_downloads_folder_failed'), 'error')
@@ -242,7 +246,12 @@ export default function LibraryScreen(): React.JSX.Element {
 
   const handleOpenFileLocation = async (item: LibraryItem): Promise<void> => {
     const result = await window.api.openDownloadItem(item.filePath)
-    if (!result.success) showToast(result.message ?? t('toast.open_file_location_failed'), 'error')
+    if (!result.success) {
+      showToast(
+        resolveAppErrorMessage(result.error, 'library:toast.open_file_location_failed'),
+        'error'
+      )
+    }
   }
 
   const closeMenu = useCallback((): void => {
@@ -271,7 +280,7 @@ export default function LibraryScreen(): React.JSX.Element {
     try {
       const result = await window.api.deleteLibraryItem(item.filePath)
       if (!result.success) {
-        showToast(result.message ?? t('toast.delete_failed'), 'error')
+        showToast(resolveAppErrorMessage(result.error, 'library:toast.delete_failed'), 'error')
         return
       }
 
@@ -317,7 +326,9 @@ export default function LibraryScreen(): React.JSX.Element {
 
     try {
       const result = await window.api.openPlayer({ paths: queuePaths })
-      if (!result.success) showToast(result.message ?? t('toast.open_player_failed'), 'error')
+      if (!result.success) {
+        showToast(resolveAppErrorMessage(result.error, 'library:toast.open_player_failed'), 'error')
+      }
     } finally {
       playerOpenInFlightRef.current = false
     }

@@ -2,6 +2,7 @@ import { Box, Stack } from '@mui/material'
 import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { useToast } from '@renderer/shared/hooks/use-toast'
+import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { RecentUrlHistoryItem } from '@src/types/settings.types'
 import clamp from 'lodash/clamp'
@@ -13,7 +14,6 @@ import DownloadsJobRowSkeleton from '../components/downloads-job-row-skeleton'
 import DownloadsQueuePanel from '../components/downloads-queue-panel'
 import DownloadsUrlPanel from '../components/downloads-url-panel'
 import {
-  getErrorMessage,
   inferTitle,
   isPlaylistUrl,
   isYoutubeUrl,
@@ -155,29 +155,44 @@ export default function DownloadsScreen(): React.JSX.Element {
     try {
       if (kind === 'playlist') {
         const clampedLimit = clamp(playlistLimit, 1, 500)
-        await window.api.downloadPlaylist({
+        const result = await window.api.downloadPlaylist({
           url,
           type: defaultType,
           playlistLimit: clampedLimit
         })
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'downloads:toast.submit.failed'), 'error')
+          return
+        }
         showToast(t('toast.submit.playlist_added', { count: clampedLimit }), 'success')
       } else {
-        if (defaultType === 'audio') await window.api.downloadAudio(url)
-        else await window.api.download(url)
+        const result =
+          defaultType === 'audio'
+            ? await window.api.downloadAudio(url)
+            : await window.api.download(url)
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'downloads:toast.submit.failed'), 'error')
+          return
+        }
 
         showToast(t('toast.submit.single_added'), 'success')
       }
 
       setInputValue('')
     } catch {
-      showToast(t('toast.submit.failed'), 'error')
+      showToast(resolveAppErrorMessage(undefined, 'downloads:toast.submit.failed'), 'error')
     } finally {
       setSubmitting(null)
     }
   }
 
   const handleToggleType = async (jobId: string, type: 'video' | 'audio'): Promise<void> => {
-    await window.api.setDownloadType({ id: jobId, type })
+    const result = await window.api.setDownloadType({ id: jobId, type })
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+      return
+    }
+
     showToast(
       t('toast.actions.type_changed', {
         type: t(type === 'audio' ? 'media.audio' : 'media.video')
@@ -187,12 +202,26 @@ export default function DownloadsScreen(): React.JSX.Element {
   }
 
   const handleStop = async (job: DownloadJob): Promise<void> => {
-    await window.api.stopDownload(job.url)
+    const result = await window.api.stopDownload(job.url)
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+      return
+    }
+
     showToast(t('toast.actions.stopped'), 'info')
   }
 
   const handleRetry = async (job: DownloadJob): Promise<void> => {
-    if (job.status === 'cancelled') await window.api.removeDownload(job.id)
+    if (job.status === 'cancelled') {
+      const removeResult = await window.api.removeDownload(job.id)
+      if (!removeResult.success) {
+        showToast(
+          resolveAppErrorMessage(removeResult.error, 'downloads:toast.retry.failed'),
+          'error'
+        )
+        return
+      }
+    }
 
     if (!isYoutubeUrl(job.url)) {
       showToast(t('toast.retry.invalid_url'), 'warning')
@@ -204,20 +233,32 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     try {
       if (kind === 'playlist') {
-        await window.api.downloadPlaylist({
+        const result = await window.api.downloadPlaylist({
           url: job.url,
           type: job.type,
           playlistLimit: clamp(playlistLimit, 1, 500)
         })
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'downloads:toast.retry.failed'), 'error')
+          return
+        }
       } else if (job.type === 'audio') {
-        await window.api.downloadAudio(job.url)
+        const result = await window.api.downloadAudio(job.url)
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'downloads:toast.retry.failed'), 'error')
+          return
+        }
       } else {
-        await window.api.download(job.url)
+        const result = await window.api.download(job.url)
+        if (!result.success) {
+          showToast(resolveAppErrorMessage(result.error, 'downloads:toast.retry.failed'), 'error')
+          return
+        }
       }
 
       showToast(t('toast.retry.started'), 'info')
     } catch {
-      showToast(t('toast.retry.failed'), 'error')
+      showToast(resolveAppErrorMessage(undefined, 'downloads:toast.retry.failed'), 'error')
     } finally {
       setSubmitting(null)
     }
@@ -225,7 +266,12 @@ export default function DownloadsScreen(): React.JSX.Element {
 
   const handleDelete = async (job: DownloadJob): Promise<void> => {
     if (job.status === 'running') return
-    await window.api.removeDownload(job.id)
+    const result = await window.api.removeDownload(job.id)
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+      return
+    }
+
     showToast(t('toast.actions.deleted'), 'info')
   }
 
@@ -238,18 +284,34 @@ export default function DownloadsScreen(): React.JSX.Element {
 
     const res = await window.api.openPlayer({ paths: [filePath] })
     if (!res.success) {
-      console.error('Failed to open player:', res.message)
-      showToast(res.message ?? t('toast.player.unavailable'), 'error')
+      showToast(resolveAppErrorMessage(res.error, 'downloads:toast.player.unavailable'), 'error')
+    }
+  }
+
+  const handleOpenDownloadDir = async (): Promise<void> => {
+    const result = await window.api.openDownloadDir()
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
     }
   }
 
   const handleStartQueue = async (): Promise<void> => {
-    await window.api.downloadsStart()
+    const result = await window.api.downloadsStart()
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+      return
+    }
+
     showToast(t('toast.queue.started'), 'success')
   }
 
   const handlePauseQueue = async (): Promise<void> => {
-    await window.api.downloadsPause()
+    const result = await window.api.downloadsPause()
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+      return
+    }
+
     showToast(t('toast.queue.paused'), 'info')
   }
 
@@ -286,8 +348,7 @@ export default function DownloadsScreen(): React.JSX.Element {
           showToast(t('toast.job.completed', { title: inferTitle(ev.job) }), 'success')
         }
         if (oldJob?.status !== 'failed' && ev.job.status === 'failed') {
-          const errorInfo = getErrorMessage(ev.job.error)
-          showToast(`❌ ${t(errorInfo.titleKey as never)}`, 'error')
+          showToast(`❌ ${resolveAppErrorMessage(ev.job.error)}`, 'error')
         }
 
         return
@@ -338,7 +399,7 @@ export default function DownloadsScreen(): React.JSX.Element {
           canStart={canStart}
           canPause={canPause}
           hydrating={hydrating}
-          onOpenDir={() => window.api.openDownloadDir()}
+          onOpenDir={() => void handleOpenDownloadDir()}
           onStartQueue={() => void handleStartQueue()}
           onPauseQueue={() => void handlePauseQueue()}
         />

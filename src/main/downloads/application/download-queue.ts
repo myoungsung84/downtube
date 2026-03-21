@@ -1,7 +1,10 @@
 import { randomUUID } from 'crypto'
 
+import type { AppResult } from '../../../types/error.types'
+import { failureResult, successResult } from '../../common/app-error'
 import { parsePlaylistInfos } from '../adapters/yt-dlp/yt-dlp-playlist'
 import type { DownloadJob, DownloadQueueEvent } from '../types'
+import { normalizeDownloadsError } from './downloads-error'
 import { isDownloadStoppedError, runDownloadJob } from './run-download-job'
 import { stopCurrentJobAndCleanup } from './stop-download-job'
 
@@ -67,17 +70,17 @@ export class DownloadQueue {
     this.emitQueueState(this.currentRunningJobId())
   }
 
-  setType(jobId: string, type: DownloadJob['type']): { success: boolean; message?: string } {
+  setType(jobId: string, type: DownloadJob['type']): AppResult {
     const job = this.jobs.find((j) => j.id === jobId)
-    if (!job) return { success: false, message: 'Job not found' }
+    if (!job) return failureResult('common.not_found')
 
     if (job.status !== 'queued') {
-      return { success: false, message: 'Only queued job can change type' }
+      return failureResult('common.invalid_request')
     }
 
     job.type = type
     this.emit({ type: 'job-updated', job })
-    return { success: true }
+    return successResult()
   }
 
   async enqueuePlaylist(args: {
@@ -123,34 +126,34 @@ export class DownloadQueue {
     return { added, limited }
   }
 
-  async cancelByUrl(url: string): Promise<{ success: boolean; message?: string }> {
+  async cancelByUrl(url: string): Promise<AppResult> {
     const job = this.jobs.find(
       (j) => j.url === url && (j.status === 'queued' || j.status === 'running')
     )
-    if (!job) return { success: false, message: 'No download task found' }
+    if (!job) return failureResult('common.not_found')
 
     if (job.status === 'queued') {
       job.status = 'cancelled'
       this.emit({ type: 'job-updated', job })
-      return { success: true }
+      return successResult()
     }
 
     if (job.status === 'running') {
       job.status = 'cancelled'
       this.emit({ type: 'job-updated', job })
       await stopCurrentJobAndCleanup(job)
-      return { success: true }
+      return successResult()
     }
 
-    return { success: false, message: 'Cannot cancel this job' }
+    return failureResult('common.invalid_request')
   }
 
-  remove(id: string): { success: boolean; message?: string } {
+  remove(id: string): AppResult {
     const job = this.jobs.find((j) => j.id === id)
-    if (!job) return { success: false, message: 'Job not found' }
+    if (!job) return failureResult('common.not_found')
 
     if (job.status === 'running') {
-      return { success: false, message: 'Cannot remove running job' }
+      return failureResult('common.invalid_request')
     }
 
     this.jobs = this.jobs.filter((j) => j.id !== id)
@@ -158,7 +161,7 @@ export class DownloadQueue {
 
     this.emitQueueState(this.currentRunningJobId())
 
-    return { success: true }
+    return successResult()
   }
 
   private update(jobId: string, patch: Partial<DownloadJob>): void {
@@ -215,7 +218,11 @@ export class DownloadQueue {
         return
       }
       if (next.status !== 'cancelled') {
-        this.update(next.id, { status: 'failed', finishedAt: Date.now(), error: String(e) })
+        this.update(next.id, {
+          status: 'failed',
+          finishedAt: Date.now(),
+          error: normalizeDownloadsError(e)
+        })
       }
     } finally {
       this.running = false

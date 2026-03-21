@@ -4,13 +4,21 @@ import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import url from 'url'
 
+import type { AppResult } from '../../types/error.types'
 import type { InitState } from '../../types/init.types'
 import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
 import type { PlayerOpenPayload } from '../../types/player.types'
 import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
+import {
+  failureFromUnknown,
+  failureResult,
+  normalizeUnknownAppError,
+  successResult
+} from '../common/app-error'
 import { initializeApp } from '../common/initialize-app'
 import { downloadsQueue, onDownloadsEvent } from '../downloads'
 import { downloadInfo } from '../downloads/adapters/yt-dlp/yt-dlp-info'
+import { normalizeDownloadsError } from '../downloads/application/downloads-error'
 import type { DownloadJob } from '../downloads/types'
 import { deleteLibraryItem, listLibraryItems } from '../library/library'
 import {
@@ -82,15 +90,15 @@ function parsePlayerPaths(payload: PlayerOpenPayload): string[] | null {
 async function openPlayerWindow(
   mainWindow: BrowserWindow,
   payload: PlayerOpenPayload
-): Promise<{ success: boolean; message?: string }> {
+): Promise<AppResult> {
   const paths = parsePlayerPaths(payload)
   if (!paths) {
-    return { success: false, message: 'Invalid player payload' }
+    return failureResult('common.invalid_request')
   }
 
   const existingPaths = paths.filter((p) => fs.existsSync(p))
   if (existingPaths.length === 0) {
-    return { success: false, message: 'File not found' }
+    return failureResult('common.file_not_found')
   }
 
   if (playerWindow && !playerWindow.isDestroyed()) {
@@ -141,7 +149,7 @@ async function openPlayerWindow(
     playerWindow.webContents.openDevTools({ mode: 'detach' })
   }
 
-  return { success: true }
+  return successResult()
 }
 
 function getSidecarBasePath(filePath: string): string {
@@ -264,8 +272,10 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         return state
       })
       .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
-        const state: InitState = { status: 'error', message }
+        const state: InitState = {
+          status: 'error',
+          error: normalizeUnknownAppError('init.initialization_failed', error)
+        }
         broadcastInitState(state)
         return state
       })
@@ -294,7 +304,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
   safeSetHandler('player-open', async (_, payload: PlayerOpenPayload) => {
     if (playerOpenInFlight) {
-      return { success: true }
+      return successResult()
     }
 
     playerOpenInFlight = true
@@ -302,10 +312,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     try {
       return await openPlayerWindow(mainWindow, payload)
     } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to open player'
-      }
+      return failureFromUnknown('player.open_failed', error)
     } finally {
       playerOpenInFlight = false
     }
@@ -320,15 +327,12 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
       const result = await shell.openPath(downloadDir)
       if (result) {
-        return { success: false, message: result || 'Failed to open download directory' }
+        return failureResult('common.open_failed', result)
       }
 
-      return { success: true }
+      return successResult()
     } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to open download directory'
-      }
+      return failureFromUnknown('common.open_failed', error)
     }
   })
 
@@ -336,31 +340,25 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     try {
       const result = await shell.openPath(getDownloadsRootDir())
       if (result) {
-        return { success: false, message: result || 'Failed to open downloads root directory' }
+        return failureResult('common.open_failed', result)
       }
 
-      return { success: true }
+      return successResult()
     } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to open downloads root directory'
-      }
+      return failureFromUnknown('common.open_failed', error)
     }
   })
 
   safeSetHandler('download-item-open', async (_, filePath: string) => {
     try {
       if (typeof filePath !== 'string' || filePath.trim().length === 0) {
-        return { success: false, message: 'Invalid path' }
+        return failureResult('common.invalid_request')
       }
 
       shell.showItemInFolder(filePath)
-      return { success: true }
+      return successResult()
     } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to open download item'
-      }
+      return failureFromUnknown('common.open_failed', error)
     }
   })
 
@@ -369,19 +367,24 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   safeSetHandler('media-sidecar-read', async (_, filePath: string) => readMediaSidecar(filePath))
 
   safeSetHandler('download-video', async (_, url: string) => {
-    if (downloadsQueue.hasUrl(url)) {
-      return { success: false, message: 'Already downloading' }
+    const normalizedUrl = typeof url === 'string' ? url.trim() : ''
+    if (!normalizedUrl) {
+      return failureResult('downloads.invalid_url')
+    }
+
+    if (downloadsQueue.hasUrl(normalizedUrl)) {
+      return failureResult('downloads.already_in_queue')
     }
 
     const downloadDir = getDownloadDir()
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_VOD`
 
-    const info = await downloadInfo(url).catch(() => undefined)
+    const info = await downloadInfo(normalizedUrl).catch(() => undefined)
 
     const job: DownloadJob = {
       id: `${timestamp}:${Math.random().toString(16).slice(2)}`,
-      url,
+      url: normalizedUrl,
       type: 'video',
       status: 'queued',
       filename: baseName,
@@ -392,23 +395,28 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
 
     downloadsQueue.enqueue(job)
-    return { success: true }
+    return successResult()
   })
 
   safeSetHandler('download-audio', async (_, url: string) => {
-    if (downloadsQueue.hasUrl(url)) {
-      return { success: false, message: 'Already downloading' }
+    const normalizedUrl = typeof url === 'string' ? url.trim() : ''
+    if (!normalizedUrl) {
+      return failureResult('downloads.invalid_url')
+    }
+
+    if (downloadsQueue.hasUrl(normalizedUrl)) {
+      return failureResult('downloads.already_in_queue')
     }
 
     const downloadDir = getDownloadDir()
     const timestamp = Math.floor(Date.now() / 1000).toString()
     const baseName = `${timestamp}_AUD`
 
-    const info = await downloadInfo(url).catch(() => undefined)
+    const info = await downloadInfo(normalizedUrl).catch(() => undefined)
 
     const job: DownloadJob = {
       id: `${timestamp}:${Math.random().toString(16).slice(2)}`,
-      url,
+      url: normalizedUrl,
       type: 'audio',
       status: 'queued',
       filename: baseName,
@@ -419,7 +427,7 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
 
     downloadsQueue.enqueue(job)
-    return { success: true }
+    return successResult()
   })
 
   safeSetHandler(
@@ -433,24 +441,39 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
         filenamePrefix?: string
       }
     ) => {
-      const playlistUrl = payload.url
-      const type = payload.type
-      const playlistLimit = payload.playlistLimit ?? 50
+      try {
+        const playlistUrl = typeof payload?.url === 'string' ? payload.url.trim() : ''
+        const type = payload?.type
+        const playlistLimit = payload?.playlistLimit ?? 50
 
-      const downloadDir = getDownloadDir()
+        if (!playlistUrl) {
+          return failureResult('downloads.invalid_url')
+        }
 
-      const timestamp = Math.floor(Date.now() / 1000).toString()
-      const filenamePrefix = payload.filenamePrefix ?? `${timestamp}_PL`
+        if (type !== 'video' && type !== 'audio') {
+          return failureResult('common.invalid_request')
+        }
 
-      const res = await downloadsQueue.enqueuePlaylist({
-        playlistUrl,
-        type,
-        outputDir: downloadDir,
-        filenamePrefix,
-        playlistLimit
-      })
+        const downloadDir = getDownloadDir()
 
-      return { success: true, ...res }
+        const timestamp = Math.floor(Date.now() / 1000).toString()
+        const filenamePrefix = payload.filenamePrefix ?? `${timestamp}_PL`
+
+        const res = await downloadsQueue.enqueuePlaylist({
+          playlistUrl,
+          type,
+          outputDir: downloadDir,
+          filenamePrefix,
+          playlistLimit
+        })
+
+        return successResult(res)
+      } catch (error) {
+        return {
+          success: false,
+          error: normalizeDownloadsError(error)
+        }
+      }
     }
   )
 
@@ -466,24 +489,24 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
       return await downloadsQueue.cancelByUrl(url)
     } catch (error) {
       log.error('Error stopping download:', error)
-      return { success: false, message: 'Failed to stop download' }
+      return failureFromUnknown('downloads.download_failed', error)
     }
   })
 
   safeSetHandler('download-remove', async (_, payload: { id: string }) => {
     try {
       const job = downloadsQueue.getJob(payload.id)
-      if (!job) return { success: false, message: 'Job not found' }
+      if (!job) return failureResult('common.not_found')
 
       if (job.status === 'running') {
-        return { success: false, message: 'Cannot remove running job' }
+        return failureResult('common.invalid_request')
       }
 
       downloadsQueue.remove(payload.id)
-      return { success: true }
+      return successResult()
     } catch (error) {
       log.error('Error removing download job:', error)
-      return { success: false, message: 'Failed to remove download job' }
+      return failureFromUnknown('downloads.download_failed', error)
     }
   })
 
@@ -496,23 +519,20 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
   safeSetHandler('library-delete', async (_, filePath: string) => {
     try {
       await deleteLibraryItem(getDownloadDir(), filePath)
-      return { success: true }
+      return successResult()
     } catch (error) {
       log.error('Error deleting library item:', error)
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to delete file'
-      }
+      return failureFromUnknown('library.delete_failed', error)
     }
   })
 
   safeSetHandler('downloads-start', async () => {
     downloadsQueue.start()
-    return { success: true }
+    return successResult()
   })
 
   safeSetHandler('downloads-pause', async () => {
     await downloadsQueue.pause()
-    return { success: true }
+    return successResult()
   })
 }

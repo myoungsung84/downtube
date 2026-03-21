@@ -4,6 +4,35 @@
     "close": "Close",
     "confirm": "Confirm"
   },
+  "errors": {
+    "common": {
+      "access_denied": "You do not have permission to complete this request.",
+      "file_not_found": "File not found.",
+      "invalid_request": "This request could not be processed.",
+      "network": "Check your network connection and try again.",
+      "not_found": "The requested item could not be found.",
+      "open_failed": "Could not open the requested item.",
+      "timeout": "The request timed out. Please try again.",
+      "unknown": "An unknown error occurred."
+    },
+    "downloads": {
+      "age_restricted": "This age-restricted video cannot be downloaded right now.",
+      "already_in_queue": "This URL is already in the download list.",
+      "download_failed": "Download failed.",
+      "invalid_url": "Check that the download URL is valid.",
+      "private_video": "Private videos cannot be downloaded.",
+      "video_unavailable": "This video is unavailable and could not be downloaded."
+    },
+    "init": {
+      "initialization_failed": "App initialization failed."
+    },
+    "library": {
+      "delete_failed": "Could not delete the file."
+    },
+    "player": {
+      "open_failed": "Could not open the player."
+    }
+  },
   "media": {
     "audio": "Audio",
     "video": "Video"

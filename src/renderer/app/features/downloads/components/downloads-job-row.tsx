@@ -23,6 +23,7 @@ import {
 import AppTooltip from '@renderer/shared/components/ui/app-tooltip'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
+import { resolveAppErrorDetail, resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import type { DownloadInfo, DownloadJob } from '@src/types/download.types'
 import clamp from 'lodash/clamp'
 import React from 'react'
@@ -30,7 +31,6 @@ import React from 'react'
 import {
   formatDuration,
   formatPercent,
-  getErrorMessage,
   inferTitle,
   resolveDownloadStatus,
   statusTone
@@ -76,7 +76,7 @@ export default function DownloadsJobRow(props: {
   const canPlay = job.status === 'completed' && Boolean(job.finalFilePath ?? job.outputFile)
 
   const percent = clamp(job.progress?.percent ?? 0, 0, 100)
-  const errorInfo = job.error ? getErrorMessage(job.error) : null
+  const errorMessage = job.error ? resolveAppErrorMessage(job.error) : null
 
   const statusMeta = resolveDownloadStatus(job.status)
   const StatusIcon = statusMeta.icon
@@ -312,7 +312,7 @@ export default function DownloadsJobRow(props: {
 
             <Stack sx={{ px: 2, pb: 1.5 }} spacing={0.75}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
-                {errorInfo ? (
+                {errorMessage ? (
                   <Stack
                     direction="row"
                     spacing={0.75}
@@ -324,13 +324,9 @@ export default function DownloadsJobRow(props: {
                       variant="caption"
                       noWrap
                       fontWeight={600}
-                      title={
-                        errorInfo.descriptionKey
-                          ? t(errorInfo.descriptionKey as never)
-                          : errorInfo.descriptionFallback
-                      }
+                      title={resolveAppErrorDetail(job.error) ?? errorMessage}
                     >
-                      {t(errorInfo.titleKey as never)}
+                      {errorMessage}
                     </Typography>
                   </Stack>
                 ) : (

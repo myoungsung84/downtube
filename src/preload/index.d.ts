@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
+import type { AppResult } from '@src/types/error.types'
 import type { InitState } from '@src/types/init.types'
 import type { LibraryItem } from '@src/types/library.types'
 import type { ReadMediaSidecarResult } from '@src/types/media-sidecar.types'
@@ -13,38 +14,35 @@ import type {
 } from '@src/types/settings.types'
 
 interface AppAPI {
-  openPlayer: (payload: PlayerOpenPayload) => Promise<{ success: boolean; message?: string }>
-  openDownloadDir: () => Promise<{ success: boolean; message?: string }>
-  openDownloadsRootDir: () => Promise<{ success: boolean; message?: string }>
-  openDownloadItem: (path: string) => Promise<{ success: boolean; message?: string }>
+  openPlayer: (payload: PlayerOpenPayload) => Promise<AppResult>
+  openDownloadDir: () => Promise<AppResult>
+  openDownloadsRootDir: () => Promise<AppResult>
+  openDownloadItem: (path: string) => Promise<AppResult>
   fileExists: (path: string) => Promise<boolean>
   readMediaSidecar: (path: string) => Promise<ReadMediaSidecarResult>
 
-  downloadsStart: () => Promise<{ success: boolean; message?: string }>
-  downloadsPause: () => Promise<{ success: boolean; message?: string }>
+  downloadsStart: () => Promise<AppResult>
+  downloadsPause: () => Promise<AppResult>
 
-  download: (url: string) => Promise<{ success: boolean; message?: string }>
-  downloadAudio: (url: string) => Promise<{ success: boolean; message?: string }>
+  download: (url: string) => Promise<AppResult>
+  downloadAudio: (url: string) => Promise<AppResult>
 
   downloadPlaylist: (payload: {
     url: string
     type: 'video' | 'audio'
     playlistLimit?: number
     filenamePrefix?: string
-  }) => Promise<{ success: boolean; added?: number; limited?: boolean; message?: string }>
+  }) => Promise<AppResult<{ added: number; limited: boolean }>>
 
-  setDownloadType: (payload: { id: string; type: 'video' | 'audio' }) => Promise<{
-    success: boolean
-    message?: string
-  }>
+  setDownloadType: (payload: { id: string; type: 'video' | 'audio' }) => Promise<AppResult>
 
-  stopDownload: (url: string) => Promise<{ success: boolean; message?: string }>
+  stopDownload: (url: string) => Promise<AppResult>
 
-  removeDownload: (jobId: string) => Promise<{ success: boolean; message?: string }>
+  removeDownload: (jobId: string) => Promise<AppResult>
 
   listDownloads: () => Promise<DownloadJob[]>
   listLibraryItems: () => Promise<LibraryItem[]>
-  deleteLibraryItem: (filePath: string) => Promise<{ success: boolean; message?: string }>
+  deleteLibraryItem: (filePath: string) => Promise<AppResult>
 
   onDownloadsEvent: (callback: (ev: DownloadQueueEvent) => void) => () => void
 

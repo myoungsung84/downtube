@@ -353,7 +353,11 @@ export function runDownloadJob(
 
       onProgress({ current, percent: 0 })
 
+      const stderrChunks: string[] = []
       attachYtDlpOutputListeners(proc, job, current, (text) => sendPercent(current, text))
+      proc.stderr.on('data', (data) => {
+        stderrChunks.push(data.toString())
+      })
 
       await new Promise<void>((res, rej) => {
         proc.on('error', (err) => {
@@ -363,7 +367,17 @@ export function runDownloadJob(
 
         proc.on('close', (code) => {
           if (task.stopRequested) return rej(new DownloadStoppedError(current))
-          code === 0 ? res() : rej(new Error(`${current} download failed with exit code ${code}`))
+          if (code === 0) {
+            res()
+            return
+          }
+
+          const tail = stderrChunks.join('').trim().slice(-2000)
+          rej(
+            new Error(
+              `${current} download failed with exit code ${code}${tail ? `\n\n${tail}` : ''}`
+            )
+          )
         })
       })
     })
