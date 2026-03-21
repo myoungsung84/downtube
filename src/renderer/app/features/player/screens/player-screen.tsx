@@ -2,6 +2,8 @@ import { Box } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
+import { useToast } from '@renderer/shared/hooks/use-toast'
+import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import clamp from 'lodash/clamp'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -84,6 +86,7 @@ function resolveCandidateIndex(
 
 export default function PlayerScreen(): React.JSX.Element {
   const { t } = useI18n('player')
+  const { showToast } = useToast()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -403,8 +406,11 @@ export default function PlayerScreen(): React.JSX.Element {
 
   const handleOpenFolder = useCallback(async (): Promise<void> => {
     if (!mediaPath) return
-    await window.api.openDownloadItem(mediaPath)
-  }, [mediaPath])
+    const result = await window.api.openDownloadItem(mediaPath)
+    if (!result.success) {
+      showToast(resolveAppErrorMessage(result.error), 'error')
+    }
+  }, [mediaPath, showToast])
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current

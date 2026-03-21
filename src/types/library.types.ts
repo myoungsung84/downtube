@@ -1,3 +1,5 @@
+import type { AppResult } from './error.types'
+
 export type LibraryItemType = 'video' | 'audio'
 
 export type LibraryItem = {
@@ -14,3 +16,7 @@ export type LibraryItem = {
   jsonPath?: string
   extension: string
 }
+
+export type ListLibraryItemsResult = AppResult<{
+  items: LibraryItem[]
+}>

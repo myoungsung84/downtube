@@ -238,35 +238,3 @@ export function statusTone(status: DownloadJob['status']): {
       return assertNever(status)
   }
 }
-
-export function getErrorMessage(error: string | undefined): {
-  titleKey: string
-  descriptionKey?: string
-  descriptionFallback?: string
-} {
-  if (!error) {
-    return { titleKey: 'errors.unknown.title', descriptionKey: 'errors.unknown.description' }
-  }
-
-  const lowerError = error.toLowerCase()
-
-  if (lowerError.includes('network') || lowerError.includes('connection')) {
-    return { titleKey: 'errors.network.title', descriptionKey: 'errors.network.description' }
-  }
-
-  if (lowerError.includes('not found') || lowerError.includes('404')) {
-    return { titleKey: 'errors.not_found.title', descriptionKey: 'errors.not_found.description' }
-  }
-
-  if (lowerError.includes('private') || lowerError.includes('unavailable')) {
-    return {
-      titleKey: 'errors.unavailable.title',
-      descriptionKey: 'errors.unavailable.description'
-    }
-  }
-
-  return {
-    titleKey: 'errors.download_failed.title',
-    descriptionFallback: error.length > 100 ? error.slice(0, 100) + '...' : error
-  }
-}

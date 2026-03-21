@@ -1,3 +1,5 @@
+import type { AppError } from './error.types'
+
 export type InitStep =
   | 'setting-up'
   | 'checking-binaries'
@@ -15,4 +17,4 @@ export type InitState =
   | { status: 'idle' }
   | { status: 'running'; step?: InitStep; progress?: InitProgress }
   | { status: 'ready' }
-  | { status: 'error'; message: string }
+  | { status: 'error'; error: AppError }

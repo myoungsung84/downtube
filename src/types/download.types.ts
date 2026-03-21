@@ -1,3 +1,5 @@
+import type { AppError } from './error.types'
+
 export type DownloadJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 
 export type DownloadInfo = {
@@ -38,7 +40,7 @@ export type DownloadJob = {
     current: 'video' | 'audio' | 'complete' | 'init' | null
   }
 
-  error?: string
+  error?: AppError
 
   createdAt: number
   startedAt?: number

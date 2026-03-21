@@ -1,5 +1,6 @@
 import { Box, Stack } from '@mui/material'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
+import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import type { InitState } from '@src/types/init.types'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -57,6 +58,11 @@ export default function SplashScreen(): React.JSX.Element {
       ? t('log.running', { stepText })
       : t('log.error_retry')
 
+  const errorMessage =
+    state.status === 'error'
+      ? resolveAppErrorMessage(state.error, 'common:errors.init.initialization_failed')
+      : ''
+
   return (
     <>
       <style>{STYLES}</style>
@@ -85,7 +91,7 @@ export default function SplashScreen(): React.JSX.Element {
           <SplashBrand isError={isError} />
 
           {isError ? (
-            <SplashError message={state.message} onRetry={() => void runInit()} />
+            <SplashError message={errorMessage} onRetry={() => void runInit()} />
           ) : (
             <SplashRunning
               stepText={stepText}

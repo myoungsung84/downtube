@@ -8,6 +8,7 @@ import path, { join } from 'path'
 
 import type { InitState } from '../../types/init.types'
 import { ensureSettingsLanguage } from '../settings/settings-store'
+import { normalizeUnknownAppError } from './app-error'
 
 const YTDLP_DOWNLOAD_URLS = {
   win32: 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe',
@@ -121,9 +122,9 @@ export async function initializeApp(reportProgress?: InitProgressReporter): Prom
     console.log('[init] App initialization completed')
     return { status: 'ready' }
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : String(error ?? 'Unknown initialization error')
-    console.error('[init] App initialization failed:', message)
-    return { status: 'error', message }
+    const normalizedError = normalizeUnknownAppError('init.initialization_failed', error)
+    const detail = normalizedError.detail ?? 'Unknown initialization error'
+    console.error('[init] App initialization failed:', detail)
+    return { status: 'error', error: normalizedError }
   }
 }
