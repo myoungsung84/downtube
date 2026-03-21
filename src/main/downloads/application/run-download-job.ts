@@ -353,10 +353,11 @@ export function runDownloadJob(
 
       onProgress({ current, percent: 0 })
 
-      const stderrChunks: string[] = []
+      const MAX_STDERR_CHARS = 2000
+      let stderrTail = ''
       attachYtDlpOutputListeners(proc, job, current, (text) => sendPercent(current, text))
-      proc.stderr.on('data', (data) => {
-        stderrChunks.push(data.toString())
+      proc.stderr.on('data', (data: Buffer) => {
+        stderrTail = (stderrTail + data.toString()).slice(-MAX_STDERR_CHARS)
       })
 
       await new Promise<void>((res, rej) => {
@@ -372,7 +373,7 @@ export function runDownloadJob(
             return
           }
 
-          const tail = stderrChunks.join('').trim().slice(-2000)
+          const tail = stderrTail.trim()
           rej(
             new Error(
               `${current} download failed with exit code ${code}${tail ? `\n\n${tail}` : ''}`

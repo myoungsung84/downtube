@@ -29,7 +29,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isAppErrorCode(value: unknown): value is AppErrorCode {
-  return typeof value === 'string' && value in errorMessageKeyMap
+  return typeof value === 'string' && Object.hasOwn(errorMessageKeyMap, value)
 }
 
 function normalizeErrorInput(error: unknown): AppError | undefined {
