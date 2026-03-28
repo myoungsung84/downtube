@@ -2,6 +2,8 @@ import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 
+import { removePathBestEffort, removePathWithRetry } from './update-fs'
+
 type DownloadUpdateAssetParams = {
   assetUrl: string
   zipPath: string
@@ -29,7 +31,7 @@ export async function downloadUpdateAsset({
   onProgress
 }: DownloadUpdateAssetParams): Promise<void> {
   await fs.promises.mkdir(path.dirname(zipPath), { recursive: true })
-  await fs.promises.rm(zipPath, { force: true })
+  await removePathWithRetry(zipPath, { force: true })
 
   try {
     const response = await axios.get<NodeJS.ReadableStream>(assetUrl, {
@@ -44,10 +46,25 @@ export async function downloadUpdateAsset({
     onStart?.({ totalBytes })
 
     await new Promise<void>((resolve, reject) => {
+      const responseStream = response.data as NodeJS.ReadableStream & {
+        destroy: (error?: Error) => void
+      }
       const writer = fs.createWriteStream(zipPath)
       let downloadedBytes = 0
+      let settled = false
 
-      response.data.on('data', (chunk: Buffer) => {
+      const fail = (error: unknown): void => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        responseStream.destroy()
+        writer.destroy()
+        reject(error)
+      }
+
+      responseStream.on('data', (chunk: Buffer) => {
         downloadedBytes += chunk.length
 
         onProgress?.({
@@ -59,13 +76,20 @@ export async function downloadUpdateAsset({
         })
       })
 
-      response.data.on('error', reject)
-      writer.on('error', reject)
-      writer.on('finish', resolve)
-      response.data.pipe(writer)
+      responseStream.on('error', fail)
+      writer.on('error', fail)
+      writer.on('finish', () => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        resolve()
+      })
+      responseStream.pipe(writer)
     })
   } catch (error) {
-    await fs.promises.rm(zipPath, { force: true })
+    await removePathBestEffort(zipPath, { force: true })
     throw error
   }
 }

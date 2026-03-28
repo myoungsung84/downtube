@@ -1,5 +1,5 @@
 import { spawn } from 'child_process'
-import { app } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import log from 'electron-log'
 import fs from 'fs'
 import path from 'path'
@@ -19,7 +19,9 @@ import { getPreparedUpdateCache } from './update-download-service'
 import { emitAppUpdateEvent } from './update-events'
 
 const WINDOWS_PLATFORM = 'win32'
-const APPLY_QUIT_DELAY_MS = 300
+const APPLY_QUIT_DELAY_MS = 1000
+const APPLY_EXIT_FALLBACK_DELAY_MS = 5000
+const SHOW_APPLY_SCRIPT_WINDOW = true
 
 let applyInFlight = false
 
@@ -131,10 +133,40 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
 
     log.info('[updates] apply script created', scriptInfo)
 
-    const child = spawn('cmd.exe', ['/d', '/s', '/c', `"${scriptInfo.scriptPath}"`], {
+    const executable = 'cmd.exe'
+    const args = ['/d', '/c', scriptInfo.scriptPath]
+    const cwd = path.dirname(scriptInfo.scriptPath)
+
+    log.info('[updates] apply launch attempted', {
+      latestVersion: preparedUpdate.latestVersion,
+      executable,
+      args,
+      cwd,
+      scriptPath: scriptInfo.scriptPath
+    })
+
+    const child = spawn(executable, args, {
+      cwd,
       detached: true,
       stdio: 'ignore',
-      windowsHide: true
+      windowsHide: !SHOW_APPLY_SCRIPT_WINDOW
+    })
+
+    child.on('error', (error) => {
+      log.error('[updates] apply script launch error', {
+        latestVersion: preparedUpdate.latestVersion,
+        scriptPath: scriptInfo.scriptPath,
+        cwd,
+        error
+      })
+    })
+
+    log.info('[updates] apply launch succeeded', {
+      latestVersion: preparedUpdate.latestVersion,
+      scriptPath: scriptInfo.scriptPath,
+      cwd,
+      pid: child.pid ?? null,
+      windowsHide: !SHOW_APPLY_SCRIPT_WINDOW
     })
 
     child.unref()
@@ -144,16 +176,61 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
       latestVersion: preparedUpdate.latestVersion
     })
 
-    log.info('[updates] apply script launched', {
+    log.info('[updates] apply script launch acknowledged', {
       latestVersion: preparedUpdate.latestVersion,
-      scriptPath: scriptInfo.scriptPath
+      scriptPath: scriptInfo.scriptPath,
+      pid: child.pid ?? null
     })
 
+    let quitObserved = false
+    const handleQuitObserved = (): void => {
+      quitObserved = true
+      log.info('[updates] quit event observed during apply', {
+        latestVersion: preparedUpdate.latestVersion,
+        pid: child.pid ?? null
+      })
+    }
+
+    app.once('quit', handleQuitObserved)
+
     setTimeout(() => {
+      log.info('[updates] app.quit() about to be called for update', {
+        latestVersion: preparedUpdate.latestVersion,
+        pid: child.pid ?? null,
+        quitDelayMs: APPLY_QUIT_DELAY_MS,
+        windowCount: BrowserWindow.getAllWindows().length
+      })
+
+      const fallbackTimer = setTimeout(() => {
+        if (quitObserved) {
+          return
+        }
+
+        log.warn('[updates] app.quit() fallback to app.exit(0)', {
+          latestVersion: preparedUpdate.latestVersion,
+          pid: child.pid ?? null,
+          fallbackDelayMs: APPLY_EXIT_FALLBACK_DELAY_MS,
+          windowCount: BrowserWindow.getAllWindows().length
+        })
+        app.exit(0)
+      }, APPLY_EXIT_FALLBACK_DELAY_MS)
+
+      app.once('quit', () => {
+        clearTimeout(fallbackTimer)
+      })
+
       log.info('[updates] quitting app for update', {
-        latestVersion: preparedUpdate.latestVersion
+        latestVersion: preparedUpdate.latestVersion,
+        pid: child.pid ?? null,
+        quitDelayMs: APPLY_QUIT_DELAY_MS,
+        windowCount: BrowserWindow.getAllWindows().length
       })
       app.quit()
+      log.info('[updates] app.quit() called for update', {
+        latestVersion: preparedUpdate.latestVersion,
+        pid: child.pid ?? null,
+        windowCount: BrowserWindow.getAllWindows().length
+      })
     }, APPLY_QUIT_DELAY_MS)
 
     return successResult({

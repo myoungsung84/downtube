@@ -102,6 +102,15 @@ async function runUpdateDownloadTask(): Promise<void> {
 
     const cachePaths = await prepareUpdateCachePaths(latestVersion, assetName)
 
+    log.info('[updates] cache paths prepared', {
+      latestVersion,
+      assetName,
+      versionDir: cachePaths.versionDir,
+      attemptDir: cachePaths.attemptDir,
+      zipPath: cachePaths.zipPath,
+      extractedDir: cachePaths.extractedDir
+    })
+
     stage = 'downloading'
     log.info('[updates] download started', {
       currentVersion,

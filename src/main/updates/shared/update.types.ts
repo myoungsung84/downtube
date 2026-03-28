@@ -21,6 +21,7 @@ export type GithubLatestRelease = {
 export type UpdateCachePaths = {
   cacheRootDir: string
   versionDir: string
+  attemptDir: string
   zipPath: string
   extractedDir: string
 }

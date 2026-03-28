@@ -4,6 +4,7 @@ import path from 'path'
 import { promisify } from 'util'
 
 import { WINDOWS_PORTABLE_EXECUTABLE_NAME } from '../../shared/update.types'
+import { removePathBestEffort, removePathWithRetry } from './update-fs'
 
 const execFileAsync = promisify(execFile)
 
@@ -50,7 +51,7 @@ export async function extractUpdateZip({
   zipPath,
   extractedDir
 }: ExtractUpdateZipParams): Promise<ExtractUpdateZipResult> {
-  await fs.promises.rm(extractedDir, { recursive: true, force: true })
+  await removePathWithRetry(extractedDir, { recursive: true, force: true })
   await fs.promises.mkdir(extractedDir, { recursive: true })
 
   try {
@@ -60,7 +61,7 @@ export async function extractUpdateZip({
       `Expand-Archive -Path '${toPowerShellLiteral(zipPath)}' -DestinationPath '${toPowerShellLiteral(extractedDir)}' -Force`
     ])
   } catch (error) {
-    await fs.promises.rm(extractedDir, { recursive: true, force: true })
+    await removePathBestEffort(extractedDir, { recursive: true, force: true })
     throw error
   }
 
@@ -78,7 +79,7 @@ export async function extractUpdateZip({
       exePath
     }
   } catch (error) {
-    await fs.promises.rm(extractedDir, { recursive: true, force: true })
+    await removePathBestEffort(extractedDir, { recursive: true, force: true })
     throw error
   }
 }
