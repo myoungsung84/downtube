@@ -225,7 +225,7 @@ export async function createUpdateApplyScript({
     'start "" "%TARGET_EXE%"',
     'call :log "restart command issued"',
     'call :log "restart command returned"',
-    'start "" cmd /c ping 127.0.0.1 -n 3 >nul ^& del /f /q "%~f0" >nul 2^>^&1',
+    'call :log "script cleanup deferred to avoid opening a visible cmd window"',
     'exit /b 0',
     ':inspect_install_dir_state',
     'set "INSTALL_DIR_ITEM_COUNT=0"',
