@@ -56,99 +56,27 @@
   },
   "updates": {
     "actions": {
-      "apply": "업데이트 적용",
-      "applying": "업데이트 적용 중...",
-      "check": "최신 버전 확인",
-      "checking": "확인 중...",
-      "download": "업데이트 다운로드",
-      "downloading": "다운로드 진행 중...",
-      "description": "GitHub 최신 Windows 포터블 릴리즈를 확인합니다",
-      "title": "업데이트 확인"
+      "description": "새 버전이 있을 때 앱을 업데이트합니다",
+      "title": "업데이트",
+      "update": "업데이트",
+      "updating": "업데이트 중..."
     },
     "current_version": {
       "description": "지금 실행 중인 앱 버전입니다",
       "title": "현재 버전"
     },
-    "apply": {
-      "description": "앱을 종료한 뒤 준비된 파일로 설치 폴더를 교체하고 새 버전으로 다시 시작합니다",
-      "notice": "{{version}} 버전을 적용하면 앱이 종료되고 새 버전으로 다시 시작됩니다"
+    "dialog": {
+      "message": "업데이트를 진행하시겠습니까? 앱이 종료된 뒤 새 버전으로 다시 시작됩니다.",
+      "title": "업데이트"
     },
-    "latest_version": {
-      "description": "최신 릴리즈 기준 버전 상태입니다",
-      "not_checked": "확인 전",
-      "published_at": "배포일: {{date}}",
-      "title": "최신 버전 상태",
-      "unsupported": "미지원"
-    },
-    "message": {
-      "unsupported": "자동 업데이트는 Windows에서만 지원합니다"
-    },
-    "download": {
-      "description": "새 버전이 있으면 포터블 zip을 다운로드하고 압축을 해제합니다",
-      "description_ready": "업데이트 파일 다운로드와 압축 해제가 완료되었습니다",
-      "ready_version": "준비된 버전: {{version}}",
-      "title": "업데이트 다운로드"
-    },
-    "download_status": {
-      "apply_ready": "다운로드와 압축 해제가 끝나 적용할 준비가 되었습니다",
-      "asset_name": "대상 파일: {{assetName}}",
-      "applying": "업데이트 적용을 시작하고 있습니다",
-      "checking": "릴리즈를 확인하는 중입니다",
-      "completed": "다운로드와 압축 해제가 완료되었습니다",
-      "description": "다운로드와 압축 해제 진행 상태입니다",
-      "downloading": "업데이트 파일을 다운로드하고 있습니다",
-      "error": "업데이트 준비에 실패했습니다",
-      "extracting": "다운로드 후 압축을 해제하고 있습니다",
-      "idle": "다운로드를 시작하지 않았습니다",
-      "title": "다운로드 상태",
-      "unsupported": "Windows에서만 지원합니다"
-    },
-    "platform": {
-      "description": "업데이트 지원 여부를 확인하는 기준입니다",
-      "title": "플랫폼"
-    },
-    "platforms": {
-      "darwin": "macOS",
-      "linux": "Linux",
-      "unknown": "기타 ({{platform}})",
-      "win32": "Windows"
-    },
-    "section_title": "업데이트",
-    "status": {
-      "available": "{{version}} 버전을 사용할 수 있습니다",
-      "checking": "최신 릴리즈를 확인하고 있습니다",
-      "error": "업데이트 정보를 확인하지 못했습니다",
-      "idle": "아직 확인하지 않았습니다",
-      "unsupported": "자동 업데이트는 Windows에서만 지원합니다",
-      "up_to_date": "현재 최신 버전을 사용 중입니다"
-    },
+    "section_title": "앱 정보",
     "progress": {
-      "applying": "앱 종료 후 새 버전으로 다시 시작할 준비를 하고 있습니다",
-      "bytes_with_total": "{{downloaded}} / {{total}} ({{percent}}%)",
-      "bytes_without_total": "{{downloaded}} 다운로드됨",
-      "checking": "다운로드 준비를 위해 릴리즈 정보를 다시 확인하고 있습니다",
-      "completed": "다운로드가 완료되었습니다",
-      "description": "zip 다운로드 진행률입니다",
-      "error": "진행 정보를 확인하지 못했습니다",
-      "extracting": "다운로드가 끝나 압축을 해제하고 있습니다",
-      "idle": "아직 다운로드를 시작하지 않았습니다",
-      "title": "진행률",
-      "unsupported": "Windows에서만 진행률을 표시합니다"
-    },
-    "ready_state": {
-      "description": "3차 적용 단계에서 사용할 준비 상태입니다",
-      "downloaded_no": "다운로드 완료: 아니요",
-      "downloaded_yes": "다운로드 완료: 예",
-      "extracted_no": "압축 해제 완료: 아니요",
-      "extracted_yes": "압축 해제 완료: 예",
-      "next_step": "업데이트 적용은 다음 단계에서 구현 예정입니다",
-      "root_ready": "적용 준비 경로 확보 완료 ({{version}})",
-      "title": "준비 상태"
+      "message": "업데이트 중입니다. 잠시만 기다려주세요.",
+      "percent": "{{percent}}%"
     },
     "toast": {
       "apply_failed": "업데이트 적용을 시작하지 못했습니다.",
       "check_failed": "업데이트 정보를 확인하지 못했습니다.",
-      "download_completed": "업데이트 파일 다운로드와 압축 해제가 완료되었습니다.",
       "download_failed": "업데이트 파일을 준비하지 못했습니다.",
       "runtime_load_failed": "앱 정보를 불러오지 못했습니다."
     }

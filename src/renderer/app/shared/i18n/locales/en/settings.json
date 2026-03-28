@@ -56,99 +56,27 @@
   },
   "updates": {
     "actions": {
-      "apply": "Apply update",
-      "applying": "Applying update...",
-      "check": "Check for updates",
-      "checking": "Checking...",
-      "download": "Download update",
-      "downloading": "Downloading...",
-      "description": "Checks the latest Windows portable release on GitHub",
-      "title": "Update check"
+      "description": "Updates the app when a new version is available",
+      "title": "Update",
+      "update": "Update",
+      "updating": "Updating..."
     },
     "current_version": {
       "description": "The version currently running in this app",
       "title": "Current version"
     },
-    "apply": {
-      "description": "Closes the app, replaces the install directory with the prepared files, and starts the new version",
-      "notice": "Applying version {{version}} will close the app and restart it with the new version"
+    "dialog": {
+      "message": "Do you want to proceed with the update? The app will close and restart with the new version.",
+      "title": "Update"
     },
-    "latest_version": {
-      "description": "Version status based on the latest release",
-      "not_checked": "Not checked",
-      "published_at": "Published: {{date}}",
-      "title": "Latest version status",
-      "unsupported": "Unsupported"
-    },
-    "message": {
-      "unsupported": "Automatic updates are supported on Windows only"
-    },
-    "download": {
-      "description": "Downloads and extracts the portable zip when a new version is available",
-      "description_ready": "The update package has been downloaded and extracted",
-      "ready_version": "Prepared version: {{version}}",
-      "title": "Update download"
-    },
-    "download_status": {
-      "apply_ready": "Download and extraction are complete, and the update is ready to apply",
-      "asset_name": "Target file: {{assetName}}",
-      "applying": "Starting the update apply flow",
-      "checking": "Checking release information",
-      "completed": "Download and extraction completed",
-      "description": "Shows the download and extraction progress",
-      "downloading": "Downloading the update package",
-      "error": "Failed to prepare the update",
-      "extracting": "Extracting the downloaded package",
-      "idle": "Download has not started yet",
-      "title": "Download status",
-      "unsupported": "Supported on Windows only"
-    },
-    "platform": {
-      "description": "Used to determine update support",
-      "title": "Platform"
-    },
-    "platforms": {
-      "darwin": "macOS",
-      "linux": "Linux",
-      "unknown": "Other ({{platform}})",
-      "win32": "Windows"
-    },
-    "section_title": "Updates",
-    "status": {
-      "available": "Version {{version}} is available",
-      "checking": "Checking the latest release",
-      "error": "Could not check update information",
-      "idle": "Not checked yet",
-      "unsupported": "Automatic updates are supported on Windows only",
-      "up_to_date": "You are using the latest version"
-    },
+    "section_title": "App info",
     "progress": {
-      "applying": "Preparing to close the app and restart with the new version",
-      "bytes_with_total": "{{downloaded}} / {{total}} ({{percent}}%)",
-      "bytes_without_total": "{{downloaded}} downloaded",
-      "checking": "Re-checking the latest release before download",
-      "completed": "Download completed",
-      "description": "Download progress for the zip package",
-      "error": "Could not determine progress",
-      "extracting": "Download finished and extraction is in progress",
-      "idle": "Download has not started yet",
-      "title": "Progress",
-      "unsupported": "Progress is shown on Windows only"
-    },
-    "ready_state": {
-      "description": "Preparation state for the apply step in the next phase",
-      "downloaded_no": "Download complete: No",
-      "downloaded_yes": "Download complete: Yes",
-      "extracted_no": "Extraction complete: No",
-      "extracted_yes": "Extraction complete: Yes",
-      "next_step": "Update apply will be implemented in the next phase",
-      "root_ready": "Prepared app root is ready ({{version}})",
-      "title": "Ready state"
+      "message": "Updating. Please wait a moment.",
+      "percent": "{{percent}}%"
     },
     "toast": {
       "apply_failed": "Could not start applying the update.",
       "check_failed": "Could not check update information.",
-      "download_completed": "The update package was downloaded and extracted.",
       "download_failed": "Could not prepare the update package.",
       "runtime_load_failed": "Could not load app runtime information."
     }
