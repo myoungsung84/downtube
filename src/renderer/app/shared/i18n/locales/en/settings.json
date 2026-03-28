@@ -11,7 +11,7 @@
     },
     "section_title": "Display",
     "theme": {
-      "description": "Set the color mode and style together",
+      "description": "Set the color mode and theme style",
       "mode_label": "Mode",
       "options": {
         "dark": "Dark",
@@ -56,29 +56,29 @@
   },
   "updates": {
     "actions": {
-      "description": "Updates the app when a new version is available",
-      "title": "Update",
-      "update": "Update",
+      "description": "The app will restart to apply the update",
+      "title": "Update available",
+      "update": "Update now",
       "updating": "Updating..."
     },
     "current_version": {
-      "description": "The version currently running in this app",
+      "description": "The version you're running now",
       "title": "Current version"
     },
     "dialog": {
-      "message": "Do you want to proceed with the update? The app will close and restart with the new version.",
+      "message": "Update now? The app will close and restart with the new version.",
       "title": "Update"
     },
     "section_title": "App info",
     "progress": {
-      "message": "Updating. Please wait a moment.",
+      "message": "Applying update…",
       "percent": "{{percent}}%"
     },
     "toast": {
-      "apply_failed": "Could not start applying the update.",
-      "check_failed": "Could not check update information.",
-      "download_failed": "Could not prepare the update package.",
-      "runtime_load_failed": "Could not load app runtime information."
+      "apply_failed": "Could not start the update.",
+      "check_failed": "Could not load update information.",
+      "download_failed": "Could not download the update package.",
+      "runtime_load_failed": "Could not load app information."
     }
   }
 }

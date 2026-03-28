@@ -11,7 +11,7 @@
     },
     "section_title": "화면",
     "theme": {
-      "description": "색상 모드와 스타일을 함께 설정합니다",
+      "description": "색상 모드와 테마 스타일을 설정합니다",
       "mode_label": "모드",
       "options": {
         "dark": "다크",
@@ -56,28 +56,28 @@
   },
   "updates": {
     "actions": {
-      "description": "새 버전이 있을 때 앱을 업데이트합니다",
-      "title": "업데이트",
-      "update": "업데이트",
+      "description": "업데이트 후 앱이 재시작됩니다",
+      "title": "업데이트 가능",
+      "update": "지금 업데이트",
       "updating": "업데이트 중..."
     },
     "current_version": {
-      "description": "지금 실행 중인 앱 버전입니다",
+      "description": "현재 실행 중인 버전입니다",
       "title": "현재 버전"
     },
     "dialog": {
-      "message": "업데이트를 진행하시겠습니까? 앱이 종료된 뒤 새 버전으로 다시 시작됩니다.",
+      "message": "업데이트할까요? 앱이 종료된 뒤 새 버전으로 다시 시작됩니다.",
       "title": "업데이트"
     },
     "section_title": "앱 정보",
     "progress": {
-      "message": "업데이트 중입니다. 잠시만 기다려주세요.",
+      "message": "업데이트를 적용하는 중입니다",
       "percent": "{{percent}}%"
     },
     "toast": {
-      "apply_failed": "업데이트 적용을 시작하지 못했습니다.",
-      "check_failed": "업데이트 정보를 확인하지 못했습니다.",
-      "download_failed": "업데이트 파일을 준비하지 못했습니다.",
+      "apply_failed": "업데이트를 시작하지 못했습니다.",
+      "check_failed": "업데이트 정보를 불러오지 못했습니다.",
+      "download_failed": "업데이트 파일을 가져오지 못했습니다.",
       "runtime_load_failed": "앱 정보를 불러오지 못했습니다."
     }
   }
