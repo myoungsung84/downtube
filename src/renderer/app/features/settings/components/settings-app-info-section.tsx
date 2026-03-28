@@ -126,6 +126,29 @@ export function AppInfoSection(): React.JSX.Element {
     void checkForUpdates({ silent: true })
   }, [checkForUpdates, runtimeInfo])
 
+  const applyPreparedUpdate = useCallback(async (): Promise<boolean> => {
+    setUpdateProgressStatus('applying')
+
+    try {
+      const result = await window.api.applyUpdate()
+
+      if (!result.success) {
+        setUpdateProgressStatus('idle')
+        showToast(
+          resolveAppErrorMessage(result.error, 'settings:updates.toast.apply_failed'),
+          'error'
+        )
+        return false
+      }
+
+      return true
+    } catch (error) {
+      setUpdateProgressStatus('idle')
+      showToast(resolveAppErrorMessage(error, 'settings:updates.toast.apply_failed'), 'error')
+      return false
+    }
+  }, [showToast])
+
   useEffect(() => {
     const unsubscribe = window.api.onAppUpdateEvent((event) => {
       switch (event.type) {
@@ -226,29 +249,6 @@ export function AppInfoSection(): React.JSX.Element {
     updateResult?.platformSupported === true
   const updateProgressPercent =
     updateDownloadProgress?.percent != null ? Math.round(updateDownloadProgress.percent) : null
-
-  const applyPreparedUpdate = useCallback(async (): Promise<boolean> => {
-    setUpdateProgressStatus('applying')
-
-    try {
-      const result = await window.api.applyUpdate()
-
-      if (!result.success) {
-        setUpdateProgressStatus('idle')
-        showToast(
-          resolveAppErrorMessage(result.error, 'settings:updates.toast.apply_failed'),
-          'error'
-        )
-        return false
-      }
-
-      return true
-    } catch (error) {
-      setUpdateProgressStatus('idle')
-      showToast(resolveAppErrorMessage(error, 'settings:updates.toast.apply_failed'), 'error')
-      return false
-    }
-  }, [showToast])
 
   const handleStartUpdate = useCallback(async (): Promise<void> => {
     if (!isWindowsPlatform || isUpdateInProgress) {
