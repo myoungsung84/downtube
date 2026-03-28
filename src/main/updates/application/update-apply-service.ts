@@ -21,7 +21,7 @@ import { emitAppUpdateEvent } from './update-events'
 const WINDOWS_PLATFORM = 'win32'
 const APPLY_QUIT_DELAY_MS = 1000
 const APPLY_EXIT_FALLBACK_DELAY_MS = 5000
-const SHOW_APPLY_SCRIPT_WINDOW = true
+const SHOW_APPLY_SCRIPT_WINDOW = false
 
 let applyInFlight = false
 
