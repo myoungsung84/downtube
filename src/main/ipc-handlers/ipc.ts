@@ -4,12 +4,14 @@ import fs, { mkdirSync } from 'fs'
 import path from 'path'
 import url from 'url'
 
+import type { AppRuntimeInfo } from '../../types/app.types'
 import type { AppResult } from '../../types/error.types'
 import type { InitState } from '../../types/init.types'
 import type { ListLibraryItemsResult } from '../../types/library.types'
 import type { MediaSidecarData, ReadMediaSidecarResult } from '../../types/media-sidecar.types'
 import type { PlayerOpenPayload } from '../../types/player.types'
 import type { AppLanguagePreference, SettingKey } from '../../types/settings.types'
+import type { AppUpdateEvent } from '../../types/update.types'
 import {
   failureFromUnknown,
   failureResult,
@@ -28,6 +30,11 @@ import {
   resolveSettingsLanguage,
   setSetting
 } from '../settings/settings-store'
+import { getCurrentInstallDir } from '../updates/adapters/fs/update-install-dir'
+import { applyUpdate, getPreparedUpdate } from '../updates/application/update-apply-service'
+import { downloadUpdate } from '../updates/application/update-download-service'
+import { onAppUpdateEvent } from '../updates/application/update-events'
+import { checkForUpdates } from '../updates/application/update-service'
 
 const registeredHandlers = new Set<string>()
 let playerWindow: BrowserWindow | null = null
@@ -55,6 +62,16 @@ function getDownloadDir(): string {
 
 function getDownloadsRootDir(): string {
   return app.getPath('downloads')
+}
+
+function getAppRuntimeInfo(): AppRuntimeInfo {
+  return {
+    version: app.getVersion(),
+    platform: process.platform,
+    isPackaged: app.isPackaged,
+    execPath: process.execPath,
+    installDir: getCurrentInstallDir()
+  }
 }
 
 function isPathInsideDownloadDir(filePath: string): boolean {
@@ -244,11 +261,23 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
     }
   }
 
+  const broadcastAppUpdateEvent = (event: AppUpdateEvent): void => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('app:update-event', event)
+    }
+  }
+
   const off = onDownloadsEvent((ev) => {
     mainWindow.webContents.send('downloads:event', ev)
   })
+  const offUpdate = onAppUpdateEvent((event) => {
+    broadcastAppUpdateEvent(event)
+  })
 
-  mainWindow.on('closed', () => off())
+  mainWindow.on('closed', () => {
+    off()
+    offUpdate()
+  })
 
   safeSetHandler('app:init', async () => {
     if (initState.status === 'ready') {
@@ -282,6 +311,16 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
     return initInFlight
   })
+
+  safeSetHandler('app:get-runtime-info', async () => getAppRuntimeInfo())
+
+  safeSetHandler('app:get-prepared-update', async () => getPreparedUpdate())
+
+  safeSetHandler('app:check-for-updates', async () => checkForUpdates())
+
+  safeSetHandler('app:download-update', async () => downloadUpdate())
+
+  safeSetHandler('app:apply-update', async () => applyUpdate())
 
   safeSetHandler('settings:get', async (_, key: SettingKey) => {
     return getSetting(key)

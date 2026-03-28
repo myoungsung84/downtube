@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 
+import type { AppRuntimeInfo } from '@src/types/app.types'
 import type { DownloadJob, DownloadQueueEvent } from '@src/types/download.types'
 import type { AppResult } from '@src/types/error.types'
 import type { InitState } from '@src/types/init.types'
@@ -12,6 +13,13 @@ import type {
   SettingKey,
   SettingValueMap
 } from '@src/types/settings.types'
+import type {
+  AppUpdateEvent,
+  ApplyUpdateResult,
+  CheckForUpdatesResult,
+  DownloadUpdateResult,
+  PreparedUpdateCache
+} from '@src/types/update.types'
 
 interface AppAPI {
   openPlayer: (payload: PlayerOpenPayload) => Promise<AppResult>
@@ -47,7 +55,13 @@ interface AppAPI {
   onDownloadsEvent: (callback: (ev: DownloadQueueEvent) => void) => () => void
 
   initApp: () => Promise<InitState>
+  getRuntimeInfo: () => Promise<AppRuntimeInfo>
+  getPreparedUpdate: () => Promise<PreparedUpdateCache | null>
+  checkForUpdates: () => Promise<AppResult<CheckForUpdatesResult>>
+  downloadUpdate: () => Promise<AppResult<DownloadUpdateResult>>
+  applyUpdate: () => Promise<AppResult<ApplyUpdateResult>>
   onInitState: (callback: (state: InitState) => void) => () => void
+  onAppUpdateEvent: (callback: (event: AppUpdateEvent) => void) => () => void
 
   getSetting: <K extends SettingKey>(key: K) => Promise<SettingValueMap[K]>
   getSettings: <const K extends readonly SettingKey[]>(

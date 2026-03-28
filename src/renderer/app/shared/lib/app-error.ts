@@ -21,6 +21,15 @@ const errorMessageKeyMap: Record<AppErrorCode, string> = {
   'downloads.download_failed': 'common:errors.downloads.download_failed',
   'player.open_failed': 'common:errors.player.open_failed',
   'library.delete_failed': 'common:errors.library.delete_failed',
+  'updates.check_failed': 'common:errors.updates.check_failed',
+  'updates.asset_not_found': 'common:errors.updates.asset_not_found',
+  'updates.download_failed': 'common:errors.updates.download_failed',
+  'updates.extract_failed': 'common:errors.updates.extract_failed',
+  'updates.unsupported_platform': 'common:errors.updates.unsupported_platform',
+  'updates.apply_not_allowed': 'common:errors.updates.apply_not_allowed',
+  'updates.prepared_update_missing': 'common:errors.updates.prepared_update_missing',
+  'updates.invalid_install_dir': 'common:errors.updates.invalid_install_dir',
+  'updates.apply_failed': 'common:errors.updates.apply_failed',
   'init.initialization_failed': 'common:errors.init.initialization_failed'
 }
 
