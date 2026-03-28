@@ -14,8 +14,8 @@ import type {
   SettingValueMap
 } from '@src/types/settings.types'
 import type {
-  AppUpdateEvent,
   ApplyUpdateResult,
+  AppUpdateEvent,
   CheckForUpdatesResult,
   DownloadUpdateResult,
   PreparedUpdateCache

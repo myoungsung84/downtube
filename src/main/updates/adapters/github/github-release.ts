@@ -1,9 +1,9 @@
 import axios from 'axios'
 
 import {
+  type GithubLatestRelease,
   UPDATE_REPOSITORY,
-  WINDOWS_PORTABLE_APP_NAME,
-  type GithubLatestRelease
+  WINDOWS_PORTABLE_APP_NAME
 } from '../../shared/update.types'
 
 type GithubReleaseAssetResponse = {
@@ -61,8 +61,7 @@ export async function fetchLatestGithubRelease(): Promise<GithubLatestRelease> {
     tagName,
     latestVersion: normalizeReleaseVersion(tagName),
     htmlUrl,
-    publishedAt:
-      typeof response.data.published_at === 'string' ? response.data.published_at : null,
+    publishedAt: typeof response.data.published_at === 'string' ? response.data.published_at : null,
     assetName: typeof asset?.name === 'string' ? asset.name : null,
     assetDownloadUrl:
       typeof asset?.browser_download_url === 'string' ? asset.browser_download_url : null,

@@ -13,11 +13,7 @@ import {
   successResult
 } from '../../common/app-error'
 import { createUpdateApplyScript } from '../adapters/fs/update-apply-script'
-import {
-  getCurrentInstallDir,
-  isSamePath,
-  pathsOverlap
-} from '../adapters/fs/update-install-dir'
+import { getCurrentInstallDir, isSamePath, pathsOverlap } from '../adapters/fs/update-install-dir'
 import { WINDOWS_PORTABLE_EXECUTABLE_NAME } from '../shared/update.types'
 import { getPreparedUpdateCache } from './update-download-service'
 import { emitAppUpdateEvent } from './update-events'
@@ -27,7 +23,10 @@ const APPLY_QUIT_DELAY_MS = 300
 
 let applyInFlight = false
 
-function emitApplyValidationError(code: Parameters<typeof failureResult>[0], detail?: string): void {
+function emitApplyValidationError(
+  code: Parameters<typeof failureResult>[0],
+  detail?: string
+): void {
   emitAppUpdateEvent({
     type: 'error',
     stage: 'applying',
@@ -132,15 +131,11 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
 
     log.info('[updates] apply script created', scriptInfo)
 
-    const child = spawn(
-      'cmd.exe',
-      ['/d', '/s', '/c', `"${scriptInfo.scriptPath}"`],
-      {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true
-      }
-    )
+    const child = spawn('cmd.exe', ['/d', '/s', '/c', `"${scriptInfo.scriptPath}"`], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    })
 
     child.unref()
 

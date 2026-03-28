@@ -53,7 +53,9 @@ export async function downloadUpdateAsset({
         onProgress?.({
           downloadedBytes,
           totalBytes,
-          percent: totalBytes ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)) : null
+          percent: totalBytes
+            ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100))
+            : null
         })
       })
 

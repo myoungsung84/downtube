@@ -1,8 +1,12 @@
 import { app } from 'electron'
 import log from 'electron-log'
 
-import type { AppUpdateStage, DownloadUpdateResult, PreparedUpdateCache } from '../../../types/update.types'
 import type { AppResult } from '../../../types/error.types'
+import type {
+  AppUpdateStage,
+  DownloadUpdateResult,
+  PreparedUpdateCache
+} from '../../../types/update.types'
 import {
   createAppError,
   failureResult,
