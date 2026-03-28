@@ -53,5 +53,32 @@
   "header": {
     "description": "앱 환경을 맞춤 설정하세요",
     "title": "설정"
+  },
+  "updates": {
+    "actions": {
+      "description": "새 버전이 있을 때 앱을 업데이트합니다",
+      "title": "업데이트",
+      "update": "업데이트",
+      "updating": "업데이트 중..."
+    },
+    "current_version": {
+      "description": "지금 실행 중인 앱 버전입니다",
+      "title": "현재 버전"
+    },
+    "dialog": {
+      "message": "업데이트를 진행하시겠습니까? 앱이 종료된 뒤 새 버전으로 다시 시작됩니다.",
+      "title": "업데이트"
+    },
+    "section_title": "앱 정보",
+    "progress": {
+      "message": "업데이트 중입니다. 잠시만 기다려주세요.",
+      "percent": "{{percent}}%"
+    },
+    "toast": {
+      "apply_failed": "업데이트 적용을 시작하지 못했습니다.",
+      "check_failed": "업데이트 정보를 확인하지 못했습니다.",
+      "download_failed": "업데이트 파일을 준비하지 못했습니다.",
+      "runtime_load_failed": "앱 정보를 불러오지 못했습니다."
+    }
   }
 }

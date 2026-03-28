@@ -1,0 +1,71 @@
+import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
+
+type DownloadUpdateAssetParams = {
+  assetUrl: string
+  zipPath: string
+  onStart?: (payload: { totalBytes: number | null }) => void
+  onProgress?: (payload: {
+    downloadedBytes: number
+    totalBytes: number | null
+    percent: number | null
+  }) => void
+}
+
+function parseContentLength(value: unknown): number | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+export async function downloadUpdateAsset({
+  assetUrl,
+  zipPath,
+  onStart,
+  onProgress
+}: DownloadUpdateAssetParams): Promise<void> {
+  await fs.promises.mkdir(path.dirname(zipPath), { recursive: true })
+  await fs.promises.rm(zipPath, { force: true })
+
+  try {
+    const response = await axios.get<NodeJS.ReadableStream>(assetUrl, {
+      responseType: 'stream',
+      headers: {
+        Accept: 'application/octet-stream',
+        'User-Agent': 'Downtube'
+      }
+    })
+
+    const totalBytes = parseContentLength(response.headers['content-length'])
+    onStart?.({ totalBytes })
+
+    await new Promise<void>((resolve, reject) => {
+      const writer = fs.createWriteStream(zipPath)
+      let downloadedBytes = 0
+
+      response.data.on('data', (chunk: Buffer) => {
+        downloadedBytes += chunk.length
+
+        onProgress?.({
+          downloadedBytes,
+          totalBytes,
+          percent: totalBytes
+            ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100))
+            : null
+        })
+      })
+
+      response.data.on('error', reject)
+      writer.on('error', reject)
+      writer.on('finish', resolve)
+      response.data.pipe(writer)
+    })
+  } catch (error) {
+    await fs.promises.rm(zipPath, { force: true })
+    throw error
+  }
+}

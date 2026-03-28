@@ -53,5 +53,32 @@
   "header": {
     "description": "Customize the app environment",
     "title": "Settings"
+  },
+  "updates": {
+    "actions": {
+      "description": "Updates the app when a new version is available",
+      "title": "Update",
+      "update": "Update",
+      "updating": "Updating..."
+    },
+    "current_version": {
+      "description": "The version currently running in this app",
+      "title": "Current version"
+    },
+    "dialog": {
+      "message": "Do you want to proceed with the update? The app will close and restart with the new version.",
+      "title": "Update"
+    },
+    "section_title": "App info",
+    "progress": {
+      "message": "Updating. Please wait a moment.",
+      "percent": "{{percent}}%"
+    },
+    "toast": {
+      "apply_failed": "Could not start applying the update.",
+      "check_failed": "Could not check update information.",
+      "download_failed": "Could not prepare the update package.",
+      "runtime_load_failed": "Could not load app runtime information."
+    }
   }
 }

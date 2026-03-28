@@ -31,6 +31,17 @@
     },
     "player": {
       "open_failed": "Could not open the player."
+    },
+    "updates": {
+      "apply_failed": "Could not start applying the update.",
+      "apply_not_allowed": "Updates can only be applied from a packaged build.",
+      "asset_not_found": "Could not find the Windows portable update package.",
+      "check_failed": "Could not check for updates.",
+      "download_failed": "Could not download the update package.",
+      "extract_failed": "Could not extract the update package.",
+      "invalid_install_dir": "Could not determine the current install directory.",
+      "prepared_update_missing": "Download and prepare the update package first.",
+      "unsupported_platform": "Update download is supported on Windows only."
     }
   },
   "media": {

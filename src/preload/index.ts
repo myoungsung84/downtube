@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+import type { AppRuntimeInfo } from '../types/app.types'
 import type { DownloadJob, DownloadQueueEvent } from '../types/download.types'
+import type { AppResult } from '../types/error.types'
 import type { InitState } from '../types/init.types'
 import type { ListLibraryItemsResult } from '../types/library.types'
 import type { ReadMediaSidecarResult } from '../types/media-sidecar.types'
@@ -11,6 +13,13 @@ import type {
   SettingKey,
   SettingValueMap
 } from '../types/settings.types'
+import type {
+  ApplyUpdateResult,
+  AppUpdateEvent,
+  CheckForUpdatesResult,
+  DownloadUpdateResult,
+  PreparedUpdateCache
+} from '../types/update.types'
 
 const api = {
   openPlayer: (payload: PlayerOpenPayload) => ipcRenderer.invoke('player-open', payload),
@@ -52,11 +61,25 @@ const api = {
   },
 
   initApp: (): Promise<InitState> => ipcRenderer.invoke('app:init'),
+  getRuntimeInfo: (): Promise<AppRuntimeInfo> => ipcRenderer.invoke('app:get-runtime-info'),
+  getPreparedUpdate: (): Promise<PreparedUpdateCache | null> =>
+    ipcRenderer.invoke('app:get-prepared-update'),
+  checkForUpdates: (): Promise<AppResult<CheckForUpdatesResult>> =>
+    ipcRenderer.invoke('app:check-for-updates'),
+  downloadUpdate: (): Promise<AppResult<DownloadUpdateResult>> =>
+    ipcRenderer.invoke('app:download-update'),
+  applyUpdate: (): Promise<AppResult<ApplyUpdateResult>> => ipcRenderer.invoke('app:apply-update'),
 
   onInitState: (callback: (state: InitState) => void) => {
     const handler = (_: unknown, state: InitState): void => callback(state)
     ipcRenderer.on('app:init-state', handler)
     return () => ipcRenderer.removeListener('app:init-state', handler)
+  },
+
+  onAppUpdateEvent: (callback: (event: AppUpdateEvent) => void) => {
+    const handler = (_: unknown, event: AppUpdateEvent): void => callback(event)
+    ipcRenderer.on('app:update-event', handler)
+    return () => ipcRenderer.removeListener('app:update-event', handler)
   },
 
   getSetting: <K extends SettingKey>(key: K): Promise<SettingValueMap[K]> =>

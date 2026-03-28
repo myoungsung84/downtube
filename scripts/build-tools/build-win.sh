@@ -12,6 +12,7 @@ ZIP_NAME="${APP_NAME}-${TAG_NAME}-unpacked.zip"
 ZIP_PATH="${RELEASE_DIR}/${ZIP_NAME}"
 
 command -v powershell.exe >/dev/null 2>&1 || { echo "Error: powershell.exe not found." >&2; exit 1; }
+command -v cygpath >/dev/null 2>&1 || { echo "Error: cygpath not found." >&2; exit 1; }
 
 bash "scripts/build-tools/build-clean.sh"
 mkdir -p "$RELEASE_DIR"
@@ -37,3 +38,7 @@ if [ ! -f "$ZIP_PATH" ]; then
 fi
 
 printf '%s\n' "$ZIP_PATH"
+
+WIN_UNPACKED_DIR_WIN="$(cygpath -aw "$WIN_UNPACKED_DIR")"
+powershell.exe -NoProfile -Command \
+  "Invoke-Item -LiteralPath '$WIN_UNPACKED_DIR_WIN'" >/dev/null 2>&1 || true

@@ -19,5 +19,9 @@ if [ -z "$APP_DIR_ARM64" ] || [ ! -d "$APP_DIR_ARM64" ]; then
   exit 1
 fi
 
+APP_DIR_ARM64_ABS="$(cd "$(dirname "$APP_DIR_ARM64")" && pwd -P)/$(basename "$APP_DIR_ARM64")"
+
 # adhoc codesign (for local run / pre-notarize)
-codesign --deep --force --sign - "$APP_DIR_ARM64"
+codesign --deep --force --sign - "$APP_DIR_ARM64_ABS"
+
+open -R "$APP_DIR_ARM64_ABS"

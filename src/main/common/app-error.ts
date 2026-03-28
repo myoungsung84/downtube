@@ -88,14 +88,20 @@ export function successResult<T extends object = Record<never, never>>(payload?:
   return { success: true, ...payload }
 }
 
-export function failureResult(code: AppErrorCode, detail?: string): AppResult {
+export function failureResult<T extends object = Record<never, never>>(
+  code: AppErrorCode,
+  detail?: string
+): AppResult<T> {
   return {
     success: false,
     error: createAppError(code, detail)
   }
 }
 
-export function failureFromUnknown(fallbackCode: AppErrorCode, error: unknown): AppResult {
+export function failureFromUnknown<T extends object = Record<never, never>>(
+  fallbackCode: AppErrorCode,
+  error: unknown
+): AppResult<T> {
   return {
     success: false,
     error: normalizeUnknownAppError(fallbackCode, error)

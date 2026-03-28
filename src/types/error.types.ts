@@ -15,6 +15,15 @@ export type AppErrorCode =
   | 'downloads.download_failed'
   | 'player.open_failed'
   | 'library.delete_failed'
+  | 'updates.check_failed'
+  | 'updates.asset_not_found'
+  | 'updates.download_failed'
+  | 'updates.extract_failed'
+  | 'updates.unsupported_platform'
+  | 'updates.apply_not_allowed'
+  | 'updates.prepared_update_missing'
+  | 'updates.invalid_install_dir'
+  | 'updates.apply_failed'
   | 'init.initialization_failed'
 
 export type AppError = {
