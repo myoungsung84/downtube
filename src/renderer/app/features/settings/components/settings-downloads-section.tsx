@@ -15,7 +15,7 @@ import { useSettingsStore } from '@renderer/features/settings/store/use-settings
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React, { useEffect } from 'react'
 
-import { TOGGLE_GROUP_SX } from './toggle-group-sx'
+import { TOGGLE_GROUP_SX } from './settings-toggle-group-sx'
 
 const DOWNLOADS_DEFAULT_TYPE_KEY = 'downloads.defaultType' as const
 const DOWNLOADS_PLAYLIST_LIMIT_KEY = 'downloads.playlistLimit' as const

@@ -13,7 +13,7 @@ import type { AppLanguagePreference, AppThemePreset } from '@src/types/settings.
 import { isAppThemePreset } from '@src/types/settings.types'
 import React, { useEffect } from 'react'
 
-import { TOGGLE_GROUP_SX } from './toggle-group-sx'
+import { TOGGLE_GROUP_SX } from './settings-toggle-group-sx'
 
 const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const

@@ -1,8 +1,8 @@
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, Stack, Typography } from '@mui/material'
-import { AppInfoSection } from '@renderer/features/settings/components/app-info-section'
-import { AppearanceSection } from '@renderer/features/settings/components/appearance-section'
-import { DownloadsSection } from '@renderer/features/settings/components/downloads-section'
+import { AppInfoSection } from '@renderer/features/settings/components/settings-app-info-section'
+import { AppearanceSection } from '@renderer/features/settings/components/settings-appearance-section'
+import { DownloadsSection } from '@renderer/features/settings/components/settings-downloads-section'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import React from 'react'
 
