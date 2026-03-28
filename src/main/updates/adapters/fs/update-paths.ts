@@ -58,6 +58,48 @@ export function getUpdateCachePaths(latestVersion: string, assetName: string): U
   }
 }
 
+export async function cleanupApplyArtifacts(): Promise<void> {
+  const cacheRootDir = path.join(app.getPath('userData'), UPDATE_CACHE_DIR_NAME)
+
+  let versionDirs: fs.Dirent[] = []
+  try {
+    versionDirs = await fs.promises.readdir(cacheRootDir, { withFileTypes: true })
+  } catch {
+    return
+  }
+
+  for (const entry of versionDirs) {
+    if (!entry.isDirectory()) {
+      continue
+    }
+
+    const versionDir = path.join(cacheRootDir, entry.name)
+
+    let files: fs.Dirent[] = []
+    try {
+      files = await fs.promises.readdir(versionDir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    for (const file of files) {
+      if (!file.isFile()) {
+        continue
+      }
+
+      const { name } = file
+      if (
+        name.startsWith('apply-update-') ||
+        name.startsWith('apply-plan-') ||
+        name === 'update-helper.exe' ||
+        name.endsWith('.entries.tmp')
+      ) {
+        await removePathBestEffort(path.join(versionDir, name), { force: true })
+      }
+    }
+  }
+}
+
 export async function prepareUpdateCachePaths(
   latestVersion: string,
   assetName: string

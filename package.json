@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "typecheck:helper": "tsc --noEmit -p tsconfig.helper.json --composite false",
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web && pnpm typecheck:helper",
+    "build:helper": "bash scripts/build-tools/build-helper.sh",
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "tools:ensure": "bash scripts/build-tools/ensure-tools.sh",
@@ -30,6 +32,7 @@
     },
     "files": [
       "out/**",
+      "!out/update-helper/**",
       "bin/**",
       "assets/**"
     ],
@@ -47,6 +50,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "out/update-helper/update-helper.exe",
+        "to": "update-helper/update-helper.exe"
       }
     ],
     "extraMetadata": {
@@ -86,6 +93,8 @@
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "@yao-pkg/pkg": "^5.12.0",
+    "esbuild": "^0.25.0",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",

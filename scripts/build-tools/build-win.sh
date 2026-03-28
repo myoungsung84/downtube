@@ -21,7 +21,23 @@ pnpm install --frozen-lockfile
 
 bash scripts/build-tools/build.sh
 
+bash scripts/build-tools/build-helper.sh
+
+HELPER_EXE="./out/update-helper/update-helper.exe"
+if [ ! -f "$HELPER_EXE" ]; then
+  echo "Error: helper exe not found after build: $HELPER_EXE" >&2
+  exit 1
+fi
+echo "[build-win] helper exe verified: $HELPER_EXE" >&2
+
 electron-builder --win --dir >&2
+
+HELPER_IN_DIST="$WIN_UNPACKED_DIR/resources/update-helper/update-helper.exe"
+if [ ! -f "$HELPER_IN_DIST" ]; then
+  echo "Error: helper exe missing from dist: $HELPER_IN_DIST" >&2
+  exit 1
+fi
+echo "[build-win] helper exe in dist verified: $HELPER_IN_DIST" >&2
 
 if [ ! -d "$WIN_UNPACKED_DIR" ]; then
   echo "Error: unpacked dir not found: $WIN_UNPACKED_DIR" >&2
