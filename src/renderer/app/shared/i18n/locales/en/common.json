@@ -34,7 +34,7 @@
     },
     "updates": {
       "apply_failed": "Could not start applying the update.",
-      "apply_not_allowed": "Updates can only be applied from the installed Windows app.",
+      "apply_not_allowed": "Updates can only be applied from a packaged build.",
       "asset_not_found": "Could not find the Windows portable update package.",
       "check_failed": "Could not check for updates.",
       "download_failed": "Could not download the update package.",

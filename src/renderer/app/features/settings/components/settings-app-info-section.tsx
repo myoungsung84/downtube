@@ -5,7 +5,7 @@ import { useToast } from '@renderer/shared/hooks/use-toast'
 import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import type { AppRuntimeInfo } from '@src/types/app.types'
 import type { CheckForUpdatesResult, PreparedUpdateCache } from '@src/types/update.types'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 type UpdateCheckStatus = 'idle' | 'checking' | 'available' | 'up-to-date' | 'unsupported' | 'error'
 type UpdateProgressStatus = 'idle' | 'checking' | 'downloading' | 'extracting' | 'applying'
@@ -24,6 +24,7 @@ export function AppInfoSection(): React.JSX.Element {
     percent: number | null
   } | null>(null)
   const [preparedUpdateCache, setPreparedUpdateCache] = useState<PreparedUpdateCache | null>(null)
+  const pendingApplyAfterExtractRef = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -179,6 +180,10 @@ export function AppInfoSection(): React.JSX.Element {
               percent: prev.totalBytes ? 100 : prev.percent
             }
           })
+          if (pendingApplyAfterExtractRef.current) {
+            pendingApplyAfterExtractRef.current = false
+            void applyPreparedUpdate()
+          }
           return
         case 'apply-started':
           setUpdateProgressStatus('applying')
@@ -187,6 +192,7 @@ export function AppInfoSection(): React.JSX.Element {
           setUpdateProgressStatus('applying')
           return
         case 'error':
+          pendingApplyAfterExtractRef.current = false
           setUpdateProgressStatus('idle')
           setUpdateDownloadProgress(null)
           if (event.stage !== 'applying') {
@@ -210,7 +216,7 @@ export function AppInfoSection(): React.JSX.Element {
     })
 
     return unsubscribe
-  }, [showToast])
+  }, [applyPreparedUpdate, showToast])
 
   const isWindowsPlatform = runtimeInfo?.platform === 'win32'
   const isUpdateInProgress = updateProgressStatus !== 'idle'
@@ -291,14 +297,15 @@ export function AppInfoSection(): React.JSX.Element {
         )
         return
       }
+
+      pendingApplyAfterExtractRef.current = true
     } catch (error) {
+      pendingApplyAfterExtractRef.current = false
       setUpdateProgressStatus('idle')
       setUpdateDownloadProgress(null)
       showToast(resolveAppErrorMessage(error, 'settings:updates.toast.download_failed'), 'error')
       return
     }
-
-    await applyPreparedUpdate()
   }, [
     applyPreparedUpdate,
     checkForUpdates,

@@ -34,7 +34,7 @@
     },
     "updates": {
       "apply_failed": "업데이트 적용을 시작하지 못했습니다.",
-      "apply_not_allowed": "설치된 Windows 앱에서만 업데이트를 적용할 수 있습니다.",
+      "apply_not_allowed": "배포(패키징)된 앱에서만 업데이트를 적용할 수 있습니다.",
       "asset_not_found": "Windows 포터블 업데이트 파일을 찾지 못했습니다.",
       "check_failed": "업데이트 정보를 확인하지 못했습니다.",
       "download_failed": "업데이트 파일을 다운로드하지 못했습니다.",
