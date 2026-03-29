@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BIN_DIR="${ROOT_DIR}/bin"
 TARGET_PLATFORM="${1:-auto}"
+NODE_BIN="${NODE_BIN:-$(command -v node.exe >/dev/null 2>&1 && echo node.exe || echo node)}"
 
 detect_platform() {
   if [[ "${TARGET_PLATFORM}" != "auto" ]]; then
@@ -79,8 +80,8 @@ prepare_ffmpeg_tools() {
   local ffmpeg_dest
   local ffprobe_dest
 
-  ffmpeg_src="$(node -p "require('ffmpeg-static')")"
-  ffprobe_src="$(node -p "require('ffprobe-static').path")"
+  ffmpeg_src="$("$NODE_BIN" -p "require('ffmpeg-static')")"
+  ffprobe_src="$("$NODE_BIN" -p "require('ffprobe-static').path")"
 
   if [[ "${platform}" == "win32" ]]; then
     ffmpeg_dest="${BIN_DIR}/ffmpeg.exe"

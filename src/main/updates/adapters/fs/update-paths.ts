@@ -3,7 +3,13 @@ import log from 'electron-log'
 import fs from 'fs'
 import path from 'path'
 
-import { UPDATE_CACHE_DIR_NAME, type UpdateCachePaths } from '../../shared/update.types'
+import {
+  UPDATE_APPLY_LOG_PREFIX,
+  UPDATE_APPLY_PLAN_PREFIX,
+  UPDATE_CACHE_DIR_NAME,
+  UPDATE_HELPER_EXE_NAME,
+  type UpdateCachePaths
+} from '../../shared/update.types'
 import { removePathBestEffort } from './update-fs'
 
 function createAttemptId(): string {
@@ -89,10 +95,9 @@ export async function cleanupApplyArtifacts(): Promise<void> {
 
       const { name } = file
       if (
-        name.startsWith('apply-update-') ||
-        name.startsWith('apply-plan-') ||
-        name === 'update-helper.exe' ||
-        name.endsWith('.entries.tmp')
+        name.startsWith(UPDATE_APPLY_LOG_PREFIX) ||
+        name.startsWith(UPDATE_APPLY_PLAN_PREFIX) ||
+        name === UPDATE_HELPER_EXE_NAME
       ) {
         await removePathBestEffort(path.join(versionDir, name), { force: true })
       }

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import type { ApplyPlan } from '../types/apply-plan.types'
+import type { ApplyPlan } from '../main/updates/shared/apply-plan.types'
 import { runApplyUpdate } from './apply-update'
 import { createHelperLogger } from './helper-log'
 

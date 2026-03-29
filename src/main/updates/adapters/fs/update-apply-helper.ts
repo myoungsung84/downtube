@@ -3,10 +3,13 @@ import log from 'electron-log'
 import fs from 'fs'
 import path from 'path'
 
-import type { ApplyPlan } from '../../../../types/apply-plan.types'
-import { UPDATE_CACHE_DIR_NAME } from '../../shared/update.types'
-
-const UPDATE_HELPER_EXE_NAME = 'update-helper.exe'
+import type { ApplyPlan } from '../../shared/apply-plan.types'
+import {
+  UPDATE_APPLY_LOG_PREFIX,
+  UPDATE_APPLY_PLAN_PREFIX,
+  UPDATE_CACHE_DIR_NAME,
+  UPDATE_HELPER_EXE_NAME
+} from '../../shared/update.types'
 
 type PrepareHelperResult = {
   helperExePath: string
@@ -38,8 +41,8 @@ export async function prepareUpdateApplyHelper({
   targetExePath
 }: PrepareHelperParams): Promise<PrepareHelperResult> {
   const versionDir = getVersionDir(latestVersion)
-  const planPath = path.join(versionDir, `apply-plan-${latestVersion}.json`)
-  const logPath = path.join(versionDir, `apply-update-${latestVersion}.log`)
+  const planPath = path.join(versionDir, `${UPDATE_APPLY_PLAN_PREFIX}${latestVersion}.json`)
+  const logPath = path.join(versionDir, `${UPDATE_APPLY_LOG_PREFIX}${latestVersion}.log`)
   const helperDestPath = path.join(versionDir, UPDATE_HELPER_EXE_NAME)
 
   await fs.promises.mkdir(versionDir, { recursive: true })
@@ -57,6 +60,7 @@ export async function prepareUpdateApplyHelper({
   }
 
   await fs.promises.copyFile(sourceHelperPath, helperDestPath)
+  await fs.promises.chmod(helperDestPath, 0o755).catch(() => undefined)
 
   const plan: ApplyPlan = {
     version: latestVersion,

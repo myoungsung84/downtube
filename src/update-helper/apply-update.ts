@@ -3,7 +3,7 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-import type { ApplyPlan } from '../types/apply-plan.types'
+import type { ApplyPlan } from '../main/updates/shared/apply-plan.types'
 import type { HelperLogger } from './helper-log'
 
 const WAIT_TIMEOUT_MS = 20_000
@@ -99,10 +99,6 @@ export async function runApplyUpdate(plan: ApplyPlan, log: HelperLogger): Promis
   log(`targetExe=${plan.targetExe}`)
 
   await waitForProcessExit(plan.appPid, log)
-
-  log('extra settle wait start')
-  await sleep(1000)
-  log('extra settle wait done')
 
   if (!fs.existsSync(plan.extractedAppDir)) {
     log('source directory missing, aborting')

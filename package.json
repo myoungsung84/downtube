@@ -27,8 +27,31 @@
     "appId": "com.shining.downtube",
     "productName": "Downtube",
     "icon": "assets/app-icon.ico",
+    "win": {
+      "executableName": "downtube",
+      "icon": "assets/app-icon.ico"
+    },
     "mac": {
-      "icon": "assets/app-icon.icns"
+      "icon": "assets/app-icon.icns",
+      "notarize": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "snap",
+        "deb"
+      ],
+      "maintainer": "electronjs.org",
+      "category": "Utility"
+    },
+    "nsis": {
+      "artifactName": "${name}-${version}-setup.${ext}",
+      "shortcutName": "${productName}",
+      "uninstallDisplayName": "${productName}",
+      "createDesktopShortcut": "always"
+    },
+    "appImage": {
+      "artifactName": "${name}-${version}.${ext}"
     },
     "files": [
       "out/**",
@@ -58,7 +81,8 @@
     ],
     "extraMetadata": {
       "main": "out/main/index.js"
-    }
+    },
+    "npmRebuild": false
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

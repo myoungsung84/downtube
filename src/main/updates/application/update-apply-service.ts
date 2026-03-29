@@ -19,7 +19,6 @@ import { getPreparedUpdateCache } from './update-download-service'
 import { emitAppUpdateEvent } from './update-events'
 
 const WINDOWS_PLATFORM = 'win32'
-const APPLY_QUIT_DELAY_MS = 1000
 const APPLY_EXIT_FALLBACK_DELAY_MS = 5000
 
 let applyInFlight = false
@@ -54,16 +53,8 @@ function validatePreparedUpdateForApply(): AppResult<PreparedUpdateCache & { ins
     return failureResult('updates.prepared_update_missing')
   }
 
-  if (!preparedUpdate.extractedAppRoot || !preparedUpdate.exePath || !preparedUpdate.zipPath) {
+  if (!preparedUpdate.extractedAppRoot || !preparedUpdate.exePath) {
     return failureResult('updates.prepared_update_missing')
-  }
-
-  if (!fs.existsSync(preparedUpdate.zipPath)) {
-    return failureResult('updates.prepared_update_missing', preparedUpdate.zipPath)
-  }
-
-  if (!fs.existsSync(preparedUpdate.extractedDir)) {
-    return failureResult('updates.prepared_update_missing', preparedUpdate.extractedDir)
   }
 
   if (!fs.existsSync(preparedUpdate.extractedAppRoot) || !fs.existsSync(preparedUpdate.exePath)) {
@@ -190,14 +181,7 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
 
     app.once('quit', handleQuitObserved)
 
-    setTimeout(() => {
-      log.info('[updates] app.quit() about to be called for update', {
-        latestVersion: preparedUpdate.latestVersion,
-        pid: child.pid ?? null,
-        quitDelayMs: APPLY_QUIT_DELAY_MS,
-        windowCount: BrowserWindow.getAllWindows().length
-      })
-
+    setImmediate(() => {
       const fallbackTimer = setTimeout(() => {
         if (quitObserved) {
           return
@@ -219,7 +203,6 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
       log.info('[updates] quitting app for update', {
         latestVersion: preparedUpdate.latestVersion,
         pid: child.pid ?? null,
-        quitDelayMs: APPLY_QUIT_DELAY_MS,
         windowCount: BrowserWindow.getAllWindows().length
       })
       app.quit()
@@ -228,7 +211,7 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
         pid: child.pid ?? null,
         windowCount: BrowserWindow.getAllWindows().length
       })
-    }, APPLY_QUIT_DELAY_MS)
+    })
 
     return successResult({
       started: true
