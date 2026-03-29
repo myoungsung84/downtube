@@ -1,254 +1,27 @@
 import { alpha, Button, Divider, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
-import { useToast } from '@renderer/shared/hooks/use-toast'
-import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
-import type { AppRuntimeInfo } from '@src/types/app.types'
-import type { CheckForUpdatesResult, PreparedUpdateCache } from '@src/types/update.types'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-
-type UpdateCheckStatus = 'idle' | 'checking' | 'available' | 'up-to-date' | 'unsupported' | 'error'
-type UpdateProgressStatus = 'idle' | 'checking' | 'downloading' | 'extracting' | 'applying'
+import { useUpdate } from '@renderer/shared/hooks/use-update'
+import React, { useCallback } from 'react'
 
 export function AppInfoSection(): React.JSX.Element {
   const { t } = useI18n('settings')
-  const { showToast } = useToast()
   const { confirm } = useDialog()
-  const [runtimeInfo, setRuntimeInfo] = useState<AppRuntimeInfo | null>(null)
-  const [updateCheckStatus, setUpdateCheckStatus] = useState<UpdateCheckStatus>('idle')
-  const [updateResult, setUpdateResult] = useState<CheckForUpdatesResult | null>(null)
-  const [updateProgressStatus, setUpdateProgressStatus] = useState<UpdateProgressStatus>('idle')
-  const [updateDownloadProgress, setUpdateDownloadProgress] = useState<{
-    downloadedBytes: number
-    totalBytes: number | null
-    percent: number | null
-  } | null>(null)
-  const [preparedUpdateCache, setPreparedUpdateCache] = useState<PreparedUpdateCache | null>(null)
-  const pendingApplyAfterExtractRef = useRef(false)
+  const {
+    isMacPlatform,
+    isUpdateInProgress,
+    isWindowsPlatform,
+    openReleasePage,
+    runtimeInfo,
+    startUpdate,
+    updateCheckStatus,
+    updateProgressPercent
+  } = useUpdate()
 
-  useEffect(() => {
-    let active = true
-
-    void window.api
-      .getRuntimeInfo()
-      .then((info) => {
-        if (!active) return
-        setRuntimeInfo(info)
-        setUpdateCheckStatus(info.platform === 'win32' ? 'idle' : 'unsupported')
-      })
-      .catch((error) => {
-        if (!active) return
-        setUpdateCheckStatus('error')
-        showToast(
-          resolveAppErrorMessage(error, 'settings:updates.toast.runtime_load_failed'),
-          'error'
-        )
-      })
-
-    return () => {
-      active = false
-    }
-  }, [showToast])
-
-  useEffect(() => {
-    let active = true
-
-    void window.api
-      .getPreparedUpdate()
-      .then((preparedUpdate) => {
-        if (!active || !preparedUpdate) {
-          return
-        }
-
-        setPreparedUpdateCache(preparedUpdate)
-      })
-      .catch(() => {
-        if (!active) {
-          return
-        }
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const checkForUpdates = useCallback(
-    async ({
-      silent = false
-    }: { silent?: boolean } = {}): Promise<CheckForUpdatesResult | null> => {
-      if (!runtimeInfo || runtimeInfo.platform !== 'win32') {
-        setUpdateCheckStatus('unsupported')
-        return null
-      }
-
-      setUpdateCheckStatus('checking')
-
-      try {
-        const result = await window.api.checkForUpdates()
-
-        if (!result.success) {
-          setUpdateCheckStatus('error')
-          if (!silent) {
-            showToast(
-              resolveAppErrorMessage(result.error, 'settings:updates.toast.check_failed'),
-              'error'
-            )
-          }
-          return null
-        }
-
-        setUpdateResult(result)
-
-        if (!result.platformSupported) {
-          setUpdateCheckStatus('unsupported')
-          return null
-        }
-
-        setUpdateCheckStatus(result.updateAvailable ? 'available' : 'up-to-date')
-        return result
-      } catch (error) {
-        setUpdateCheckStatus('error')
-        if (!silent) {
-          showToast(resolveAppErrorMessage(error, 'settings:updates.toast.check_failed'), 'error')
-        }
-        return null
-      }
-    },
-    [runtimeInfo, showToast]
-  )
-
-  useEffect(() => {
-    if (!runtimeInfo || runtimeInfo.platform !== 'win32') {
-      return
-    }
-
-    void checkForUpdates({ silent: true })
-  }, [checkForUpdates, runtimeInfo])
-
-  const applyPreparedUpdate = useCallback(async (): Promise<boolean> => {
-    setUpdateProgressStatus('applying')
-
-    try {
-      const result = await window.api.applyUpdate()
-
-      if (!result.success) {
-        setUpdateProgressStatus('idle')
-        showToast(
-          resolveAppErrorMessage(result.error, 'settings:updates.toast.apply_failed'),
-          'error'
-        )
-        return false
-      }
-
-      return true
-    } catch (error) {
-      setUpdateProgressStatus('idle')
-      showToast(resolveAppErrorMessage(error, 'settings:updates.toast.apply_failed'), 'error')
-      return false
-    }
-  }, [showToast])
-
-  useEffect(() => {
-    const unsubscribe = window.api.onAppUpdateEvent((event) => {
-      switch (event.type) {
-        case 'checking':
-          setUpdateProgressStatus('checking')
-          setUpdateDownloadProgress(null)
-          setPreparedUpdateCache(null)
-          return
-        case 'download-started':
-          setUpdateProgressStatus('downloading')
-          setUpdateDownloadProgress({
-            downloadedBytes: 0,
-            totalBytes: event.totalBytes,
-            percent: event.totalBytes ? 0 : null
-          })
-          setPreparedUpdateCache(null)
-          return
-        case 'download-progress':
-          setUpdateProgressStatus('downloading')
-          setUpdateDownloadProgress({
-            downloadedBytes: event.downloadedBytes,
-            totalBytes: event.totalBytes,
-            percent: event.percent
-          })
-          return
-        case 'download-complete':
-          setUpdateDownloadProgress((prev) => {
-            if (!prev) {
-              return prev
-            }
-
-            return {
-              downloadedBytes: prev.totalBytes ?? prev.downloadedBytes,
-              totalBytes: prev.totalBytes,
-              percent: prev.totalBytes ? 100 : prev.percent
-            }
-          })
-          return
-        case 'extract-started':
-          setUpdateProgressStatus('extracting')
-          return
-        case 'extract-complete':
-          setPreparedUpdateCache(event.cache)
-          setUpdateDownloadProgress((prev) => {
-            if (!prev) {
-              return prev
-            }
-
-            return {
-              downloadedBytes: prev.totalBytes ?? prev.downloadedBytes,
-              totalBytes: prev.totalBytes,
-              percent: prev.totalBytes ? 100 : prev.percent
-            }
-          })
-          if (pendingApplyAfterExtractRef.current) {
-            pendingApplyAfterExtractRef.current = false
-            void applyPreparedUpdate()
-          }
-          return
-        case 'apply-started':
-          setUpdateProgressStatus('applying')
-          return
-        case 'apply-launching':
-          setUpdateProgressStatus('applying')
-          return
-        case 'error':
-          pendingApplyAfterExtractRef.current = false
-          setUpdateProgressStatus('idle')
-          setUpdateDownloadProgress(null)
-          if (event.stage !== 'applying') {
-            setPreparedUpdateCache(null)
-          }
-
-          if (event.stage === 'applying') {
-            showToast(
-              resolveAppErrorMessage(event.error, 'settings:updates.toast.apply_failed'),
-              'error'
-            )
-            return
-          }
-
-          showToast(
-            resolveAppErrorMessage(event.error, 'settings:updates.toast.download_failed'),
-            'error'
-          )
-          return
-      }
-    })
-
-    return unsubscribe
-  }, [applyPreparedUpdate, showToast])
-
-  const isWindowsPlatform = runtimeInfo?.platform === 'win32'
-  const isUpdateInProgress = updateProgressStatus !== 'idle'
-  const showUpdateButton =
-    isWindowsPlatform &&
-    updateCheckStatus === 'available' &&
-    updateResult?.platformSupported === true
-  const updateProgressPercent =
-    updateDownloadProgress?.percent != null ? Math.round(updateDownloadProgress.percent) : null
+  const showUpdateUi = runtimeInfo?.isPackaged === true
+  const showWindowsUpdateButton =
+    showUpdateUi && isWindowsPlatform && updateCheckStatus === 'available' && !isUpdateInProgress
+  const showMacReleaseButton = showUpdateUi && isMacPlatform && updateCheckStatus === 'available'
 
   const handleStartUpdate = useCallback(async (): Promise<void> => {
     if (!isWindowsPlatform || isUpdateInProgress) {
@@ -265,57 +38,12 @@ export function AppInfoSection(): React.JSX.Element {
       return
     }
 
-    setUpdateProgressStatus('checking')
-    setUpdateDownloadProgress(null)
+    await startUpdate()
+  }, [confirm, isUpdateInProgress, isWindowsPlatform, startUpdate, t])
 
-    const latestResult = await checkForUpdates()
-
-    if (!latestResult || !latestResult.platformSupported || !latestResult.updateAvailable) {
-      setUpdateProgressStatus('idle')
-      setUpdateDownloadProgress(null)
-      return
-    }
-
-    const canUsePreparedUpdate =
-      preparedUpdateCache != null &&
-      preparedUpdateCache.latestVersion === latestResult.latestVersion
-
-    if (canUsePreparedUpdate) {
-      await applyPreparedUpdate()
-      return
-    }
-
-    try {
-      const result = await window.api.downloadUpdate()
-
-      if (!result.success) {
-        setUpdateProgressStatus('idle')
-        setUpdateDownloadProgress(null)
-        showToast(
-          resolveAppErrorMessage(result.error, 'settings:updates.toast.download_failed'),
-          'error'
-        )
-        return
-      }
-
-      pendingApplyAfterExtractRef.current = true
-    } catch (error) {
-      pendingApplyAfterExtractRef.current = false
-      setUpdateProgressStatus('idle')
-      setUpdateDownloadProgress(null)
-      showToast(resolveAppErrorMessage(error, 'settings:updates.toast.download_failed'), 'error')
-      return
-    }
-  }, [
-    applyPreparedUpdate,
-    checkForUpdates,
-    confirm,
-    isUpdateInProgress,
-    isWindowsPlatform,
-    preparedUpdateCache,
-    showToast,
-    t
-  ])
+  const handleOpenReleasePage = useCallback(async (): Promise<void> => {
+    await openReleasePage()
+  }, [openReleasePage])
 
   return (
     <Paper
@@ -369,7 +97,7 @@ export function AppInfoSection(): React.JSX.Element {
           </Typography>
         </Stack>
 
-        {showUpdateButton && (
+        {showUpdateUi && (showWindowsUpdateButton || showMacReleaseButton) && (
           <>
             <Divider />
             <Stack
@@ -388,20 +116,32 @@ export function AppInfoSection(): React.JSX.Element {
                 </Typography>
               </Stack>
 
-              <Button
-                variant="contained"
-                disabled={isUpdateInProgress}
-                onClick={() => {
-                  void handleStartUpdate()
-                }}
-              >
-                {isUpdateInProgress ? t('updates.actions.updating') : t('updates.actions.update')}
-              </Button>
+              {showWindowsUpdateButton && (
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    void handleStartUpdate()
+                  }}
+                >
+                  {t('updates.actions.update')}
+                </Button>
+              )}
+
+              {showMacReleaseButton && (
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    void handleOpenReleasePage()
+                  }}
+                >
+                  {t('updates.actions.view_on_github')}
+                </Button>
+              )}
             </Stack>
           </>
         )}
 
-        {isUpdateInProgress && (
+        {showUpdateUi && isUpdateInProgress && (
           <>
             <Divider />
             <Stack spacing={1.25} sx={{ px: 3, py: 2.5 }}>

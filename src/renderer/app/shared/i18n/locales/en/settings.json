@@ -35,7 +35,7 @@
   },
   "downloads": {
     "default_type": {
-      "description": "The format selected by default when adding a link",
+      "description": "The format used by default when adding a link",
       "title": "Default download format"
     },
     "playlist_limit": {
@@ -56,28 +56,36 @@
   },
   "updates": {
     "actions": {
-      "description": "The app will restart to apply the update",
+      "description": "A new version is available.",
       "title": "Update available",
       "update": "Update now",
-      "updating": "Updating..."
+      "updating": "Updating...",
+      "view_on_github": "View on GitHub"
     },
     "current_version": {
       "description": "The version you're running now",
       "title": "Current version"
     },
     "dialog": {
-      "message": "Update now? The app will close and restart with the new version.",
+      "message": "The app will restart to apply the update. Continue?",
       "title": "Update"
+    },
+    "navigation_guard": {
+      "cancel_and_move": "Cancel and move",
+      "keep_updating": "Keep updating",
+      "message": "Navigating away will stop the update.",
+      "title": "Update in progress."
     },
     "section_title": "App info",
     "progress": {
-      "message": "Applying update…",
+      "message": "Applying update...",
       "percent": "{{percent}}%"
     },
     "toast": {
-      "apply_failed": "Could not start the update.",
+      "apply_failed": "Could not apply the update.",
       "check_failed": "Could not load update information.",
       "download_failed": "Could not download the update package.",
+      "open_release_failed": "Could not open GitHub.",
       "runtime_load_failed": "Could not load app information."
     }
   }
