@@ -126,12 +126,29 @@ export async function runApplyUpdate(plan: ApplyPlan, log: HelperLogger): Promis
 
   log('launching new exe')
   const child = spawn(plan.targetExe, [], {
+    cwd: path.dirname(plan.targetExe),
     detached: true,
     stdio: 'ignore'
   })
-  child.unref()
-  log('new exe launched')
 
-  log('apply complete')
-  process.exit(0)
+  let spawnError: Error | null = null
+
+  child.once('error', (err: Error) => {
+    spawnError = err
+    log(`failed to launch new exe: ${err.message}`)
+    process.exit(12)
+  })
+
+  child.unref()
+
+  // Short delay to detect immediate spawn failures before declaring success
+  setTimeout(() => {
+    if (spawnError) {
+      // error handler may have already called process.exit(12); ensure exit here too
+      process.exit(12)
+    }
+    log('new exe launch verified (no immediate spawn error)')
+    log('apply complete')
+    process.exit(0)
+  }, 1_000)
 }

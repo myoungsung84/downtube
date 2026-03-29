@@ -33,6 +33,16 @@ function getVersionDir(latestVersion: string): string {
   return path.join(app.getPath('userData'), UPDATE_CACHE_DIR_NAME, latestVersion)
 }
 
+function sanitizeVersionSegment(version: string): string {
+  // Replace forbidden chars with '_', collapse consecutive dots, trim, limit length
+  const sanitized = version
+    .replace(/[^a-zA-Z0-9.\-]/g, '_')
+    .replace(/\.{2,}/g, '_')
+    .replace(/^[.\-]+|[.\-]+$/g, '')
+    .slice(0, 64)
+  return sanitized.length > 0 ? sanitized : 'unknown'
+}
+
 export async function prepareUpdateApplyHelper({
   latestVersion,
   appPid,
@@ -40,9 +50,10 @@ export async function prepareUpdateApplyHelper({
   extractedAppDir,
   targetExePath
 }: PrepareHelperParams): Promise<PrepareHelperResult> {
-  const versionDir = getVersionDir(latestVersion)
-  const planPath = path.join(versionDir, `${UPDATE_APPLY_PLAN_PREFIX}${latestVersion}.json`)
-  const logPath = path.join(versionDir, `${UPDATE_APPLY_LOG_PREFIX}${latestVersion}.log`)
+  const safeVersion = sanitizeVersionSegment(latestVersion)
+  const versionDir = getVersionDir(safeVersion)
+  const planPath = path.join(versionDir, `${UPDATE_APPLY_PLAN_PREFIX}${safeVersion}.json`)
+  const logPath = path.join(versionDir, `${UPDATE_APPLY_LOG_PREFIX}${safeVersion}.log`)
   const helperDestPath = path.join(versionDir, UPDATE_HELPER_EXE_NAME)
 
   await fs.promises.mkdir(versionDir, { recursive: true })
