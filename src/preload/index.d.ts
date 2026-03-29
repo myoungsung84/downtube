@@ -16,6 +16,7 @@ import type {
 import type {
   ApplyUpdateResult,
   AppUpdateEvent,
+  CancelUpdateResult,
   CheckForUpdatesResult,
   DownloadUpdateResult,
   PreparedUpdateCache
@@ -26,6 +27,7 @@ interface AppAPI {
   openDownloadDir: () => Promise<AppResult>
   openDownloadsRootDir: () => Promise<AppResult>
   openDownloadItem: (path: string) => Promise<AppResult>
+  openExternalUrl: (url: string) => Promise<AppResult>
   fileExists: (path: string) => Promise<boolean>
   readMediaSidecar: (path: string) => Promise<ReadMediaSidecarResult>
 
@@ -59,6 +61,7 @@ interface AppAPI {
   getPreparedUpdate: () => Promise<PreparedUpdateCache | null>
   checkForUpdates: () => Promise<AppResult<CheckForUpdatesResult>>
   downloadUpdate: () => Promise<AppResult<DownloadUpdateResult>>
+  cancelUpdate: () => Promise<AppResult<CancelUpdateResult>>
   applyUpdate: () => Promise<AppResult<ApplyUpdateResult>>
   onInitState: (callback: (state: InitState) => void) => () => void
   onAppUpdateEvent: (callback: (event: AppUpdateEvent) => void) => () => void

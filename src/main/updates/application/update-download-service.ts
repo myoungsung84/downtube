@@ -4,6 +4,7 @@ import log from 'electron-log'
 import type { AppResult } from '../../../types/error.types'
 import type {
   AppUpdateStage,
+  CancelUpdateResult,
   DownloadUpdateResult,
   PreparedUpdateCache
 } from '../../../types/update.types'
@@ -23,6 +24,9 @@ const WINDOWS_PLATFORM = 'win32'
 
 let preparedUpdateCache: PreparedUpdateCache | null = null
 let updateDownloadInFlight = false
+let updateAbortController: AbortController | null = null
+let updateCancelRequested = false
+let updateStage: AppUpdateStage | 'idle' = 'idle'
 
 function emitUpdateError(
   stage: AppUpdateStage,
@@ -60,8 +64,44 @@ function emitUnknownUpdateError(
   })
 }
 
+function resetUpdateTaskState(): void {
+  updateAbortController = null
+  updateCancelRequested = false
+  updateStage = 'idle'
+}
+
+function emitUpdateCancelled(): void {
+  preparedUpdateCache = null
+  emitAppUpdateEvent({ type: 'cancelled' })
+}
+
+function throwIfUpdateCancelled(): void {
+  if (!updateCancelRequested) {
+    return
+  }
+
+  const error = new Error('Update cancelled') as Error & { code?: string }
+  error.code = 'UPDATE_CANCELLED'
+  throw error
+}
+
+function isUpdateCancellationError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const cancellableError = error as Error & { code?: string; name?: string }
+  return (
+    cancellableError.code === 'UPDATE_CANCELLED' ||
+    cancellableError.code === 'ERR_CANCELED' ||
+    cancellableError.name === 'AbortError' ||
+    error.message === 'Update cancelled'
+  )
+}
+
 async function runUpdateDownloadTask(): Promise<void> {
   preparedUpdateCache = null
+  updateStage = 'checking'
   emitAppUpdateEvent({ type: 'checking' })
 
   const currentVersion = app.getVersion()
@@ -71,6 +111,8 @@ async function runUpdateDownloadTask(): Promise<void> {
 
   try {
     const latestRelease = await fetchLatestGithubRelease()
+
+    throwIfUpdateCancelled()
 
     latestVersion = latestRelease.latestVersion
     assetName = latestRelease.assetName
@@ -112,6 +154,9 @@ async function runUpdateDownloadTask(): Promise<void> {
     })
 
     stage = 'downloading'
+    updateStage = stage
+    updateAbortController = new AbortController()
+
     log.info('[updates] download started', {
       currentVersion,
       latestVersion,
@@ -122,6 +167,7 @@ async function runUpdateDownloadTask(): Promise<void> {
     await downloadUpdateAsset({
       assetUrl: latestRelease.assetDownloadUrl,
       zipPath: cachePaths.zipPath,
+      signal: updateAbortController.signal,
       onStart: ({ totalBytes }) => {
         emitAppUpdateEvent({
           type: 'download-started',
@@ -142,6 +188,9 @@ async function runUpdateDownloadTask(): Promise<void> {
       }
     })
 
+    updateAbortController = null
+    throwIfUpdateCancelled()
+
     log.info('[updates] download complete', {
       latestVersion,
       assetName,
@@ -156,6 +205,9 @@ async function runUpdateDownloadTask(): Promise<void> {
     })
 
     stage = 'extracting'
+    updateStage = stage
+    throwIfUpdateCancelled()
+
     emitAppUpdateEvent({
       type: 'extract-started',
       latestVersion,
@@ -185,8 +237,16 @@ async function runUpdateDownloadTask(): Promise<void> {
       cache: preparedUpdateCache
     })
   } catch (error) {
+    if (isUpdateCancellationError(error)) {
+      log.info('[updates] update task cancelled', { stage, latestVersion, assetName })
+      emitUpdateCancelled()
+      return
+    }
+
     log.error('[updates] download task failed', { stage, latestVersion, assetName, error })
     emitUnknownUpdateError(stage, error, { latestVersion, assetName })
+  } finally {
+    resetUpdateTaskState()
   }
 }
 
@@ -212,4 +272,19 @@ export async function downloadUpdate(): Promise<AppResult<DownloadUpdateResult>>
   return successResult({
     started: true
   })
+}
+
+export async function cancelUpdate(): Promise<AppResult<CancelUpdateResult>> {
+  if (!updateDownloadInFlight) {
+    return successResult({ cancelled: false })
+  }
+
+  if (updateStage !== 'checking' && updateStage !== 'downloading') {
+    return successResult({ cancelled: false })
+  }
+
+  updateCancelRequested = true
+  updateAbortController?.abort()
+
+  return successResult({ cancelled: true })
 }
