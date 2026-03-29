@@ -8,13 +8,12 @@
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
-  <img src="https://img.shields.io/badge/release-1.0.6-111827" alt="Release 1.0.6" />
+  <img src="https://img.shields.io/badge/release-1.0.9-111827" alt="Release 1.0.9" />
   <img src="https://img.shields.io/badge/electron-35-47848F?logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=white" alt="React" />
 </p>
 
-Downtube is a personal Electron desktop app for queue-based media downloads and local playback.
-Version 1.0.6 combines queue downloads, a completed-items library, a built-in player, localized UI, theme presets, and persisted app settings.
+Downtube is a personal Electron desktop app for queue-based media downloads, a completed-items library, local playback, and Windows in-app update delivery.
 
 > Use this project only for media you own, media with a public license, or media you are authorized to use.
 
@@ -25,6 +24,7 @@ Version 1.0.6 combines queue downloads, a completed-items library, a built-in pl
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
 - [Build and Packaging](#build-and-packaging)
+- [Windows Update Flow](#windows-update-flow)
 - [Settings and Localization](#settings-and-localization)
 - [Project Structure](#project-structure)
 - [Main IPC Channels](#main-ipc-channels)
@@ -34,24 +34,19 @@ Version 1.0.6 combines queue downloads, a completed-items library, a built-in pl
 - [Usage and Distribution Notice](#usage-and-distribution-notice)
 - [Contributing](#contributing)
 
----
-
 ## Key Features
 
-- Queue-based downloads for video and audio items
+- Queue-based video and audio downloads
 - Playlist parsing and batch enqueue with a configurable playlist limit
-- Queue controls for start, pause, stop, remove, and retry
-- Per-job type switching while a job is still queued
-- Recent URL history stored in settings
-- Library view for completed downloads with open, reveal, delete, thumbnail, and JSON sidecar reuse
+- Queue controls for start, pause, stop, remove, retry, and queued-job type switching
+- Recent URL history persisted in settings
+- Library view for completed downloads with open, reveal, delete, thumbnail, and sidecar metadata reuse
 - Built-in player for local video and audio playback
-- Playback controls for seek, volume, mute, playback rate, fullscreen, audio visualizer, and ambient particles
-- Settings for theme mode, theme preset, language, default download type, and playlist limit
+- Player controls for seek, volume, mute, playback rate, fullscreen, audio visualizer, and ambient particles
+- Theme mode, theme preset, language, default download type, and playlist limit settings
 - Korean and English UI, plus a `system` language preference resolved in the main process
-- Resolved language applied before the first React render, including the splash screen
-- Startup checks for bundled binaries and runtime fallback download for `yt-dlp` on Windows and macOS when needed
-
----
+- Runtime startup checks for bundled tools and fallback `yt-dlp` download on Windows and macOS when needed
+- Windows update flow for check, download, extract, restart, and apply via a dedicated `update-helper`
 
 ## Tech Stack
 
@@ -64,50 +59,44 @@ Version 1.0.6 combines queue downloads, a completed-items library, a built-in pl
 | Localization    | i18next, react-i18next                 |
 | Media tools     | yt-dlp, FFmpeg, ffprobe, fluent-ffmpeg |
 | Storage         | electron-store                         |
-| Build           | electron-builder                       |
-
----
+| Build           | electron-builder, esbuild, pkg         |
 
 ## Requirements
 
 - Node.js
 - pnpm
 - Windows or macOS if you plan to use the maintained packaging scripts
-- `powershell.exe` if you run `pnpm build:win` from an environment such as WSL
+- `powershell.exe` if you run `pnpm build:win` from Git Bash, WSL, or another Unix-like shell on Windows
 - `gh` CLI only if you use `pnpm release:win`
 
 Notes:
 
-- The app currently validates YouTube video and playlist URLs in the renderer.
-- Bundled binary preparation scripts target Windows and macOS. Linux packaging is not configured in `package.json`.
-
----
+- The renderer currently validates YouTube video and playlist URLs.
+- The maintained release/update path is Windows-first.
+- `package.json` is the source of truth for electron-builder configuration.
 
 ## Getting Started
 
 ```bash
-# 1. Clone the repository
 git clone <your-repository-url>
 cd downtube
-
-# 2. Install dependencies
 pnpm install
-
-# 3. Run the app in development mode
 pnpm dev
 ```
 
-**Useful development commands**
+Useful commands:
 
 ```bash
-pnpm typecheck    # type checking
-pnpm lint         # lint
-pnpm format       # format
-pnpm clean        # clean build artifacts
-pnpm tools:ensure # copy ffmpeg/ffprobe to bin/ and download yt-dlp if missing
+pnpm typecheck
+pnpm lint
+pnpm format
+pnpm clean
+pnpm tools:ensure
+pnpm build
+pnpm build:helper
+pnpm build:win
+pnpm build:mac
 ```
-
----
 
 ## Build and Packaging
 
@@ -117,7 +106,19 @@ pnpm tools:ensure # copy ffmpeg/ffprobe to bin/ and download yt-dlp if missing
 pnpm build
 ```
 
-Runs in order: `ensure-tools.sh` → `pnpm typecheck` → `electron-vite build`
+Runs in order:
+
+- `scripts/build-tools/ensure-tools.sh`
+- `pnpm typecheck`
+- `electron-vite build`
+
+### Helper build
+
+```bash
+pnpm build:helper
+```
+
+Bundles `src/update-helper/index.ts` with esbuild and packages `out/update-helper/update-helper.exe` with `pkg`.
 
 ### Windows package
 
@@ -125,7 +126,16 @@ Runs in order: `ensure-tools.sh` → `pnpm typecheck` → `electron-vite build`
 pnpm build:win
 ```
 
-Cleans `dist/` and `out/` → reinstalls dependencies (`--frozen-lockfile`) → builds the app → creates a Windows unpacked build → zips `dist/win-unpacked` into `releases/`
+What it does:
+
+- cleans `dist/` and `out/`
+- reinstalls dependencies with `--frozen-lockfile`
+- runs the normal app build
+- builds `update-helper.exe`
+- creates a Windows unpacked app with electron-builder
+- verifies `resources/update-helper/update-helper.exe` is included
+- zips `dist/win-unpacked` into `releases/`
+- opens the unpacked output folder after a successful build
 
 ### macOS package
 
@@ -133,7 +143,13 @@ Cleans `dist/` and `out/` → reinstalls dependencies (`--frozen-lockfile`) → 
 pnpm build:mac
 ```
 
-Cleans `dist/` and `out/` → reinstalls dependencies (`--frozen-lockfile`) → builds the app → packages a macOS arm64 app bundle → applies ad-hoc signing for local execution
+What it does:
+
+- cleans `dist/` and `out/`
+- reinstalls dependencies with `--frozen-lockfile`
+- runs the normal app build
+- creates a macOS arm64 bundle with electron-builder
+- applies ad-hoc signing for local execution
 
 ### Windows release draft
 
@@ -149,7 +165,24 @@ This script assumes:
 
 It builds the Windows artifact and creates or updates a draft GitHub release.
 
----
+## Windows Update Flow
+
+Downtube includes an in-app Windows update flow exposed from the settings screen.
+
+High-level behavior:
+
+- `app:check-for-updates` loads the latest GitHub release metadata
+- `app:download-update` downloads the Windows portable zip into the app update cache
+- the zip is extracted into a versioned cache directory
+- `app:apply-update` prepares an apply plan and copies `update-helper.exe` into the version cache
+- the helper waits for the app to quit, replaces the installed files, and launches the updated executable
+- the next app boot cleans helper/apply artifacts from the update cache
+
+Scope notes:
+
+- update download and apply are currently supported on Windows only
+- helper-specific types and file preparation live under `src/main/updates`
+- the packaged app includes `resources/update-helper/update-helper.exe` through the `build.extraResources` configuration in `package.json`
 
 ## Settings and Localization
 
@@ -168,21 +201,19 @@ Persisted settings are stored through `electron-store` and validated in the main
 | Playlist limit               | —                                           |
 | Recent URL history           | —                                           |
 
-**Language flow**
+Language flow:
 
-- The stored value is a language preference.
-- The effective app language is resolved in the main process.
-- If the preference is `system`, the app resolves the OS language to `ko` or `en`.
-- The resolved language is applied before React renders, so the splash screen and the main UI start in the same language.
+- the stored value is a language preference
+- the effective app language is resolved in the main process
+- if the preference is `system`, the app normalizes the OS language to `ko` or `en`
+- the resolved language is applied before React renders, so the splash screen and the main UI start in the same language
 
-**Theme flow**
+Theme flow:
 
-- The theme mode and preset are stored separately in settings.
-- `system` theme follows `prefers-color-scheme` in the renderer.
-- In `system` mode, the default preset is applied.
-- Manual light and dark modes expose the `default`, `slate`, `ink`, `jade`, and `aurora` style options supported by the app.
-
----
+- theme mode and preset are stored separately
+- `system` mode follows `prefers-color-scheme` in the renderer
+- `system` mode uses the default preset
+- manual light and dark modes expose `default`, `slate`, `ink`, `jade`, and `aurora`
 
 ## Project Structure
 
@@ -193,7 +224,11 @@ src
 │   ├── downloads
 │   ├── ipc-handlers
 │   ├── library
-│   └── settings
+│   ├── settings
+│   └── updates
+│       ├── adapters
+│       ├── application
+│       └── shared
 ├── preload
 ├── renderer
 │   └── app
@@ -207,18 +242,24 @@ src
 │       ├── shared
 │       ├── styles
 │       └── theme
-└── types
+├── types
+└── update-helper
 ```
-
----
 
 ## Main IPC Channels
 
-The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the source of truth. The table below lists the main channels currently exposed by the app.
+The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the source of truth.
 
 | Area         | Channel                     | Direction        | Purpose                                                       |
 | ------------ | --------------------------- | ---------------- | ------------------------------------------------------------- |
 | app          | `app:init`                  | renderer -> main | Run startup initialization and report progress                |
+| app          | `app:get-runtime-info`      | renderer -> main | Read version, platform, packaging, and install directory info |
+| app          | `app:get-prepared-update`   | renderer -> main | Read the current prepared update cache                        |
+| updates      | `app:check-for-updates`     | renderer -> main | Check the latest Windows release metadata                     |
+| updates      | `app:download-update`       | renderer -> main | Download and extract an update package                        |
+| updates      | `app:apply-update`          | renderer -> main | Start the helper-based apply flow                             |
+| updates      | `app:update-event`          | main -> renderer | Push update progress and error events                         |
+| app          | `app:init-state`            | main -> renderer | Push startup initialization progress                          |
 | settings     | `settings:get`              | renderer -> main | Read a single persisted setting                               |
 | settings     | `settings:get-many`         | renderer -> main | Read multiple settings at once                                |
 | settings     | `settings:set`              | renderer -> main | Save a setting after validation                               |
@@ -235,14 +276,12 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 | downloads    | `downloads:event`           | main -> renderer | Push queue and job updates                                    |
 | library      | `library-list`              | renderer -> main | Scan completed media under the app download directory         |
 | library      | `library-delete`            | renderer -> main | Delete a media file and related sidecars                      |
-| player/files | `download-player`           | renderer -> main | Open the player window for a completed job                    |
-| player/files | `download-player-file`      | renderer -> main | Open the player window for a file path                        |
+| player/files | `player-open`               | renderer -> main | Open the player window for one or more local files            |
 | player/files | `download-dir-open`         | renderer -> main | Open the app download directory                               |
 | player/files | `downloads-root-open`       | renderer -> main | Open the system downloads root                                |
 | player/files | `download-item-open`        | renderer -> main | Reveal or open a downloaded item path                         |
+| player/files | `file-exists`               | renderer -> main | Check whether a file exists inside the allowed directory      |
 | player/files | `media-sidecar-read`        | renderer -> main | Read sidecar metadata for the player                          |
-
----
 
 ## Security Notes
 
@@ -251,20 +290,16 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 - IPC is restricted to the handlers registered in `src/main/ipc-handlers/ipc.ts`.
 - External windows are denied and opened through the system browser with `shell.openExternal`.
 - The custom `downtube-media://` protocol only serves files inside the system downloads directory and supports range requests for playback.
-- File operations such as player open, sidecar read, and library delete validate that paths stay inside the allowed directory.
-
----
+- File operations such as player open, sidecar read, library delete, and file existence checks validate that paths stay inside the allowed directory.
 
 ## Development Notes
 
 - The app uses a hash router and boots through `/splash`.
-- The splash screen reflects the same resolved language as the rest of the app from the first render.
-- Initialization sets up the log file under `Downloads/DownTube/down-tube.log`.
 - In development, the main window and the player window open DevTools automatically.
+- Initialization writes the app log under `Downloads/DownTube/down-tube.log`.
 - The app stores media sidecars (`.json`) and thumbnail images next to downloaded files and reuses them in the library and player.
-- The player includes both an audio visualizer and reactive ambient particles, and each toggle is persisted in settings.
-
----
+- The settings screen includes runtime info plus a Windows update section backed by the main-process update services.
+- The packaged Windows app ships a separate `update-helper.exe`, while the repository keeps its source in `src/update-helper`.
 
 ## License
 
@@ -278,8 +313,6 @@ External tools included in or used with the app follow their own licenses.
 | FFmpeg  | LGPL-2.1-or-later, depending on the distributed build | [ffmpeg.org](https://ffmpeg.org)           |
 | ffprobe | Distributed under FFmpeg terms                        | [ffmpeg.org](https://ffmpeg.org)           |
 
----
-
 ## Usage and Distribution Notice
 
 Downtube provides download and local playback features, but you are responsible for checking:
@@ -289,8 +322,6 @@ Downtube provides download and local playback features, but you are responsible 
 - the copyright law and related regulations in your jurisdiction
 
 The screenshots and descriptions in this repository are provided only to explain the app itself. They do not imply that content from any particular platform may be downloaded or redistributed freely.
-
----
 
 ## Contributing
 
