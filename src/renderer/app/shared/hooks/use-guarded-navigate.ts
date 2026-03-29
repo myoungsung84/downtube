@@ -35,11 +35,13 @@ export function useGuardedNavigate(): (to: string) => Promise<void> {
         return
       }
 
-      const cancelled = await cancelUpdate()
-
-      if (cancelled) {
-        navigate(to)
+      try {
+        await cancelUpdate()
+      } catch {
+        // 취소 실패 시에도 항상 이동을 허용한다.
       }
+
+      navigate(to)
     },
     [cancelUpdate, confirm, isUpdateInProgress, location.pathname, navigate, t]
   )

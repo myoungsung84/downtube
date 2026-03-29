@@ -349,13 +349,13 @@ export default function UpdateProvider({
         return false
       }
 
-      if (result.cancelled) {
+      if (result.cancellationRequested) {
         setUpdateProgressStatus('idle')
         setUpdateDownloadProgress(null)
         setPreparedUpdateCache(null)
       }
 
-      return result.cancelled
+      return result.cancellationRequested
     } catch {
       return false
     }

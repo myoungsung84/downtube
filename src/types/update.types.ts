@@ -16,7 +16,7 @@ export type DownloadUpdateResult = {
 }
 
 export type CancelUpdateResult = {
-  cancelled: boolean
+  cancellationRequested: boolean
 }
 
 export type ApplyUpdateResult = {

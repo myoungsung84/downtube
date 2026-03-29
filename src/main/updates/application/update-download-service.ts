@@ -276,15 +276,15 @@ export async function downloadUpdate(): Promise<AppResult<DownloadUpdateResult>>
 
 export async function cancelUpdate(): Promise<AppResult<CancelUpdateResult>> {
   if (!updateDownloadInFlight) {
-    return successResult({ cancelled: false })
+    return successResult({ cancellationRequested: false })
   }
 
   if (updateStage !== 'checking' && updateStage !== 'downloading') {
-    return successResult({ cancelled: false })
+    return successResult({ cancellationRequested: false })
   }
 
   updateCancelRequested = true
   updateAbortController?.abort()
 
-  return successResult({ cancelled: true })
+  return successResult({ cancellationRequested: true })
 }
