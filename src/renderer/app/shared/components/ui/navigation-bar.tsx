@@ -3,9 +3,10 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useGuardedNavigate } from '@renderer/shared/hooks/use-guarded-navigate'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { JSX } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 const NAV_ICON_BTN_SX = {
   p: 0.875,
@@ -36,7 +37,7 @@ const NAV_ICON_BTN_SX = {
 }
 
 export default function NavigationBar(): JSX.Element {
-  const navigate = useNavigate()
+  const navigate = useGuardedNavigate()
   const location = useLocation()
   const { t } = useI18n('navigation')
   const isSettingsPage = location.pathname === '/settings'
@@ -70,11 +71,15 @@ export default function NavigationBar(): JSX.Element {
           width: '100%'
         }}
       >
-        {/* Left actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
           {showBackButton && (
             <Tooltip title={t('actions.back')} placement="bottom" arrow>
-              <IconButton onClick={() => navigate('/')} sx={NAV_ICON_BTN_SX}>
+              <IconButton
+                onClick={() => {
+                  void navigate('/')
+                }}
+                sx={NAV_ICON_BTN_SX}
+              >
                 <ArrowBackIosNewOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               </IconButton>
             </Tooltip>
@@ -82,7 +87,9 @@ export default function NavigationBar(): JSX.Element {
 
           <Tooltip title={t('items.library')} placement="bottom" arrow>
             <IconButton
-              onClick={() => navigate('/library')}
+              onClick={() => {
+                void navigate('/library')
+              }}
               aria-label={t('items.library')}
               sx={{
                 ...NAV_ICON_BTN_SX,
@@ -102,7 +109,6 @@ export default function NavigationBar(): JSX.Element {
           </Tooltip>
         </Stack>
 
-        {/* Center logo */}
         <Stack alignItems="center" sx={{ flex: 2, userSelect: 'none' }}>
           <Stack direction="row" alignItems="baseline" spacing={0.5}>
             <Typography
@@ -140,11 +146,12 @@ export default function NavigationBar(): JSX.Element {
           />
         </Stack>
 
-        {/* Right actions */}
         <Stack direction="row" spacing={1} sx={{ flex: 1 }} justifyContent="flex-end">
           <Tooltip title={t('items.settings')} placement="bottom" arrow>
             <IconButton
-              onClick={() => navigate('/settings')}
+              onClick={() => {
+                void navigate('/settings')
+              }}
               sx={{
                 ...NAV_ICON_BTN_SX,
                 ...(isSettingsPage && {

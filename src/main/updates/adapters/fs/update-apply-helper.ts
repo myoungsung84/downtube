@@ -36,9 +36,9 @@ function getVersionDir(latestVersion: string): string {
 function sanitizeVersionSegment(version: string): string {
   // Replace forbidden chars with '_', collapse consecutive dots, trim, limit length
   const sanitized = version
-    .replace(/[^a-zA-Z0-9.\-]/g, '_')
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
     .replace(/\.{2,}/g, '_')
-    .replace(/^[.\-]+|[.\-]+$/g, '')
+    .replace(/^[.-]+|[.-]+$/g, '')
     .slice(0, 64)
   return sanitized.length > 0 ? sanitized : 'unknown'
 }

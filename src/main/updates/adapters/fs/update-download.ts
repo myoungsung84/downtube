@@ -7,6 +7,7 @@ import { removePathBestEffort, removePathWithRetry } from './update-fs'
 type DownloadUpdateAssetParams = {
   assetUrl: string
   zipPath: string
+  signal?: AbortSignal
   onStart?: (payload: { totalBytes: number | null }) => void
   onProgress?: (payload: {
     downloadedBytes: number
@@ -27,6 +28,7 @@ function parseContentLength(value: unknown): number | null {
 export async function downloadUpdateAsset({
   assetUrl,
   zipPath,
+  signal,
   onStart,
   onProgress
 }: DownloadUpdateAssetParams): Promise<void> {
@@ -36,6 +38,7 @@ export async function downloadUpdateAsset({
   try {
     const response = await axios.get<NodeJS.ReadableStream>(assetUrl, {
       responseType: 'stream',
+      signal,
       headers: {
         Accept: 'application/octet-stream',
         'User-Agent': 'Downtube'
@@ -62,6 +65,18 @@ export async function downloadUpdateAsset({
         responseStream.destroy()
         writer.destroy()
         reject(error)
+      }
+
+      if (signal) {
+        signal.addEventListener(
+          'abort',
+          () => {
+            const error = new Error('Update cancelled') as Error & { code?: string }
+            error.code = 'UPDATE_CANCELLED'
+            fail(error)
+          },
+          { once: true }
+        )
       }
 
       responseStream.on('data', (chunk: Buffer) => {

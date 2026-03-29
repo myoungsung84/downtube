@@ -16,6 +16,7 @@ import type {
 import type {
   ApplyUpdateResult,
   AppUpdateEvent,
+  CancelUpdateResult,
   CheckForUpdatesResult,
   DownloadUpdateResult,
   PreparedUpdateCache
@@ -26,6 +27,8 @@ const api = {
   openDownloadDir: () => ipcRenderer.invoke('download-dir-open'),
   openDownloadsRootDir: () => ipcRenderer.invoke('downloads-root-open'),
   openDownloadItem: (path: string) => ipcRenderer.invoke('download-item-open', path),
+  openExternalUrl: (url: string): Promise<AppResult> =>
+    ipcRenderer.invoke('app:open-external-url', url),
   fileExists: (path: string): Promise<boolean> => ipcRenderer.invoke('file-exists', path),
   readMediaSidecar: (path: string): Promise<ReadMediaSidecarResult> =>
     ipcRenderer.invoke('media-sidecar-read', path),
@@ -68,6 +71,8 @@ const api = {
     ipcRenderer.invoke('app:check-for-updates'),
   downloadUpdate: (): Promise<AppResult<DownloadUpdateResult>> =>
     ipcRenderer.invoke('app:download-update'),
+  cancelUpdate: (): Promise<AppResult<CancelUpdateResult>> =>
+    ipcRenderer.invoke('app:cancel-update'),
   applyUpdate: (): Promise<AppResult<ApplyUpdateResult>> => ipcRenderer.invoke('app:apply-update'),
 
   onInitState: (callback: (state: InitState) => void) => {

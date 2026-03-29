@@ -32,7 +32,7 @@ import {
 } from '../settings/settings-store'
 import { getCurrentInstallDir } from '../updates/adapters/fs/update-install-dir'
 import { applyUpdate, getPreparedUpdate } from '../updates/application/update-apply-service'
-import { downloadUpdate } from '../updates/application/update-download-service'
+import { cancelUpdate, downloadUpdate } from '../updates/application/update-download-service'
 import { onAppUpdateEvent } from '../updates/application/update-events'
 import { checkForUpdates } from '../updates/application/update-service'
 
@@ -82,6 +82,15 @@ function isPathInsideDownloadDir(filePath: string): boolean {
     process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget
   const rel = path.relative(normalizedRoot, normalizedTarget)
   return !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
+function isSafeExternalUrl(targetUrl: string): boolean {
+  try {
+    const parsed = new URL(targetUrl)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
 }
 
 function parsePlayerPaths(payload: PlayerOpenPayload): string[] | null {
@@ -320,7 +329,22 @@ export const ipcHandler = (mainWindow: BrowserWindow): void => {
 
   safeSetHandler('app:download-update', async () => downloadUpdate())
 
+  safeSetHandler('app:cancel-update', async () => cancelUpdate())
+
   safeSetHandler('app:apply-update', async () => applyUpdate())
+
+  safeSetHandler('app:open-external-url', async (_, targetUrl: string) => {
+    if (typeof targetUrl !== 'string' || !isSafeExternalUrl(targetUrl)) {
+      return failureResult('common.invalid_request')
+    }
+
+    try {
+      await shell.openExternal(targetUrl)
+      return successResult()
+    } catch (error) {
+      return failureFromUnknown('common.open_failed', error)
+    }
+  })
 
   safeSetHandler('settings:get', async (_, key: SettingKey) => {
     return getSetting(key)

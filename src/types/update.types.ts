@@ -15,6 +15,10 @@ export type DownloadUpdateResult = {
   started: boolean
 }
 
+export type CancelUpdateResult = {
+  cancellationRequested: boolean
+}
+
 export type ApplyUpdateResult = {
   started: boolean
 }
@@ -72,6 +76,9 @@ export type AppUpdateEvent =
   | {
       type: 'apply-launching'
       latestVersion: string
+    }
+  | {
+      type: 'cancelled'
     }
   | {
       type: 'error'

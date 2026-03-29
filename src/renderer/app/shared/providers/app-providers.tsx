@@ -4,6 +4,7 @@ import React from 'react'
 
 import DialogProvider from './dialog/dialog-provider'
 import ToastProvider from './toast/toast-provider'
+import UpdateProvider from './update/update-provider'
 
 const APP_LANGUAGE_KEY = 'app.language' as const
 
@@ -30,8 +31,10 @@ export default function AppProviders(props: { children: React.ReactNode }): Reac
   return (
     <ToastProvider>
       <DialogProvider>
-        <AppLanguageSync />
-        {props.children}
+        <UpdateProvider>
+          <AppLanguageSync />
+          {props.children}
+        </UpdateProvider>
       </DialogProvider>
     </ToastProvider>
   )

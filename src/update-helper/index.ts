@@ -16,7 +16,7 @@ function parsePlanPath(argv: string[]): string | null {
 function validatePlan(parsed: unknown): parsed is ApplyPlan {
   if (!parsed || typeof parsed !== 'object') return false
   const p = parsed as Record<string, unknown>
-  const versionPattern = /^[a-zA-Z0-9.\-]+$/
+  const versionPattern = /^[a-zA-Z0-9.-]+$/
   return (
     typeof p.version === 'string' &&
     p.version.length > 0 &&
@@ -52,9 +52,7 @@ async function main(): Promise<void> {
     const raw = fs.readFileSync(planPath, 'utf-8')
     const parsed: unknown = JSON.parse(raw)
     if (!validatePlan(parsed)) {
-      process.stderr.write(
-        'update-helper: invalid plan: missing or invalid required fields\n'
-      )
+      process.stderr.write('update-helper: invalid plan: missing or invalid required fields\n')
       process.exit(3)
     }
     plan = parsed

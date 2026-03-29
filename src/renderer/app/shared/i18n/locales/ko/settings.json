@@ -35,7 +35,7 @@
   },
   "downloads": {
     "default_type": {
-      "description": "링크를 추가할 때 기본으로 선택될 형식입니다",
+      "description": "링크 추가 시 기본으로 사용할 형식입니다",
       "title": "기본 다운로드 형식"
     },
     "playlist_limit": {
@@ -56,18 +56,25 @@
   },
   "updates": {
     "actions": {
-      "description": "업데이트 후 앱이 재시작됩니다",
+      "description": "새 버전이 있습니다.",
       "title": "업데이트 가능",
       "update": "지금 업데이트",
-      "updating": "업데이트 중..."
+      "updating": "업데이트 중...",
+      "view_on_github": "GitHub"
     },
     "current_version": {
       "description": "현재 실행 중인 버전입니다",
       "title": "현재 버전"
     },
     "dialog": {
-      "message": "업데이트할까요? 앱이 종료된 뒤 새 버전으로 다시 시작됩니다.",
+      "message": "업데이트하면 앱이 재시작됩니다. 계속할까요?",
       "title": "업데이트"
+    },
+    "navigation_guard": {
+      "cancel_and_move": "취소하고 이동",
+      "keep_updating": "계속 업데이트",
+      "message": "페이지를 이동하면 업데이트가 중단됩니다.",
+      "title": "업데이트 중입니다."
     },
     "section_title": "앱 정보",
     "progress": {
@@ -75,9 +82,10 @@
       "percent": "{{percent}}%"
     },
     "toast": {
-      "apply_failed": "업데이트를 시작하지 못했습니다.",
+      "apply_failed": "업데이트를 적용하지 못했습니다.",
       "check_failed": "업데이트 정보를 불러오지 못했습니다.",
       "download_failed": "업데이트 파일을 가져오지 못했습니다.",
+      "open_release_failed": "GitHub를 열지 못했습니다.",
       "runtime_load_failed": "앱 정보를 불러오지 못했습니다."
     }
   }
