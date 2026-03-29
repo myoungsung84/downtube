@@ -1,0 +1,9 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["src/update-helper/**/*", "src/main/updates/shared/**/*"],
+  "compilerOptions": {
+    "composite": false,
+    "moduleResolution": "bundler",
+    "paths": {}
+  }
+}

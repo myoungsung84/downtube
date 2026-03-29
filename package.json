@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "typecheck:helper": "tsc --noEmit -p tsconfig.helper.json --composite false",
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web && pnpm typecheck:helper",
+    "build:helper": "bash scripts/build-tools/build-helper.sh",
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "tools:ensure": "bash scripts/build-tools/ensure-tools.sh",
@@ -25,11 +27,35 @@
     "appId": "com.shining.downtube",
     "productName": "Downtube",
     "icon": "assets/app-icon.ico",
+    "win": {
+      "executableName": "downtube",
+      "icon": "assets/app-icon.ico"
+    },
     "mac": {
-      "icon": "assets/app-icon.icns"
+      "icon": "assets/app-icon.icns",
+      "notarize": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "snap",
+        "deb"
+      ],
+      "maintainer": "electronjs.org",
+      "category": "Utility"
+    },
+    "nsis": {
+      "artifactName": "${name}-${version}-setup.${ext}",
+      "shortcutName": "${productName}",
+      "uninstallDisplayName": "${productName}",
+      "createDesktopShortcut": "always"
+    },
+    "appImage": {
+      "artifactName": "${name}-${version}.${ext}"
     },
     "files": [
       "out/**",
+      "!out/update-helper/**",
       "bin/**",
       "assets/**"
     ],
@@ -47,11 +73,16 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "out/update-helper/update-helper.exe",
+        "to": "update-helper/update-helper.exe"
       }
     ],
     "extraMetadata": {
       "main": "out/main/index.js"
-    }
+    },
+    "npmRebuild": false
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -86,6 +117,8 @@
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "@yao-pkg/pkg": "^5.12.0",
+    "esbuild": "^0.25.0",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",

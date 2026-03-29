@@ -12,16 +12,14 @@ import {
   normalizeUnknownAppError,
   successResult
 } from '../../common/app-error'
-import { createUpdateApplyScript } from '../adapters/fs/update-apply-script'
+import { prepareUpdateApplyHelper } from '../adapters/fs/update-apply-helper'
 import { getCurrentInstallDir, isSamePath, pathsOverlap } from '../adapters/fs/update-install-dir'
 import { WINDOWS_PORTABLE_EXECUTABLE_NAME } from '../shared/update.types'
 import { getPreparedUpdateCache } from './update-download-service'
 import { emitAppUpdateEvent } from './update-events'
 
 const WINDOWS_PLATFORM = 'win32'
-const APPLY_QUIT_DELAY_MS = 1000
 const APPLY_EXIT_FALLBACK_DELAY_MS = 5000
-const SHOW_APPLY_SCRIPT_WINDOW = false
 
 let applyInFlight = false
 
@@ -55,16 +53,8 @@ function validatePreparedUpdateForApply(): AppResult<PreparedUpdateCache & { ins
     return failureResult('updates.prepared_update_missing')
   }
 
-  if (!preparedUpdate.extractedAppRoot || !preparedUpdate.exePath || !preparedUpdate.zipPath) {
+  if (!preparedUpdate.extractedAppRoot || !preparedUpdate.exePath) {
     return failureResult('updates.prepared_update_missing')
-  }
-
-  if (!fs.existsSync(preparedUpdate.zipPath)) {
-    return failureResult('updates.prepared_update_missing', preparedUpdate.zipPath)
-  }
-
-  if (!fs.existsSync(preparedUpdate.extractedDir)) {
-    return failureResult('updates.prepared_update_missing', preparedUpdate.extractedDir)
   }
 
   if (!fs.existsSync(preparedUpdate.extractedAppRoot) || !fs.existsSync(preparedUpdate.exePath)) {
@@ -123,39 +113,38 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
     })
 
     const targetExePath = path.join(preparedUpdate.installDir, WINDOWS_PORTABLE_EXECUTABLE_NAME)
-    const scriptInfo = await createUpdateApplyScript({
+    const helperInfo = await prepareUpdateApplyHelper({
       latestVersion: preparedUpdate.latestVersion,
       appPid: process.pid,
       installDir: preparedUpdate.installDir,
-      extractedAppRoot: preparedUpdate.extractedAppRoot,
+      extractedAppDir: preparedUpdate.extractedAppRoot,
       targetExePath
     })
 
-    log.info('[updates] apply script created', scriptInfo)
+    log.info('[updates] update helper prepared', helperInfo)
 
-    const executable = 'cmd.exe'
-    const args = ['/d', '/c', scriptInfo.scriptPath]
-    const cwd = path.dirname(scriptInfo.scriptPath)
+    const executable = helperInfo.helperExePath
+    const args = ['--plan', helperInfo.planPath]
+    const cwd = path.dirname(helperInfo.helperExePath)
 
     log.info('[updates] apply launch attempted', {
       latestVersion: preparedUpdate.latestVersion,
       executable,
       args,
-      cwd,
-      scriptPath: scriptInfo.scriptPath
+      cwd
     })
 
     const child = spawn(executable, args, {
       cwd,
       detached: true,
       stdio: 'ignore',
-      windowsHide: !SHOW_APPLY_SCRIPT_WINDOW
+      windowsHide: true
     })
 
     child.on('error', (error) => {
-      log.error('[updates] apply script launch error', {
+      log.error('[updates] apply helper launch error', {
         latestVersion: preparedUpdate.latestVersion,
-        scriptPath: scriptInfo.scriptPath,
+        helperExePath: helperInfo.helperExePath,
         cwd,
         error
       })
@@ -163,10 +152,9 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
 
     log.info('[updates] apply launch succeeded', {
       latestVersion: preparedUpdate.latestVersion,
-      scriptPath: scriptInfo.scriptPath,
+      helperExePath: helperInfo.helperExePath,
       cwd,
-      pid: child.pid ?? null,
-      windowsHide: !SHOW_APPLY_SCRIPT_WINDOW
+      pid: child.pid ?? null
     })
 
     child.unref()
@@ -176,9 +164,9 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
       latestVersion: preparedUpdate.latestVersion
     })
 
-    log.info('[updates] apply script launch acknowledged', {
+    log.info('[updates] apply helper launch acknowledged', {
       latestVersion: preparedUpdate.latestVersion,
-      scriptPath: scriptInfo.scriptPath,
+      helperExePath: helperInfo.helperExePath,
       pid: child.pid ?? null
     })
 
@@ -193,14 +181,7 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
 
     app.once('quit', handleQuitObserved)
 
-    setTimeout(() => {
-      log.info('[updates] app.quit() about to be called for update', {
-        latestVersion: preparedUpdate.latestVersion,
-        pid: child.pid ?? null,
-        quitDelayMs: APPLY_QUIT_DELAY_MS,
-        windowCount: BrowserWindow.getAllWindows().length
-      })
-
+    setImmediate(() => {
       const fallbackTimer = setTimeout(() => {
         if (quitObserved) {
           return
@@ -222,7 +203,6 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
       log.info('[updates] quitting app for update', {
         latestVersion: preparedUpdate.latestVersion,
         pid: child.pid ?? null,
-        quitDelayMs: APPLY_QUIT_DELAY_MS,
         windowCount: BrowserWindow.getAllWindows().length
       })
       app.quit()
@@ -231,7 +211,7 @@ export async function applyUpdate(): Promise<AppResult<ApplyUpdateResult>> {
         pid: child.pid ?? null,
         windowCount: BrowserWindow.getAllWindows().length
       })
-    }, APPLY_QUIT_DELAY_MS)
+    })
 
     return successResult({
       started: true

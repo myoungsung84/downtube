@@ -3,7 +3,13 @@ import log from 'electron-log'
 import fs from 'fs'
 import path from 'path'
 
-import { UPDATE_CACHE_DIR_NAME, type UpdateCachePaths } from '../../shared/update.types'
+import {
+  UPDATE_APPLY_LOG_PREFIX,
+  UPDATE_APPLY_PLAN_PREFIX,
+  UPDATE_CACHE_DIR_NAME,
+  UPDATE_HELPER_EXE_NAME,
+  type UpdateCachePaths
+} from '../../shared/update.types'
 import { removePathBestEffort } from './update-fs'
 
 function createAttemptId(): string {
@@ -55,6 +61,47 @@ export function getUpdateCachePaths(latestVersion: string, assetName: string): U
     attemptDir,
     zipPath: path.join(attemptDir, assetName),
     extractedDir: path.join(attemptDir, 'extracted')
+  }
+}
+
+export async function cleanupApplyArtifacts(): Promise<void> {
+  const cacheRootDir = path.join(app.getPath('userData'), UPDATE_CACHE_DIR_NAME)
+
+  let versionDirs: fs.Dirent[] = []
+  try {
+    versionDirs = await fs.promises.readdir(cacheRootDir, { withFileTypes: true })
+  } catch {
+    return
+  }
+
+  for (const entry of versionDirs) {
+    if (!entry.isDirectory()) {
+      continue
+    }
+
+    const versionDir = path.join(cacheRootDir, entry.name)
+
+    let files: fs.Dirent[] = []
+    try {
+      files = await fs.promises.readdir(versionDir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    for (const file of files) {
+      if (!file.isFile()) {
+        continue
+      }
+
+      const { name } = file
+      if (
+        name.startsWith(UPDATE_APPLY_LOG_PREFIX) ||
+        name.startsWith(UPDATE_APPLY_PLAN_PREFIX) ||
+        name === UPDATE_HELPER_EXE_NAME
+      ) {
+        await removePathBestEffort(path.join(versionDir, name), { force: true })
+      }
+    }
   }
 }
 

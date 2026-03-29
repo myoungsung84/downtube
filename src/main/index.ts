@@ -5,6 +5,7 @@ import { join } from 'path'
 
 import { registerMediaProtocol } from './common/register-media-protocol'
 import { ipcHandler } from './ipc-handlers/ipc'
+import { cleanupApplyArtifacts } from './updates/adapters/fs/update-paths'
 
 function logAppLifecycle(eventName: string): void {
   log.info(`[app] ${eventName}`, {
@@ -59,6 +60,9 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
   registerMediaProtocol()
   logAppLifecycle('ready')
+  cleanupApplyArtifacts().catch((error) => {
+    log.warn('[updates] apply artifact cleanup failed', { error })
+  })
 
   app.on('browser-window-created', (_, window) => {
     log.info('[app] browser-window-created', {
