@@ -1,11 +1,11 @@
 import { app } from 'electron'
-import ffmpegStatic from 'ffmpeg-static'
-import ffprobeStatic from 'ffprobe-static'
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
+import { createRequire } from 'module'
 import path from 'path'
 
 const isWindows = process.platform === 'win32'
+const requireFromCjs = createRequire(import.meta.url)
 
 function locateBinary(name: 'ffmpeg' | 'ffprobe'): string {
   const binaryName = isWindows ? `${name}.exe` : name
@@ -27,7 +27,11 @@ function locateBinary(name: 'ffmpeg' | 'ffprobe'): string {
     if (fs.existsSync(candidate)) return candidate
   }
 
-  return name === 'ffmpeg' ? (ffmpegStatic as string) : ffprobeStatic.path
+  // dev fallback: ffmpeg-static / ffprobe-static은 devDependencies에만 존재
+
+  return name === 'ffmpeg'
+    ? (requireFromCjs('ffmpeg-static') as string)
+    : (requireFromCjs('ffprobe-static') as { path: string }).path
 }
 
 export function locateFfmpeg(): string {
