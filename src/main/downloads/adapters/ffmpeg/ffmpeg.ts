@@ -5,7 +5,9 @@ import { createRequire } from 'module'
 import path from 'path'
 
 const isWindows = process.platform === 'win32'
-const requireFromCjs = createRequire(import.meta.url)
+const requireFromCjs = createRequire(
+  typeof __filename !== 'undefined' ? __filename : import.meta.url
+)
 
 function locateBinary(name: 'ffmpeg' | 'ffprobe'): string {
   const binaryName = isWindows ? `${name}.exe` : name
