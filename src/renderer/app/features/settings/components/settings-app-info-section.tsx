@@ -19,9 +19,10 @@ export function AppInfoSection(): React.JSX.Element {
   } = useUpdate()
 
   const showUpdateUi = runtimeInfo?.isPackaged === true
+  const hasAvailableUpdate = updateCheckStatus === 'available'
   const showWindowsUpdateButton =
-    showUpdateUi && isWindowsPlatform && updateCheckStatus === 'available' && !isUpdateInProgress
-  const showMacReleaseButton = showUpdateUi && isMacPlatform
+    showUpdateUi && isWindowsPlatform && hasAvailableUpdate && !isUpdateInProgress
+  const showMacReleaseButton = showUpdateUi && isMacPlatform && hasAvailableUpdate
 
   const handleStartUpdate = useCallback(async (): Promise<void> => {
     if (!isWindowsPlatform || isUpdateInProgress) {
