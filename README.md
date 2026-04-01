@@ -63,8 +63,8 @@ Downtube is a personal Electron desktop app for queue-based media downloads, a c
 
 ## Requirements
 
-- Node.js
-- pnpm
+- Node.js LTS (Node 20 or later recommended)
+- pnpm via Corepack (`corepack enable`)
 - Windows or macOS if you plan to use the maintained packaging scripts
 - `powershell.exe` if you run `pnpm build:win` from Git Bash, WSL, or another Unix-like shell on Windows
 - `gh` CLI only if you use `pnpm release:win`
@@ -80,9 +80,12 @@ Notes:
 ```bash
 git clone <your-repository-url>
 cd downtube
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
+
+For normal setup, keep `pnpm install --frozen-lockfile`.
+When you intentionally change dependencies, use `pnpm add` or `pnpm update` and commit the updated lockfile together.
 
 Useful commands:
 
