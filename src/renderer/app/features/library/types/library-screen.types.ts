@@ -1,6 +1,7 @@
 import type { LibraryItem } from '@src/types/library.types'
+import type { AppLanguage } from '@src/types/settings.types'
 
-export type LibraryScreenLanguage = 'ko' | 'en'
+export type LibraryScreenLanguage = AppLanguage
 
 export type LibraryMenuState =
   | { phase: 'idle' }

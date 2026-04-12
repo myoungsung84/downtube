@@ -30,31 +30,20 @@ function toSafeNumber(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
-function getSafeCreatedAt(item: Partial<LibraryItem>): number {
-  return toSafeNumber(item.createdAt)
+type DecoratedLibraryItem = {
+  item: LibraryItem
+  index: number
+  primaryDate: number
+  createdAt: number
+  fileSize: number
+  titleText: string
+  fileNameText: string
 }
 
-function getSafeDownloadedAt(item: Partial<LibraryItem>): number {
+function toSafeDownloadedAt(item: LibraryItem): number {
   if (!item.downloadedAt) return 0
-
   const parsed = dayjs(item.downloadedAt)
   return parsed.isValid() ? parsed.valueOf() : 0
-}
-
-function getSafePrimaryDate(item: Partial<LibraryItem>): number {
-  return getSafeDownloadedAt(item) || getSafeCreatedAt(item)
-}
-
-function getSafeFileSize(item: Partial<LibraryItem>): number {
-  return toSafeNumber(item.fileSize)
-}
-
-function getSafeTitleText(item: Partial<LibraryItem>): string {
-  return item.title?.trim() || item.fileName?.trim() || ''
-}
-
-function getSafeFileNameText(item: Partial<LibraryItem>): string {
-  return item.fileName?.trim() || ''
 }
 
 function compareAsc(left: number, right: number): number {
@@ -69,45 +58,59 @@ function compareText(left: string, right: string): number {
   return titleCollator.compare(left, right)
 }
 
-function compareStableText(left: Partial<LibraryItem>, right: Partial<LibraryItem>): number {
-  return (
-    compareText(getSafeTitleText(left), getSafeTitleText(right)) ||
-    compareText(getSafeFileNameText(left), getSafeFileNameText(right))
-  )
-}
-
-function compareBySortKey(left: LibraryItem, right: LibraryItem, sortKey: LibrarySortKey): number {
+function compareDecoratedBySortKey(
+  left: DecoratedLibraryItem,
+  right: DecoratedLibraryItem,
+  sortKey: LibrarySortKey
+): number {
   switch (sortKey) {
     case 'downloadedAt-desc':
       return (
-        compareDesc(getSafePrimaryDate(left), getSafePrimaryDate(right)) ||
-        compareDesc(getSafeCreatedAt(left), getSafeCreatedAt(right)) ||
-        compareStableText(left, right)
+        compareDesc(left.primaryDate, right.primaryDate) ||
+        compareDesc(left.createdAt, right.createdAt) ||
+        compareText(left.titleText, right.titleText) ||
+        compareText(left.fileNameText, right.fileNameText)
       )
 
     case 'downloadedAt-asc':
       return (
-        compareAsc(getSafePrimaryDate(left), getSafePrimaryDate(right)) ||
-        compareAsc(getSafeCreatedAt(left), getSafeCreatedAt(right)) ||
-        compareStableText(left, right)
+        compareAsc(left.primaryDate, right.primaryDate) ||
+        compareAsc(left.createdAt, right.createdAt) ||
+        compareText(left.titleText, right.titleText) ||
+        compareText(left.fileNameText, right.fileNameText)
       )
 
     case 'title-asc':
       return (
-        compareText(getSafeTitleText(left), getSafeTitleText(right)) ||
-        compareDesc(getSafeCreatedAt(left), getSafeCreatedAt(right)) ||
-        compareStableText(left, right)
+        compareText(left.titleText, right.titleText) ||
+        compareDesc(left.createdAt, right.createdAt) ||
+        compareText(left.fileNameText, right.fileNameText)
       )
 
     case 'fileSize-desc':
       return (
-        compareDesc(getSafeFileSize(left), getSafeFileSize(right)) ||
-        compareDesc(getSafeCreatedAt(left), getSafeCreatedAt(right)) ||
-        compareStableText(left, right)
+        compareDesc(left.fileSize, right.fileSize) ||
+        compareDesc(left.createdAt, right.createdAt) ||
+        compareText(left.titleText, right.titleText) ||
+        compareText(left.fileNameText, right.fileNameText)
       )
 
     default:
       return 0
+  }
+}
+
+function decorate(item: LibraryItem, index: number): DecoratedLibraryItem {
+  const createdAt = toSafeNumber(item.createdAt)
+  const downloadedAt = toSafeDownloadedAt(item)
+  return {
+    item,
+    index,
+    primaryDate: downloadedAt || createdAt,
+    createdAt,
+    fileSize: toSafeNumber(item.fileSize),
+    titleText: item.title?.trim() || item.fileName?.trim() || '',
+    fileNameText: item.fileName?.trim() || ''
   }
 }
 
@@ -116,9 +119,9 @@ export function sortLibraryItems(
   sortKey: LibrarySortKey
 ): LibraryItem[] {
   return items
-    .map((item, index) => ({ item, index }))
-    .sort((left, right) => {
-      return compareBySortKey(left.item, right.item, sortKey) || left.index - right.index
-    })
+    .map((item, index) => decorate(item, index))
+    .sort(
+      (left, right) => compareDecoratedBySortKey(left, right, sortKey) || left.index - right.index
+    )
     .map(({ item }) => item)
 }

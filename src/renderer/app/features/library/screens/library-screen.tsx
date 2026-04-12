@@ -185,6 +185,7 @@ function LibraryHeaderSection({
   sortKey,
   sortOptions,
   onSortChange,
+  sortLabel,
   loading,
   refreshing,
   onRefresh,
@@ -203,6 +204,7 @@ function LibraryHeaderSection({
   sortKey: LibrarySortKey
   sortOptions: ReadonlyArray<{ key: LibrarySortKey; label: string }>
   onSortChange: (event: SelectChangeEvent<LibrarySortKey>) => void
+  sortLabel: string
   loading: boolean
   refreshing: boolean
   onRefresh: () => void
@@ -247,6 +249,7 @@ function LibraryHeaderSection({
               <Select
                 value={sortKey}
                 onChange={onSortChange}
+                inputProps={{ 'aria-label': sortLabel }}
                 sx={{
                   height: 32,
                   minWidth: 148,
@@ -391,7 +394,13 @@ function LibraryItemRow({
 
   return (
     <Box
-      onClick={canOpenPlayer ? () => onOpenPlayer(item) : undefined}
+      onClick={
+        canOpenPlayer
+          ? () => {
+              void onOpenPlayer(item)
+            }
+          : undefined
+      }
       sx={{
         cursor: canOpenPlayer ? 'pointer' : 'default',
         opacity: isDeleting ? 0.4 : 1,
@@ -793,6 +802,7 @@ export default function LibraryScreen(): React.JSX.Element {
           sortKey={sortKey}
           sortOptions={sortOptions}
           onSortChange={handleSortChange}
+          sortLabel={t('sort.label')}
           loading={loading}
           refreshing={refreshing}
           onRefresh={() => void loadItems('refresh')}
