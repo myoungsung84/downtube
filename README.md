@@ -221,6 +221,11 @@ Theme flow:
 ## Project Structure
 
 ```text
+assets
+bin
+scripts
+├── build-tools
+└── release-tools
 src
 ├── main
 │   ├── common
@@ -258,8 +263,10 @@ The preload bridge in [`src/preload/index.ts`](./src/preload/index.ts) is the so
 | app          | `app:init`                  | renderer -> main | Run startup initialization and report progress                |
 | app          | `app:get-runtime-info`      | renderer -> main | Read version, platform, packaging, and install directory info |
 | app          | `app:get-prepared-update`   | renderer -> main | Read the current prepared update cache                        |
+| app          | `app:open-external-url`     | renderer -> main | Open a safe external URL in the system browser                |
 | updates      | `app:check-for-updates`     | renderer -> main | Check the latest Windows release metadata                     |
 | updates      | `app:download-update`       | renderer -> main | Download and extract an update package                        |
+| updates      | `app:cancel-update`         | renderer -> main | Request cancellation of an in-progress update download        |
 | updates      | `app:apply-update`          | renderer -> main | Start the helper-based apply flow                             |
 | updates      | `app:update-event`          | main -> renderer | Push update progress and error events                         |
 | app          | `app:init-state`            | main -> renderer | Push startup initialization progress                          |

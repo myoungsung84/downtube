@@ -222,6 +222,11 @@ Downtube는 설정 화면에서 사용할 수 있는 Windows 인앱 업데이트
 ## 프로젝트 구조
 
 ```text
+assets
+bin
+scripts
+├── build-tools
+└── release-tools
 src
 ├── main
 │   ├── common
@@ -259,8 +264,10 @@ src
 | app          | `app:init`                  | renderer -> main | 시작 초기화 실행 및 진행 상태 보고              |
 | app          | `app:get-runtime-info`      | renderer -> main | 버전, 플랫폼, 패키징 여부, 설치 경로 조회       |
 | app          | `app:get-prepared-update`   | renderer -> main | 준비된 업데이트 캐시 상태 조회                  |
+| app          | `app:open-external-url`     | renderer -> main | 안전한 외부 URL을 시스템 브라우저에서 열기      |
 | updates      | `app:check-for-updates`     | renderer -> main | 최신 Windows 릴리즈 메타데이터 확인             |
 | updates      | `app:download-update`       | renderer -> main | 업데이트 패키지 다운로드 및 압축 해제           |
+| updates      | `app:cancel-update`         | renderer -> main | 진행 중인 업데이트 다운로드 취소 요청           |
 | updates      | `app:apply-update`          | renderer -> main | helper 기반 적용 흐름 시작                      |
 | updates      | `app:update-event`          | main -> renderer | 업데이트 진행 상태와 오류 이벤트 전달           |
 | app          | `app:init-state`            | main -> renderer | 시작 초기화 진행 이벤트 전달                    |
