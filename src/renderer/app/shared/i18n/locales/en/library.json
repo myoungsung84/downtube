@@ -27,6 +27,13 @@
     "delete": "Delete",
     "open_file_location": "Open file location"
   },
+  "sort": {
+    "label": "Sort",
+    "latest": "Latest",
+    "oldest": "Oldest",
+    "title": "Title",
+    "size": "File size"
+  },
   "tabs": {
     "audio": "Audio",
     "video": "Video"
