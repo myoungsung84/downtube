@@ -17,10 +17,12 @@ Downtube 저장소 전용 릴리즈 노트 작성 절차다.
 1. 먼저 `docs/release/release-note-template-win.md` 내용을 직접 확인한다.
 2. `package.json`을 열어 `version` 값을 직접 확인한다.
 3. 템플릿 구조를 그대로 유지한 채 아래 4개만 채운다.
+
 - `version`
 - `added`
 - `improved`
 - `fixed`
+
 4. 템플릿의 나머지 문구는 바꾸지 않는다.
 5. 템플릿의 섹션 순서도 바꾸지 않는다.
 6. 한국어 안내가 먼저, 영어 안내가 나중에 오는 순서를 유지한다.
