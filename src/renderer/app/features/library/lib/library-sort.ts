@@ -103,14 +103,16 @@ function compareDecoratedBySortKey(
 function decorate(item: LibraryItem, index: number): DecoratedLibraryItem {
   const createdAt = toSafeNumber(item.createdAt)
   const downloadedAt = toSafeDownloadedAt(item)
+  const trimmedTitle = item.title?.trim() || ''
+  const trimmedFileName = item.fileName?.trim() || ''
   return {
     item,
     index,
     primaryDate: downloadedAt || createdAt,
     createdAt,
     fileSize: toSafeNumber(item.fileSize),
-    titleText: item.title?.trim() || item.fileName?.trim() || '',
-    fileNameText: item.fileName?.trim() || ''
+    titleText: trimmedTitle || trimmedFileName,
+    fileNameText: trimmedFileName
   }
 }
 
