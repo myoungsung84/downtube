@@ -27,6 +27,13 @@
     "delete": "삭제",
     "open_file_location": "파일 위치 열기"
   },
+  "sort": {
+    "label": "정렬",
+    "latest": "최신순",
+    "oldest": "오래된순",
+    "title": "제목순",
+    "size": "파일 크기순"
+  },
   "tabs": {
     "audio": "오디오",
     "video": "비디오"
