@@ -21,7 +21,8 @@ const settingsStoreDefaults: Partial<SettingValueMap> = {
   'player.ambientParticlesEnabled': settingsDefaults['player.ambientParticlesEnabled'],
   'downloads.defaultType': settingsDefaults['downloads.defaultType'],
   'downloads.playlistLimit': settingsDefaults['downloads.playlistLimit'],
-  'downloads.recentUrls': settingsDefaults['downloads.recentUrls']
+  'downloads.recentUrls': settingsDefaults['downloads.recentUrls'],
+  'library.sortKey': settingsDefaults['library.sortKey']
 }
 
 const settingsStore = new StoreConstructor<SettingValueMap>({

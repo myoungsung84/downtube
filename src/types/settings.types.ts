@@ -1,3 +1,5 @@
+import type { LibrarySortKey } from './library.types'
+
 export type RecentUrlHistoryItem = {
   url: string
   title: string
@@ -24,7 +26,8 @@ export const settingKeys = [
   'player.ambientParticlesEnabled',
   'downloads.defaultType',
   'downloads.playlistLimit',
-  'downloads.recentUrls'
+  'downloads.recentUrls',
+  'library.sortKey'
 ] as const
 
 export type SettingKey = (typeof settingKeys)[number]
@@ -40,4 +43,5 @@ export type SettingValueMap = {
   'downloads.defaultType': 'video' | 'audio'
   'downloads.playlistLimit': number
   'downloads.recentUrls': RecentUrlHistoryItem[]
+  'library.sortKey': LibrarySortKey
 }

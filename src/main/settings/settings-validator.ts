@@ -1,5 +1,6 @@
 import isNil from 'lodash/isNil'
 
+import { isLibrarySortKey } from '../../types/library.types'
 import type { SettingKey, SettingValueMap } from '../../types/settings.types'
 import { isAppThemePreset } from '../../types/settings.types'
 
@@ -92,6 +93,13 @@ export function validateSettingValue<K extends SettingKey>(
         throw new Error(
           `[settings] ${key} must contain only objects with { url: string, title: string, kind: "single" | "playlist" }`
         )
+      }
+      return
+    }
+
+    case 'library.sortKey': {
+      if (!isLibrarySortKey(value)) {
+        throw new Error(`[settings] ${key} must be a valid library sort key`)
       }
       return
     }

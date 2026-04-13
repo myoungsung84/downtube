@@ -1,18 +1,14 @@
-import type { LibraryItem } from '@src/types/library.types'
+import {
+  DEFAULT_LIBRARY_SORT_KEY,
+  type LibraryItem,
+  type LibrarySortKey
+} from '@src/types/library.types'
 import dayjs from 'dayjs'
-
-export type LibrarySortKey =
-  | 'downloadedAt-desc'
-  | 'downloadedAt-asc'
-  | 'title-asc'
-  | 'fileSize-desc'
 
 export type LibrarySortOption = {
   key: LibrarySortKey
   labelKey: 'sort.latest' | 'sort.oldest' | 'sort.title' | 'sort.size'
 }
-
-export const DEFAULT_LIBRARY_SORT_KEY: LibrarySortKey = 'downloadedAt-desc'
 
 export const LIBRARY_SORT_OPTIONS: readonly LibrarySortOption[] = [
   { key: 'downloadedAt-desc', labelKey: 'sort.latest' },
@@ -20,6 +16,8 @@ export const LIBRARY_SORT_OPTIONS: readonly LibrarySortOption[] = [
   { key: 'title-asc', labelKey: 'sort.title' },
   { key: 'fileSize-desc', labelKey: 'sort.size' }
 ] as const
+
+export { DEFAULT_LIBRARY_SORT_KEY }
 
 const titleCollator = new Intl.Collator(['ko', 'en'], {
   numeric: true,

@@ -24,13 +24,20 @@ import {
   useTheme
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import { useSettingsStore } from '@renderer/features/settings/store/use-settings-store'
 import Thumbnail from '@renderer/shared/components/ui/thumbnail'
 import { useDialog } from '@renderer/shared/hooks/use-dialog'
 import { useI18n } from '@renderer/shared/hooks/use-i18n'
 import { useToast } from '@renderer/shared/hooks/use-toast'
 import { resolveAppErrorMessage } from '@renderer/shared/lib/app-error'
 import { toMediaUrl } from '@renderer/shared/lib/media-url'
-import type { LibraryItem, LibraryItemType } from '@src/types/library.types'
+import {
+  DEFAULT_LIBRARY_SORT_KEY,
+  isLibrarySortKey,
+  type LibraryItem,
+  type LibraryItemType,
+  type LibrarySortKey
+} from '@src/types/library.types'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -39,15 +46,11 @@ import {
   formatLibraryItemDate,
   getLibraryItemDisplayTitle
 } from '../lib/library-screen-helpers'
-import {
-  DEFAULT_LIBRARY_SORT_KEY,
-  LIBRARY_SORT_OPTIONS,
-  type LibrarySortKey,
-  sortLibraryItems
-} from '../lib/library-sort'
+import { LIBRARY_SORT_OPTIONS, sortLibraryItems } from '../lib/library-sort'
 import type { LibraryMenuState, LibraryPlayerOpenState } from '../types/library-screen.types'
 
 const PLAYABLE_ITEM_TYPES: readonly LibraryItemType[] = ['video', 'audio']
+const LIBRARY_SORT_KEY = 'library.sortKey' as const
 
 const META_CHIP_SX = {
   height: 18,
@@ -615,6 +618,8 @@ export default function LibraryScreen(): React.JSX.Element {
   const { t, language } = useI18n('library')
   const { showToast } = useToast()
   const { confirm } = useDialog()
+  const hydrateSetting = useSettingsStore((state) => state.hydrateSetting)
+  const setSettingValue = useSettingsStore((state) => state.setValue)
 
   const [items, setItems] = useState<LibraryItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -663,6 +668,24 @@ export default function LibraryScreen(): React.JSX.Element {
   useEffect(() => {
     void loadItems()
   }, [loadItems])
+
+  useEffect(() => {
+    let cancelled = false
+
+    void hydrateSetting(LIBRARY_SORT_KEY)
+      .then((savedSortKey) => {
+        if (cancelled) return
+        setSortKey(isLibrarySortKey(savedSortKey) ? savedSortKey : DEFAULT_LIBRARY_SORT_KEY)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSortKey(DEFAULT_LIBRARY_SORT_KEY)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [hydrateSetting])
 
   useEffect(() => {
     return () => {
@@ -773,9 +796,17 @@ export default function LibraryScreen(): React.JSX.Element {
   const menuAnchorEl = isMenuOpen ? menuState.anchorEl : null
   const menuItem = isMenuOpen ? menuState.item : null
 
-  const handleSortChange = (event: SelectChangeEvent<LibrarySortKey>): void => {
-    setSortKey(event.target.value as LibrarySortKey)
-  }
+  const handleSortChange = useCallback(
+    (event: SelectChangeEvent<LibrarySortKey>): void => {
+      const nextSortKey = isLibrarySortKey(event.target.value)
+        ? event.target.value
+        : DEFAULT_LIBRARY_SORT_KEY
+
+      setSortKey(nextSortKey)
+      void setSettingValue(LIBRARY_SORT_KEY, nextSortKey).catch(() => undefined)
+    },
+    [setSettingValue]
+  )
 
   const handleOpenMenu = useCallback((anchorEl: HTMLElement, item: LibraryItem): void => {
     lastMenuTriggerRef.current = anchorEl

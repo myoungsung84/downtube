@@ -1,3 +1,4 @@
+import { DEFAULT_LIBRARY_SORT_KEY } from '../../types/library.types'
 import type { SettingValueMap } from '../../types/settings.types'
 
 export const settingsDefaults: SettingValueMap = {
@@ -10,5 +11,6 @@ export const settingsDefaults: SettingValueMap = {
   'player.ambientParticlesEnabled': false,
   'downloads.defaultType': 'video',
   'downloads.playlistLimit': 10,
-  'downloads.recentUrls': []
+  'downloads.recentUrls': [],
+  'library.sortKey': DEFAULT_LIBRARY_SORT_KEY
 }
