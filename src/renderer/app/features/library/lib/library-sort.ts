@@ -1,25 +1,29 @@
-import type { LibraryItem } from '@src/types/library.types'
+import {
+  DEFAULT_LIBRARY_SORT_KEY,
+  type LibraryItem,
+  type LibrarySortKey,
+  librarySortKeys
+} from '@src/types/library.types'
 import dayjs from 'dayjs'
-
-export type LibrarySortKey =
-  | 'downloadedAt-desc'
-  | 'downloadedAt-asc'
-  | 'title-asc'
-  | 'fileSize-desc'
 
 export type LibrarySortOption = {
   key: LibrarySortKey
   labelKey: 'sort.latest' | 'sort.oldest' | 'sort.title' | 'sort.size'
 }
 
-export const DEFAULT_LIBRARY_SORT_KEY: LibrarySortKey = 'downloadedAt-desc'
+const LIBRARY_SORT_LABEL_MAP = {
+  'downloadedAt-desc': 'sort.latest',
+  'downloadedAt-asc': 'sort.oldest',
+  'title-asc': 'sort.title',
+  'fileSize-desc': 'sort.size'
+} as const satisfies Record<LibrarySortKey, LibrarySortOption['labelKey']>
 
-export const LIBRARY_SORT_OPTIONS: readonly LibrarySortOption[] = [
-  { key: 'downloadedAt-desc', labelKey: 'sort.latest' },
-  { key: 'downloadedAt-asc', labelKey: 'sort.oldest' },
-  { key: 'title-asc', labelKey: 'sort.title' },
-  { key: 'fileSize-desc', labelKey: 'sort.size' }
-] as const
+export const LIBRARY_SORT_OPTIONS: readonly LibrarySortOption[] = librarySortKeys.map((key) => ({
+  key,
+  labelKey: LIBRARY_SORT_LABEL_MAP[key]
+}))
+
+export { DEFAULT_LIBRARY_SORT_KEY }
 
 const titleCollator = new Intl.Collator(['ko', 'en'], {
   numeric: true,
