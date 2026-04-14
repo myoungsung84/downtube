@@ -40,10 +40,10 @@ Downtube is a personal Electron desktop app for queue-based media downloads, a c
 - Playlist parsing and batch enqueue with a configurable playlist limit
 - Queue controls for start, pause, stop, remove, retry, and queued-job type switching
 - Recent URL history persisted in settings
-- Library view for completed downloads with open, reveal, delete, thumbnail, and sidecar metadata reuse
+- Library view for completed downloads with sorting, open, reveal, delete, thumbnail, and sidecar metadata reuse
 - Built-in player for local video and audio playback
 - Player controls for seek, volume, mute, playback rate, fullscreen, audio visualizer, and ambient particles
-- Theme mode, theme preset, language, default download type, and playlist limit settings
+- Theme mode, mode-specific theme presets, language, default download type, playlist limit, and library sort settings
 - Korean and English UI, plus a `system` language preference resolved in the main process
 - Runtime startup checks for bundled tools and fallback `yt-dlp` download on Windows and macOS when needed
 - Windows update flow for check, download, extract, restart, and apply via a dedicated `update-helper`
@@ -195,7 +195,7 @@ Persisted settings are stored through `electron-store` and validated in the main
 | ---------------------------- | ------------------------------------------- |
 | App language                 | `system`, `ko`, `en`                        |
 | App theme                    | `system`, `light`, `dark`                   |
-| App theme preset             | `default`, `slate`, `ink`, `jade`, `aurora` |
+| App theme preset             | `default`, `slate`, `rose`, `ink`, `jade`, `aurora`, `ember` |
 | Player volume                | —                                           |
 | Player muted state           | —                                           |
 | Audio visualizer visibility  | —                                           |
@@ -203,6 +203,7 @@ Persisted settings are stored through `electron-store` and validated in the main
 | Default download type        | `video`, `audio`                            |
 | Playlist limit               | —                                           |
 | Recent URL history           | —                                           |
+| Library sort                 | `downloadedAt-desc`, `downloadedAt-asc`, `title-asc`, `fileSize-desc` |
 
 Language flow:
 
@@ -216,7 +217,8 @@ Theme flow:
 - theme mode and preset are stored separately
 - `system` mode follows `prefers-color-scheme` in the renderer
 - `system` mode uses the default preset
-- manual light and dark modes expose `default`, `slate`, `ink`, `jade`, and `aurora`
+- light mode exposes `default`, `slate`, and `rose`
+- dark mode exposes `default`, `ink`, `jade`, `aurora`, and `ember`
 
 ## Project Structure
 
