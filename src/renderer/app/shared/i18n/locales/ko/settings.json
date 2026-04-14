@@ -26,8 +26,10 @@
       "options": {
         "aurora": "오로라",
         "default": "기본",
+        "ember": "엠버",
         "ink": "잉크",
         "jade": "제이드",
+        "rose": "로즈",
         "slate": "슬레이트"
       },
       "title": "스타일"

@@ -9,7 +9,15 @@ export type RecentUrlHistoryItem = {
 export type AppLanguage = 'ko' | 'en'
 export type AppLanguagePreference = 'system' | AppLanguage
 
-export const APP_THEME_PRESETS = ['default', 'slate', 'ink', 'jade', 'aurora'] as const
+export const APP_THEME_PRESETS = [
+  'default',
+  'slate',
+  'rose',
+  'ink',
+  'jade',
+  'aurora',
+  'ember'
+] as const
 export type AppThemePreset = (typeof APP_THEME_PRESETS)[number]
 
 export function isAppThemePreset(value: unknown): value is AppThemePreset {

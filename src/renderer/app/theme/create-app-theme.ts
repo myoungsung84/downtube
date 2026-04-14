@@ -30,7 +30,8 @@ type ThemeTokens = {
 }
 
 // slate: 라이트 전용. 쿨 블루-그레이 틴트. 배경·패널·디바이더 모두 명확히 차갑게
-const LIGHT_PRESETS: Record<'default' | 'slate', Partial<ThemeTokens>> = {
+// rose: 라이트 전용. 따뜻한 로즈-핑크. 배경·아이콘·버튼까지 전체가 핑크 계열
+const LIGHT_PRESETS: Record<'default' | 'slate' | 'rose', Partial<ThemeTokens>> = {
   default: {},
   slate: {
     backgroundDefault: '#D4E3F5',
@@ -39,6 +40,20 @@ const LIGHT_PRESETS: Record<'default' | 'slate', Partial<ThemeTokens>> = {
     textSecondary: '#304C6A',
     textDisabled: '#6888AA',
     divider: '#A0BEDD'
+  },
+  rose: {
+    backgroundDefault: '#FAF0F3',
+    backgroundPaper: '#FFF5F8',
+    bodyGradient: 'linear-gradient(180deg, #FCF1F5 0%, #F7EBF0 50%, #FCF1F5 100%)',
+    primaryMain: '#C94970',
+    primaryLight: '#DC6A8A',
+    primaryDark: '#A83459',
+    secondaryMain: '#9C5878',
+    secondaryLight: '#B47090',
+    secondaryDark: '#804462',
+    textSecondary: '#7A4060',
+    textDisabled: '#C898AC',
+    divider: '#EAC0CC'
   }
 }
 type LightPreset = keyof typeof LIGHT_PRESETS
@@ -46,7 +61,11 @@ type LightPreset = keyof typeof LIGHT_PRESETS
 // jade: 다크 전용. 극야의 틸트-블랙. 차갑고 정제된 전기감, 네온 없이 그린-청록 톤만
 // aurora: 다크 전용. 딥 네이비 위 시안 중심, 아주 약한 블루-바이올렛 힌트. 차갑고 전기적인 오로라
 // ink: 다크 전용. 깊은 네이비-블랙. 배경·패널·디바이더 모두 명확히 짙고 파랗게
-const DARK_PRESETS: Record<'default' | 'ink' | 'jade' | 'aurora', Partial<ThemeTokens>> = {
+// ember: 다크 전용. 어두운 차콜 베이스 위 은은한 웜 앰버 포인트. 따뜻하지만 번쩍이지 않게
+const DARK_PRESETS: Record<
+  'default' | 'ink' | 'jade' | 'aurora' | 'ember',
+  Partial<ThemeTokens>
+> = {
   default: {},
   aurora: {
     backgroundDefault: '#050B12',
@@ -92,6 +111,21 @@ const DARK_PRESETS: Record<'default' | 'ink' | 'jade' | 'aurora', Partial<ThemeT
     textSecondary: '#7A92BC',
     textDisabled: '#3E5272',
     divider: '#121E3A'
+  },
+  ember: {
+    backgroundDefault: '#120A07',
+    backgroundPaper: '#1E1209',
+    bodyGradient: 'linear-gradient(180deg, #160D08 0%, #0E0805 50%, #160D08 100%)',
+    primaryMain: '#E8923A',
+    primaryLight: '#F5AE60',
+    primaryDark: '#C47828',
+    secondaryMain: '#C4584A',
+    secondaryLight: '#D47468',
+    secondaryDark: '#A0403A',
+    textPrimary: '#F2E8DC',
+    textSecondary: '#B89070',
+    textDisabled: '#6E4E3A',
+    divider: '#3C2015'
   }
 }
 type DarkPreset = keyof typeof DARK_PRESETS
@@ -153,13 +187,16 @@ const DARK_BASE: ThemeTokens = {
 }
 
 function resolveLightPreset(preset: AppThemePreset): LightPreset {
-  return preset === 'slate' ? 'slate' : 'default'
+  if (preset === 'slate') return 'slate'
+  if (preset === 'rose') return 'rose'
+  return 'default'
 }
 
 function resolveDarkPreset(preset: AppThemePreset): DarkPreset {
   if (preset === 'ink') return 'ink'
   if (preset === 'jade') return 'jade'
   if (preset === 'aurora') return 'aurora'
+  if (preset === 'ember') return 'ember'
   return 'default'
 }
 

@@ -26,8 +26,10 @@
       "options": {
         "aurora": "Aurora",
         "default": "Default",
+        "ember": "Ember",
         "ink": "Ink",
         "jade": "Jade",
+        "rose": "Rose",
         "slate": "Slate"
       },
       "title": "Style"

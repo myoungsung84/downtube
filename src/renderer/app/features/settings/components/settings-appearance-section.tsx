@@ -39,8 +39,17 @@ export function AppearanceSection(): React.JSX.Element {
   // mode와 맞지 않는 preset은 default로 표시
   const themePreset: AppThemePreset = (() => {
     if (themeMode === 'system') return 'default'
-    if (themeMode === 'light') return rawPreset === 'slate' ? 'slate' : 'default'
-    if (rawPreset === 'ink' || rawPreset === 'jade' || rawPreset === 'aurora') return rawPreset
+    if (themeMode === 'light') {
+      if (rawPreset === 'slate' || rawPreset === 'rose') return rawPreset
+      return 'default'
+    }
+    if (
+      rawPreset === 'ink' ||
+      rawPreset === 'jade' ||
+      rawPreset === 'aurora' ||
+      rawPreset === 'ember'
+    )
+      return rawPreset
     return 'default'
   })()
 
@@ -178,6 +187,11 @@ export function AppearanceSection(): React.JSX.Element {
                   {t('appearance.theme_preset.options.slate')}
                 </ToggleButton>
               )}
+              {themeMode === 'light' && (
+                <ToggleButton value="rose">
+                  {t('appearance.theme_preset.options.rose')}
+                </ToggleButton>
+              )}
               {themeMode === 'dark' && (
                 <ToggleButton value="ink">{t('appearance.theme_preset.options.ink')}</ToggleButton>
               )}
@@ -189,6 +203,11 @@ export function AppearanceSection(): React.JSX.Element {
               {themeMode === 'dark' && (
                 <ToggleButton value="aurora">
                   {t('appearance.theme_preset.options.aurora')}
+                </ToggleButton>
+              )}
+              {themeMode === 'dark' && (
+                <ToggleButton value="ember">
+                  {t('appearance.theme_preset.options.ember')}
                 </ToggleButton>
               )}
             </ToggleButtonGroup>
