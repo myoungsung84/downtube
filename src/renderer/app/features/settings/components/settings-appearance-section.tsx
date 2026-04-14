@@ -19,6 +19,11 @@ const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const
 const APP_THEME_PRESET_KEY = 'app.themePreset' as const
 
+const ALLOWED_PRESETS_BY_MODE: Record<'light' | 'dark', AppThemePreset[]> = {
+  light: ['default', 'slate', 'rose'],
+  dark: ['default', 'ink', 'jade', 'aurora', 'ember']
+}
+
 export function AppearanceSection(): React.JSX.Element {
   const { t, changeLanguage } = useI18n('settings')
   const hydrateSettings = useSettingsStore((state) => state.hydrateSettings)
@@ -39,18 +44,8 @@ export function AppearanceSection(): React.JSX.Element {
   // mode와 맞지 않는 preset은 default로 표시
   const themePreset: AppThemePreset = (() => {
     if (themeMode === 'system') return 'default'
-    if (themeMode === 'light') {
-      if (rawPreset === 'slate' || rawPreset === 'rose') return rawPreset
-      return 'default'
-    }
-    if (
-      rawPreset === 'ink' ||
-      rawPreset === 'jade' ||
-      rawPreset === 'aurora' ||
-      rawPreset === 'ember'
-    )
-      return rawPreset
-    return 'default'
+    const allowed = ALLOWED_PRESETS_BY_MODE[themeMode]
+    return allowed.includes(rawPreset) ? rawPreset : 'default'
   })()
 
   useEffect(() => {
@@ -179,37 +174,14 @@ export function AppearanceSection(): React.JSX.Element {
               }}
               sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
             >
-              <ToggleButton value="default">
-                {t('appearance.theme_preset.options.default')}
-              </ToggleButton>
-              {themeMode === 'light' && (
-                <ToggleButton value="slate">
-                  {t('appearance.theme_preset.options.slate')}
+              {(themeMode !== 'system'
+                ? ALLOWED_PRESETS_BY_MODE[themeMode]
+                : ['default' as const]
+              ).map((preset) => (
+                <ToggleButton key={preset} value={preset}>
+                  {t(`appearance.theme_preset.options.${preset}`)}
                 </ToggleButton>
-              )}
-              {themeMode === 'light' && (
-                <ToggleButton value="rose">
-                  {t('appearance.theme_preset.options.rose')}
-                </ToggleButton>
-              )}
-              {themeMode === 'dark' && (
-                <ToggleButton value="ink">{t('appearance.theme_preset.options.ink')}</ToggleButton>
-              )}
-              {themeMode === 'dark' && (
-                <ToggleButton value="jade">
-                  {t('appearance.theme_preset.options.jade')}
-                </ToggleButton>
-              )}
-              {themeMode === 'dark' && (
-                <ToggleButton value="aurora">
-                  {t('appearance.theme_preset.options.aurora')}
-                </ToggleButton>
-              )}
-              {themeMode === 'dark' && (
-                <ToggleButton value="ember">
-                  {t('appearance.theme_preset.options.ember')}
-                </ToggleButton>
-              )}
+              ))}
             </ToggleButtonGroup>
           </Stack>
         </Stack>
