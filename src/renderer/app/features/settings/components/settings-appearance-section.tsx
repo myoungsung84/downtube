@@ -19,7 +19,8 @@ const APP_LANGUAGE_KEY = 'app.language' as const
 const APP_THEME_MODE_KEY = 'app.themeMode' as const
 const APP_THEME_PRESET_KEY = 'app.themePreset' as const
 
-const ALLOWED_PRESETS_BY_MODE: Record<'light' | 'dark', AppThemePreset[]> = {
+const ALLOWED_PRESETS_BY_MODE: Record<'light' | 'dark' | 'system', AppThemePreset[]> = {
+  system: ['default'],
   light: ['default', 'slate', 'rose'],
   dark: ['default', 'ink', 'jade', 'aurora', 'ember']
 }
@@ -174,10 +175,7 @@ export function AppearanceSection(): React.JSX.Element {
               }}
               sx={[TOGGLE_GROUP_SX, { width: 'fit-content' }]}
             >
-              {(themeMode !== 'system'
-                ? ALLOWED_PRESETS_BY_MODE[themeMode]
-                : ['default' as const]
-              ).map((preset) => (
+              {ALLOWED_PRESETS_BY_MODE[themeMode].map((preset) => (
                 <ToggleButton key={preset} value={preset}>
                   {t(`appearance.theme_preset.options.${preset}`)}
                 </ToggleButton>
