@@ -191,18 +191,18 @@ Scope notes:
 
 Persisted settings are stored through `electron-store` and validated in the main process.
 
-| Setting                      | Values                                      |
-| ---------------------------- | ------------------------------------------- |
-| App language                 | `system`, `ko`, `en`                        |
-| App theme                    | `system`, `light`, `dark`                   |
-| App theme preset             | `default`, `slate`, `rose`, `ink`, `jade`, `aurora`, `ember` |
-| Player volume                | —                                           |
-| Player muted state           | —                                           |
-| Audio visualizer visibility  | —                                           |
-| Ambient particles visibility | —                                           |
-| Default download type        | `video`, `audio`                            |
-| Playlist limit               | —                                           |
-| Recent URL history           | —                                           |
+| Setting                      | Values                                                                |
+| ---------------------------- | --------------------------------------------------------------------- |
+| App language                 | `system`, `ko`, `en`                                                  |
+| App theme                    | `system`, `light`, `dark`                                             |
+| App theme preset             | `default`, `slate`, `rose`, `sand`, `ink`, `jade`, `aurora`, `ember`  |
+| Player volume                | —                                                                     |
+| Player muted state           | —                                                                     |
+| Audio visualizer visibility  | —                                                                     |
+| Ambient particles visibility | —                                                                     |
+| Default download type        | `video`, `audio`                                                      |
+| Playlist limit               | —                                                                     |
+| Recent URL history           | —                                                                     |
 | Library sort                 | `downloadedAt-desc`, `downloadedAt-asc`, `title-asc`, `fileSize-desc` |
 
 Language flow:
@@ -217,7 +217,7 @@ Theme flow:
 - theme mode and preset are stored separately
 - `system` mode follows `prefers-color-scheme` in the renderer
 - `system` mode uses the default preset
-- light mode exposes `default`, `slate`, and `rose`
+- light mode exposes `default`, `slate`, `rose`, and `sand`
 - dark mode exposes `default`, `ink`, `jade`, `aurora`, and `ember`
 
 ## Project Structure

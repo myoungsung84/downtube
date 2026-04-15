@@ -192,18 +192,18 @@ Downtube는 설정 화면에서 사용할 수 있는 Windows 인앱 업데이트
 
 저장 설정은 `electron-store`를 통해 저장되며 main process에서 검증됩니다.
 
-| 설정 항목                   | 값                                          |
-| --------------------------- | ------------------------------------------- |
-| 앱 언어                     | `system`, `ko`, `en`                        |
-| 앱 테마                     | `system`, `light`, `dark`                   |
-| 앱 테마 스타일              | `default`, `slate`, `rose`, `ink`, `jade`, `aurora`, `ember` |
-| 플레이어 볼륨               | —                                           |
-| 플레이어 음소거 상태        | —                                           |
-| 오디오 시각화 표시 여부     | —                                           |
-| ambient particles 표시 여부 | —                                           |
-| 기본 다운로드 타입          | `video`, `audio`                            |
-| 플레이리스트 제한           | —                                           |
-| 최근 URL 기록               | —                                           |
+| 설정 항목                   | 값                                                                    |
+| --------------------------- | --------------------------------------------------------------------- |
+| 앱 언어                     | `system`, `ko`, `en`                                                  |
+| 앱 테마                     | `system`, `light`, `dark`                                             |
+| 앱 테마 스타일              | `default`, `slate`, `rose`, `sand`, `ink`, `jade`, `aurora`, `ember`  |
+| 플레이어 볼륨               | —                                                                     |
+| 플레이어 음소거 상태        | —                                                                     |
+| 오디오 시각화 표시 여부     | —                                                                     |
+| ambient particles 표시 여부 | —                                                                     |
+| 기본 다운로드 타입          | `video`, `audio`                                                      |
+| 플레이리스트 제한           | —                                                                     |
+| 최근 URL 기록               | —                                                                     |
 | 보관함 정렬                 | `downloadedAt-desc`, `downloadedAt-asc`, `title-asc`, `fileSize-desc` |
 
 언어 처리 흐름:
@@ -218,7 +218,7 @@ Downtube는 설정 화면에서 사용할 수 있는 Windows 인앱 업데이트
 - 테마 모드와 스타일은 각각 따로 저장됩니다.
 - `system` 모드는 renderer의 `prefers-color-scheme`를 따릅니다.
 - `system` 모드에서는 기본 스타일을 사용합니다.
-- 라이트 모드에서는 `default`, `slate`, `rose`를 선택할 수 있습니다.
+- 라이트 모드에서는 `default`, `slate`, `rose`, `sand`를 선택할 수 있습니다.
 - 다크 모드에서는 `default`, `ink`, `jade`, `aurora`, `ember`를 선택할 수 있습니다.
 
 ## 프로젝트 구조
