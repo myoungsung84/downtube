@@ -29,7 +29,9 @@ export function validateSettingValue<K extends SettingKey>(
 
     case 'app.themePreset': {
       if (!isAppThemePreset(value)) {
-        throw new Error(`[settings] ${key} must be "default", "slate", "ink", "jade", or "aurora"`)
+        throw new Error(
+          `[settings] ${key} must be "default", "slate", "rose", "sand", "ink", "jade", "aurora", or "ember"`
+        )
       }
       return
     }

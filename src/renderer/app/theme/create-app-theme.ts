@@ -31,7 +31,8 @@ type ThemeTokens = {
 
 // slate: 라이트 전용. 쿨 블루-그레이 틴트. 배경·패널·디바이더 모두 명확히 차갑게
 // rose: 라이트 전용. 따뜻한 로즈-핑크. 배경·아이콘·버튼까지 전체가 핑크 계열
-const LIGHT_PRESETS: Record<'default' | 'slate' | 'rose', Partial<ThemeTokens>> = {
+// sand: 라이트 전용. 아이보리-샌드 베이스에 앰버 포인트. 눈부심을 줄인 따뜻한 업무용 톤
+const LIGHT_PRESETS: Record<'default' | 'slate' | 'rose' | 'sand', Partial<ThemeTokens>> = {
   default: {},
   slate: {
     backgroundDefault: '#D4E3F5',
@@ -54,6 +55,21 @@ const LIGHT_PRESETS: Record<'default' | 'slate' | 'rose', Partial<ThemeTokens>> 
     textSecondary: '#7A4060',
     textDisabled: '#C898AC',
     divider: '#EAC0CC'
+  },
+  sand: {
+    backgroundDefault: '#F3E9DC',
+    backgroundPaper: '#FCF7F0',
+    bodyGradient: 'linear-gradient(180deg, #FBF5ED 0%, #F1E5D5 50%, #FBF5ED 100%)',
+    primaryMain: '#B86A1E',
+    primaryLight: '#D08A3D',
+    primaryDark: '#965217',
+    secondaryMain: '#5B7B76',
+    secondaryLight: '#78958F',
+    secondaryDark: '#45615D',
+    textPrimary: '#2B1C10',
+    textSecondary: '#6D5743',
+    textDisabled: '#AF8F74',
+    divider: '#E1CFBC'
   }
 }
 type LightPreset = keyof typeof LIGHT_PRESETS
@@ -189,6 +205,7 @@ const DARK_BASE: ThemeTokens = {
 function resolveLightPreset(preset: AppThemePreset): LightPreset {
   if (preset === 'slate') return 'slate'
   if (preset === 'rose') return 'rose'
+  if (preset === 'sand') return 'sand'
   return 'default'
 }
 

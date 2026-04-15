@@ -13,6 +13,7 @@ export const APP_THEME_PRESETS = [
   'default',
   'slate',
   'rose',
+  'sand',
   'ink',
   'jade',
   'aurora',

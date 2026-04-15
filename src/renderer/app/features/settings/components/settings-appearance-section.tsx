@@ -21,7 +21,7 @@ const APP_THEME_PRESET_KEY = 'app.themePreset' as const
 
 const ALLOWED_PRESETS_BY_MODE: Record<'light' | 'dark' | 'system', AppThemePreset[]> = {
   system: ['default'],
-  light: ['default', 'slate', 'rose'],
+  light: ['default', 'slate', 'rose', 'sand'],
   dark: ['default', 'ink', 'jade', 'aurora', 'ember']
 }
 
